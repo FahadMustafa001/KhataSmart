@@ -1,0 +1,48 @@
+name: smartkhata
+description: "Offline-First Smart Retail POS & Credit Ledger for Pakistani Retailers"
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 1. Typography & Modern Fonts
+  google_fonts: ^6.2.1
+
+  # 2. Icons (WhatsApp, Shopping, Retail)
+  font_awesome_flutter: ^11.0.0
+  cupertino_icons: ^1.0.8
+
+  # 3. Barcode Scanner (Mobile Camera integration)
+  mobile_scanner: ^5.2.3
+
+  # 4. State Management (Lightweight, simple & UI-reactive)
+  provider: ^6.1.2
+
+  # 5. Receipt Printing & PDF Document Generation
+  pdf: ^3.11.1
+  printing: ^5.13.2
+
+  # 6. Intent & Native Sharing (WhatsApp slip sharing & links)
+  share_plus: ^10.0.2
+  url_launcher: ^6.3.0
+
+  # 7. Formatting Helpers (Dates & Numbers)
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  # Local Assets Configuration
+  assets:
+    - assets/icons/
+    - assets/images/
