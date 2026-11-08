@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/constants/app_routes.dart';
+import '../../routes/app_routes.dart';
 
 /// Unified 4-Tab Bottom Navigation Bar for KhataSmart
 /// Connected across Home, POS Sale, Inventory, and Khata Book
@@ -126,4 +126,3 @@ class SmartBottomNavigationBar extends StatelessWidget {
     );
   }
 }
-

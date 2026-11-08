@@ -39,12 +39,29 @@ class ReceiptPreviewScreen extends StatelessWidget {
             : 'PAID • ${actualOrder.paymentMode.name.toUpperCase()}')
         : 'PAID • CASH';
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: CustomAppBar(
-        title: 'Receipt Preview',
-        subtitle: invoiceNumber,
-        showLogo: true,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.posCart);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: CustomAppBar(
+          title: 'Receipt Preview',
+          subtitle: invoiceNumber,
+          showLogo: true,
+          onBack: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, AppRoutes.posCart);
+            }
+          },
         actions: [
           IconButton(
             icon: const Icon(Icons.share_outlined, color: Color(0xFF1E293B)),
@@ -725,6 +742,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 

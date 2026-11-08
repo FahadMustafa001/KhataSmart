@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/constants/app_colors.dart';
+import '../../routes/app_routes.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -47,7 +48,18 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         leadingWidget = IconButton(
           icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
           tooltip: 'Back',
-          onPressed: onBack ?? () => Navigator.maybePop(context),
+          onPressed: onBack ??
+              () {
+                if (Navigator.canPop(context)) {
+                  Navigator.pop(context);
+                } else {
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.dashboard,
+                    (route) => false,
+                  );
+                }
+              },
         );
       }
     }

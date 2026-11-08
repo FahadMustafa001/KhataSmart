@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
 import '../../models/ledger_entry_model.dart';
 import '../../models/party_model.dart';
+import '../../routes/app_routes.dart';
 import '../../state/khata_state.dart';
 import 'widgets/add_transaction_modal.dart';
 
@@ -147,15 +148,32 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF0F172A),
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.maybePop(context),
-        ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.khataDirectory);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF0F172A),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacementNamed(
+                    context, AppRoutes.khataDirectory);
+              }
+            },
+          ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -290,8 +308,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
           _buildBottomActionButtons(),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // 1. Customer Profile Card
   Widget _buildCustomerProfileCard() {

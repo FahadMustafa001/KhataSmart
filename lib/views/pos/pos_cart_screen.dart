@@ -105,9 +105,23 @@ class _PosCartScreenState extends State<PosCartScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      drawer: const SmartKhataDrawer(currentRoute: AppRoutes.posCart),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.dashboard,
+            (route) => false,
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        drawer: const SmartKhataDrawer(currentRoute: AppRoutes.posCart),
       appBar: CustomAppBar(
         title: 'Counter Billing',
         subtitle: 'SmartKhata POS',
@@ -668,6 +682,7 @@ class _PosCartScreenState extends State<PosCartScreen> {
       bottomNavigationBar: const SmartBottomNavigationBar(
         currentRoute: AppRoutes.posCart,
       ),
+    ),
     );
   }
 

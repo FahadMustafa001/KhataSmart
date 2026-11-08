@@ -114,11 +114,28 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: CustomAppBar(
-        title: _isEditing ? 'Edit Product' : 'Add New Product',
-        showLogo: true,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.inventoryList);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: CustomAppBar(
+          title: _isEditing ? 'Edit Product' : 'Add New Product',
+          showLogo: true,
+          onBack: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, AppRoutes.inventoryList);
+            }
+          },
         actions: [
           TextButton(
             onPressed: _onSaveProduct,
@@ -210,6 +227,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

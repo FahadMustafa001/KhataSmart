@@ -100,13 +100,30 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      appBar: const CustomAppBar(
-        title: 'Counter 01',
-        subtitle: 'SmartKhata POS',
-        showLogo: true,
-        actions: [
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.posCart);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        appBar: CustomAppBar(
+          title: 'Counter 01',
+          subtitle: 'SmartKhata POS',
+          showLogo: true,
+          onBack: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, AppRoutes.posCart);
+            }
+          },
+          actions: const [
           Padding(
             padding: EdgeInsets.only(right: 14.0),
             child: CircleAvatar(
@@ -939,6 +956,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 

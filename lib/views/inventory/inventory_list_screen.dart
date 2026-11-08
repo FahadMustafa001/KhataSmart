@@ -286,9 +286,23 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
   Widget build(BuildContext context) {
     final products = _filteredList;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      drawer: const SmartKhataDrawer(currentRoute: AppRoutes.inventoryList),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.dashboard,
+            (route) => false,
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        drawer: const SmartKhataDrawer(currentRoute: AppRoutes.inventoryList),
       appBar: CustomAppBar(
         title: 'SmartKhata Store',
         subtitle: 'Inventory Catalog',
@@ -428,6 +442,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
       bottomNavigationBar: const SmartBottomNavigationBar(
         currentRoute: AppRoutes.inventoryList,
       ),
+    ),
     );
   }
 

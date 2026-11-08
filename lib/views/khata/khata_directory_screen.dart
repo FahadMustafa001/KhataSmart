@@ -246,9 +246,23 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
   Widget build(BuildContext context) {
     final list = _currentList;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
-      drawer: const SmartKhataDrawer(currentRoute: AppRoutes.khataDirectory),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.dashboard,
+            (route) => false,
+          );
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        drawer: const SmartKhataDrawer(currentRoute: AppRoutes.khataDirectory),
       appBar: CustomAppBar(
         title: 'Khata Ledger',
         subtitle: 'SmartKhata Store • Sync OK',
@@ -346,6 +360,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
       bottomNavigationBar: const SmartBottomNavigationBar(
         currentRoute: AppRoutes.khataDirectory,
       ),
+    ),
     );
   }
 

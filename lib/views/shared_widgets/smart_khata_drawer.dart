@@ -410,7 +410,17 @@ class SmartKhataDrawer extends StatelessWidget {
       onTap: () {
         Navigator.pop(context); // Close drawer
         if (route != null && route != currentRoute) {
-          Navigator.pushReplacementNamed(context, route);
+          if (route == AppRoutes.dashboard) {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              AppRoutes.dashboard,
+              (r) => false,
+            );
+          } else if (currentRoute == AppRoutes.dashboard) {
+            Navigator.pushNamed(context, route);
+          } else {
+            Navigator.pushReplacementNamed(context, route);
+          }
         }
       },
       child: Container(

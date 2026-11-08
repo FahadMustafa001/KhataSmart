@@ -132,7 +132,17 @@ class _PosScannerScreenState extends State<PosScannerScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacementNamed(context, AppRoutes.posCart);
+        }
+      },
+      child: Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
         child: Column(
@@ -291,6 +301,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -303,7 +314,13 @@ class _PosScannerScreenState extends State<PosScannerScreen>
         children: [
           // Close (X) button
           GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushReplacementNamed(context, AppRoutes.posCart);
+              }
+            },
             child: Container(
               width: 38,
               height: 38,
