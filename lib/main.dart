@@ -36,13 +36,13 @@ class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (SecurityService.instance.isAuthenticating) {
-      return;
-    }
     if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden) {
       _pausedTime ??= DateTime.now();
+    } else if (state == AppLifecycleState.inactive) {
+      if (!SecurityService.instance.isAuthenticating) {
+        _pausedTime ??= DateTime.now();
+      }
     } else if (state == AppLifecycleState.resumed) {
       if (_pausedTime != null) {
         final pausedAt = _pausedTime!;
@@ -52,11 +52,17 @@ class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserv
           // Auto-lock when returning from background/idle after 5+ seconds
           if (elapsed >= 5) {
             SecurityService.instance.lockApp();
-            if (!SecurityService.instance.isLockScreenActive) {
+            // Verification-only screens do not suppress the mandatory lock route
+            if (!SecurityService.instance.isMandatoryLockActive) {
+              SecurityService.instance.isMandatoryLockActive = true;
               SecurityService.instance.isLockScreenActive = true;
               appNavigatorKey.currentState
                   ?.pushNamed(AppRoutes.appLock)
-                  .then((_) => SecurityService.instance.isLockScreenActive = false);
+                  .then((_) {
+                    SecurityService.instance.isMandatoryLockActive = false;
+                    SecurityService.instance.isLockScreenActive =
+                        SecurityService.instance.isVerificationLockActive;
+                  });
             }
           }
         }

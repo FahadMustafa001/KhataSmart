@@ -23,8 +23,10 @@ class LocalDatabaseService {
   static const String _dbFileName = 'khatasmart_local_database.json';
   File? _databaseFile;
   bool _isInitialized = false;
+  bool _isLoading = false;
 
   bool get isInitialized => _isInitialized;
+  bool get isLoading => _isLoading;
 
   // Locate the persistent local file
   Future<File> _getFile() async {
@@ -43,8 +45,9 @@ class LocalDatabaseService {
   // 1. Initialize & Load Saved Data on App Startup
   Future<void> init({bool forceRetry = false}) async {
     if (_isInitialized && !forceRetry) return;
+    if (_isLoading) return;
+    _isLoading = true;
     _isInitialized = false;
-    _loadFailed = false;
 
     bool loadSucceeded = false;
 
@@ -91,6 +94,8 @@ class LocalDatabaseService {
     } catch (e) {
       _loadFailed = true;
       debugPrint('LocalDatabaseService init error: $e');
+    } finally {
+      _isLoading = false;
     }
 
     _isInitialized = true;
@@ -100,6 +105,7 @@ class LocalDatabaseService {
       return;
     }
 
+    _loadFailed = false;
     _attachListeners();
   }
 
@@ -233,10 +239,10 @@ class LocalDatabaseService {
   Future<void> persistToDisk() {
     _debounceTimer?.cancel();
 
-    if (_loadFailed) {
-      debugPrint('LocalDatabaseService: Skipping persistToDisk because loading failed.');
+    if (_loadFailed || _isLoading) {
+      debugPrint('LocalDatabaseService: Skipping persistToDisk because database is loading or load failed.');
       return Future.error(StateError(
-        'Cannot persist to disk while database load has failed. Please restore from backup or clear data to recover.',
+        'Cannot persist to disk while database is loading or load failed. Please restore from backup or clear data to recover.',
       ));
     }
 

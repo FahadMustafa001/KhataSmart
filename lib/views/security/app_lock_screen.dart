@@ -31,6 +31,11 @@ class _AppLockScreenState extends State<AppLockScreen> {
   void initState() {
     super.initState();
     SecurityService.instance.isLockScreenActive = true;
+    if (widget.isVerificationOnly) {
+      SecurityService.instance.isVerificationLockActive = true;
+    } else {
+      SecurityService.instance.isMandatoryLockActive = true;
+    }
     if (SecurityService.instance.hasCredentialError) {
       _errorMessage = 'PIN data is corrupted. Please reset your PIN below.';
     }
@@ -45,7 +50,14 @@ class _AppLockScreenState extends State<AppLockScreen> {
   @override
   void dispose() {
     SecurityService.instance.cancelBiometricAuth();
-    SecurityService.instance.isLockScreenActive = false;
+    if (widget.isVerificationOnly) {
+      SecurityService.instance.isVerificationLockActive = false;
+    } else {
+      SecurityService.instance.isMandatoryLockActive = false;
+    }
+    SecurityService.instance.isLockScreenActive =
+        SecurityService.instance.isMandatoryLockActive ||
+        SecurityService.instance.isVerificationLockActive;
     super.dispose();
   }
 
@@ -77,22 +89,27 @@ class _AppLockScreenState extends State<AppLockScreen> {
     if (_hasCompletedUnlock) return;
     _hasCompletedUnlock = true;
     SecurityService.instance.cancelBiometricAuth();
-    SecurityService.instance.isLockScreenActive = false;
+    if (widget.isVerificationOnly) {
+      SecurityService.instance.isVerificationLockActive = false;
+    } else {
+      SecurityService.instance.isMandatoryLockActive = false;
+    }
+    SecurityService.instance.isLockScreenActive =
+        SecurityService.instance.isMandatoryLockActive ||
+        SecurityService.instance.isVerificationLockActive;
     if (widget.onSuccess != null) {
       widget.onSuccess!();
     } else if (Navigator.canPop(context)) {
       Navigator.pop(context, true);
     } else {
+      final hasCompletedOnboarding = ShopState.instance.hasCompletedOnboarding ||
+          ShopState.instance.shops.length > 1 ||
+          ShopState.instance.activeShop.phone.isNotEmpty ||
+          ShopState.instance.activeShop.name != 'My Store' ||
+          InventoryState.instance.allProductsForDatabase.isNotEmpty ||
+          KhataState.instance.allPartiesForDatabase.isNotEmpty;
       final destination = widget.destinationRoute ??
-          ((ShopState.instance.hasCompletedOnboarding ||
-                  ShopState.instance.shops.length > 1 ||
-                  ShopState.instance.activeShop.phone.isNotEmpty ||
-                  ShopState.instance.activeShop.name != 'My Store' ||
-                  InventoryState.instance.allProductsForDatabase.isNotEmpty ||
-                  KhataState.instance.allPartiesForDatabase.isNotEmpty ||
-                  LocalDatabaseService.instance.isInitialized)
-              ? AppRoutes.dashboard
-              : AppRoutes.auth);
+          (hasCompletedOnboarding ? AppRoutes.dashboard : AppRoutes.auth);
       Navigator.pushReplacementNamed(context, destination);
     }
   }

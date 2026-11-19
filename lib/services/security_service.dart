@@ -22,6 +22,8 @@ class SecurityService extends ChangeNotifier {
   bool _hasCredentialError = false;
   bool _isAuthenticating = false;
   bool isLockScreenActive = false;
+  bool isMandatoryLockActive = false;
+  bool isVerificationLockActive = false;
 
   bool get isLockEnabled => _isLockEnabled;
   bool get isBiometricEnabled => _isBiometricEnabled;
