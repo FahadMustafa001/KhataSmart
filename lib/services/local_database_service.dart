@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
@@ -45,12 +46,36 @@ class LocalDatabaseService {
 
     try {
       final file = await _getFile();
+      final tmpFile = File('${file.path}.tmp');
+
+      // Restore from .tmp file if main file is missing after an interrupted write
+      if (!await file.exists() && await tmpFile.exists()) {
+        try {
+          await tmpFile.rename(file.path);
+        } catch (_) {
+          try {
+            await tmpFile.copy(file.path);
+            await tmpFile.delete();
+          } catch (_) {}
+        }
+      }
+
       if (await file.exists()) {
         final content = await file.readAsString();
         if (content.trim().isNotEmpty) {
-          final Map<String, dynamic> data = jsonDecode(content);
-          _loadIntoState(data);
-          debugPrint('LocalDatabaseService: Loaded existing offline database successfully.');
+          try {
+            final Map<String, dynamic> data = jsonDecode(content);
+            _loadIntoState(data);
+            debugPrint('LocalDatabaseService: Loaded existing offline database successfully.');
+          } catch (decodeError) {
+            debugPrint('Database decode failure: $decodeError. Preserving as .corrupt copy.');
+            try {
+              final corruptFile = File('${file.path}.corrupt');
+              await file.copy(corruptFile.path);
+            } catch (copyErr) {
+              debugPrint('Failed to preserve corrupt file: $copyErr');
+            }
+          }
         }
       }
     } catch (e) {
@@ -59,88 +84,151 @@ class LocalDatabaseService {
 
     _isInitialized = true;
 
-    // Attach reactive listeners so all future mutations auto-persist to disk
-    ShopState.instance.addListener(persistToDisk);
-    InventoryState.instance.addListener(persistToDisk);
-    KhataState.instance.addListener(persistToDisk);
-    SecurityService.instance.addListener(persistToDisk);
-    NotificationService.instance.addListener(persistToDisk);
+    // Attach debounced reactive listeners so all future mutations auto-persist safely
+    ShopState.instance.addListener(schedulePersist);
+    InventoryState.instance.addListener(schedulePersist);
+    KhataState.instance.addListener(schedulePersist);
+    SecurityService.instance.addListener(schedulePersist);
+    NotificationService.instance.addListener(schedulePersist);
   }
 
   // 2. Populate App Singletons with Loaded Data
+  // Parses every section into local variables first before applying state
   void _loadIntoState(Map<String, dynamic> data) {
-    // 1. Shops & Active Shop
+    // 1. Parse Shops
+    List<ShopModel>? parsedShops;
+    String? parsedActiveShopId;
     if (data['shops'] is List) {
-      final loadedShops = (data['shops'] as List)
+      parsedShops = (data['shops'] as List)
           .map((m) => ShopModel.fromMap(Map<String, dynamic>.from(m)))
           .toList();
-      if (loadedShops.isNotEmpty) {
-        ShopState.instance.loadFromDatabase(
-          shops: loadedShops,
-          activeShopId: data['activeShopId'] ?? loadedShops.first.id,
-        );
-      }
+      parsedActiveShopId = data['activeShopId'] as String?;
     }
 
-    // 2. Products
+    // 2. Parse Products
+    List<ProductModel>? parsedProducts;
     if (data['products'] is List) {
-      final loadedProducts = (data['products'] as List)
+      parsedProducts = (data['products'] as List)
           .map((m) => ProductModel.fromMap(Map<String, dynamic>.from(m)))
           .toList();
-      InventoryState.instance.loadFromDatabase(loadedProducts);
     }
 
-    // 3. Khata Parties, Entries, and Orders
-    if (data['parties'] is List || data['entries'] is List || data['orders'] is List) {
-      final loadedParties = (data['parties'] as List? ?? [])
+    // 3. Parse Parties, Entries, Orders
+    List<PartyModel>? parsedParties;
+    List<LedgerEntryModel>? parsedEntries;
+    List<OrderModel>? parsedOrders;
+    final hasKhataData = data['parties'] is List || data['entries'] is List || data['orders'] is List;
+    if (hasKhataData) {
+      parsedParties = (data['parties'] as List? ?? [])
           .map((m) => PartyModel.fromMap(Map<String, dynamic>.from(m)))
           .toList();
-      final loadedEntries = (data['entries'] as List? ?? [])
+      parsedEntries = (data['entries'] as List? ?? [])
           .map((m) => LedgerEntryModel.fromMap(Map<String, dynamic>.from(m)))
           .toList();
-      final loadedOrders = (data['orders'] as List? ?? [])
+      parsedOrders = (data['orders'] as List? ?? [])
           .map((m) => OrderModel.fromMap(Map<String, dynamic>.from(m)))
           .toList();
-
-      KhataState.instance.loadFromDatabase(
-        parties: loadedParties,
-        entries: loadedEntries,
-        orders: loadedOrders,
-      );
     }
 
-    // 4. Security Settings
+    // 4. Parse Security
+    Map<String, dynamic>? parsedSecurity;
     if (data['security'] is Map) {
-      final sec = Map<String, dynamic>.from(data['security']);
-      SecurityService.instance.loadFromDatabase(
-        isLockEnabled: sec['isLockEnabled'] ?? false,
-        isBiometricEnabled: sec['isBiometricEnabled'] ?? false,
-        pin: sec['pin'] ?? '',
-        question: sec['securityQuestion'],
-        answer: sec['securityAnswer'],
+      parsedSecurity = Map<String, dynamic>.from(data['security']);
+    }
+
+    // 5. Parse Google Drive
+    Map<String, dynamic>? parsedGoogleDrive;
+    if (data['googleDrive'] is Map) {
+      parsedGoogleDrive = Map<String, dynamic>.from(data['googleDrive']);
+    }
+
+    // 6. Parse Notifications
+    List<dynamic>? parsedNotifications;
+    if (data['notifications'] is List) {
+      parsedNotifications = List<dynamic>.from(data['notifications']);
+    }
+
+    // ALL parsing succeeded: apply state to singletons
+    if (parsedShops != null && parsedShops.isNotEmpty) {
+      ShopState.instance.loadFromDatabase(
+        shops: parsedShops,
+        activeShopId: parsedActiveShopId ?? parsedShops.first.id,
       );
     }
 
-    // 5. Google Drive Cloud State
-    if (data['googleDrive'] is Map) {
-      final gd = Map<String, dynamic>.from(data['googleDrive']);
-      GoogleDriveService.instance.loadFromDatabase(gd);
+    if (parsedProducts != null) {
+      InventoryState.instance.loadFromDatabase(parsedProducts);
     }
 
-    // 6. Notifications
-    if (data['notifications'] is List) {
-      NotificationService.instance.loadFromDatabase(data['notifications']);
+    if (hasKhataData) {
+      KhataState.instance.loadFromDatabase(
+        parties: parsedParties ?? [],
+        entries: parsedEntries ?? [],
+        orders: parsedOrders ?? [],
+      );
+    }
+
+    if (parsedSecurity != null) {
+      SecurityService.instance.loadFromDatabase(
+        isLockEnabled: parsedSecurity['isLockEnabled'] ?? false,
+        isBiometricEnabled: parsedSecurity['isBiometricEnabled'] ?? false,
+        pinHash: parsedSecurity['pinHash'],
+        pinSalt: parsedSecurity['pinSalt'],
+        pin: parsedSecurity['pin'],
+        question: parsedSecurity['securityQuestion'],
+        answerHash: parsedSecurity['answerHash'],
+        answerSalt: parsedSecurity['answerSalt'],
+        answer: parsedSecurity['securityAnswer'],
+      );
+    }
+
+    if (parsedGoogleDrive != null) {
+      GoogleDriveService.instance.loadFromDatabase(parsedGoogleDrive);
+    }
+
+    if (parsedNotifications != null) {
+      NotificationService.instance.loadFromDatabase(parsedNotifications);
     } else {
       NotificationService.instance.init();
     }
   }
 
-  // 3. Atomic Disk Persistence
+  // 3. Debouncing & Coalescing Persistence
+  Timer? _debounceTimer;
   bool _isSaving = false;
+  bool _hasPendingSave = false;
+
+  void schedulePersist() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      persistToDisk();
+    });
+  }
+
   Future<void> persistToDisk() async {
-    if (_isSaving) return;
+    _debounceTimer?.cancel();
+
+    if (_isSaving) {
+      _hasPendingSave = true;
+      return;
+    }
+
     _isSaving = true;
 
+    try {
+      while (true) {
+        _hasPendingSave = false;
+        await _performWrite();
+        if (!_hasPendingSave) {
+          break;
+        }
+      }
+    } finally {
+      _isSaving = false;
+    }
+  }
+
+  Future<void> _performWrite() async {
     try {
       final file = await _getFile();
       final Map<String, dynamic> payload = {
@@ -152,38 +240,47 @@ class LocalDatabaseService {
         'parties': KhataState.instance.allPartiesForDatabase.map((p) => p.toMap()).toList(),
         'entries': KhataState.instance.allEntriesForDatabase.map((e) => e.toMap()).toList(),
         'orders': KhataState.instance.allOrdersForDatabase.map((o) => o.toMap()).toList(),
-        'security': {
-          'isLockEnabled': SecurityService.instance.isLockEnabled,
-          'isBiometricEnabled': SecurityService.instance.isBiometricEnabled,
-          'pin': SecurityService.instance.hasPinSet ? SecurityService.instance.rawPin : '',
-          'securityQuestion': SecurityService.instance.securityQuestion,
-          'securityAnswer': SecurityService.instance.rawAnswer,
-        },
+        'security': SecurityService.instance.toDatabaseMap(),
         'googleDrive': GoogleDriveService.instance.toMap(),
         'notifications': NotificationService.instance.toDatabaseList(),
       };
 
       final jsonStr = jsonEncode(payload);
 
-      // Safe atomic write (Write to .tmp then rename)
       final tmpFile = File('${file.path}.tmp');
       await tmpFile.writeAsString(jsonStr, flush: true);
-      if (await file.exists()) {
-        await file.delete();
+
+      // Attempt atomic replacement without deleting main file first
+      try {
+        await tmpFile.rename(file.path);
+      } catch (renameErr) {
+        // Fallback for platform-specific rename locks
+        if (await file.exists()) {
+          await file.delete();
+        }
+        await tmpFile.rename(file.path);
       }
-      await tmpFile.rename(file.path);
     } catch (e) {
-      debugPrint('LocalDatabaseService persistToDisk error: $e');
-    } finally {
-      _isSaving = false;
+      debugPrint('LocalDatabaseService _performWrite error: $e');
     }
   }
 
-  // 4. Backup & Restore Helpers for Google Drive & File Export
+  // 4. Backup & Restore Helpers
+  // Excludes the security section from exportDatabaseJson so Drive backups never store PIN/credentials
   Future<String> exportDatabaseJson() async {
+    // Flush any pending write first
+    await persistToDisk();
+
     final file = await _getFile();
     if (await file.exists()) {
-      return await file.readAsString();
+      final content = await file.readAsString();
+      if (content.trim().isNotEmpty) {
+        try {
+          final Map<String, dynamic> data = jsonDecode(content);
+          data.remove('security');
+          return jsonEncode(data);
+        } catch (_) {}
+      }
     }
     return '{}';
   }
@@ -201,9 +298,14 @@ class LocalDatabaseService {
   }
 
   Future<void> clearAllData() async {
+    _debounceTimer?.cancel();
     final file = await _getFile();
     if (await file.exists()) {
       await file.delete();
+    }
+    final tmpFile = File('${file.path}.tmp');
+    if (await tmpFile.exists()) {
+      await tmpFile.delete();
     }
   }
 }
