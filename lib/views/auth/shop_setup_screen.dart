@@ -482,7 +482,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                             ),
                           ),
                           SizedBox(height: 2),
-                          const Text(
+                          Text(
                             'SmartKhata runs offline and stores your data safely on your device.',
                             style: TextStyle(
                               fontSize: 11,

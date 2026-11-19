@@ -74,12 +74,13 @@ class KhataState extends ChangeNotifier {
 
   void addParty(PartyModel party, {String? targetShopId}) {
     final activeId = ShopState.instance.activeShopId;
+    PartyModel finalParty = party;
     if (targetShopId != null && targetShopId.isNotEmpty) {
-      party.shopId = targetShopId;
+      finalParty = party.copyWith(shopId: targetShopId);
     } else if (party.shopId.isEmpty || (party.shopId == 'shop_1' && activeId != 'shop_1')) {
-      party.shopId = activeId;
+      finalParty = party.copyWith(shopId: activeId);
     }
-    _parties.insert(0, party);
+    _parties.insert(0, finalParty);
     notifyListeners();
   }
 

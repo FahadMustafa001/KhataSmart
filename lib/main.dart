@@ -39,14 +39,16 @@ class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserv
     if (state == AppLifecycleState.paused) {
       _pausedTime = DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
-      if (SecurityService.instance.isLockEnabled) {
-        final elapsed = _pausedTime != null
-            ? DateTime.now().difference(_pausedTime!).inSeconds
-            : 10;
-        // Auto-lock when coming back from background (3+ seconds)
-        if (elapsed >= 3) {
-          SecurityService.instance.lockApp();
-          appNavigatorKey.currentState?.pushNamed(AppRoutes.appLock);
+      if (_pausedTime != null) {
+        final pausedAt = _pausedTime!;
+        _pausedTime = null;
+        if (SecurityService.instance.isLockEnabled) {
+          final elapsed = DateTime.now().difference(pausedAt).inSeconds;
+          // Auto-lock when coming back from background (3+ seconds)
+          if (elapsed >= 3) {
+            SecurityService.instance.lockApp();
+            appNavigatorKey.currentState?.pushNamed(AppRoutes.appLock);
+          }
         }
       }
     }

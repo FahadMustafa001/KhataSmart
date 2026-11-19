@@ -53,6 +53,38 @@ class PartyModel {
     return components.join(', ');
   }
 
+  PartyModel copyWith({
+    String? id,
+    String? name,
+    String? phone,
+    PartyType? type,
+    String? address,
+    String? city,
+    String? area,
+    String? cnic,
+    double? creditLimit,
+    String? notes,
+    double? balance,
+    String? shopId,
+    DateTime? createdAt,
+  }) {
+    return PartyModel(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      type: type ?? this.type,
+      address: address ?? this.address,
+      city: city ?? this.city,
+      area: area ?? this.area,
+      cnic: cnic ?? this.cnic,
+      creditLimit: creditLimit ?? this.creditLimit,
+      notes: notes ?? this.notes,
+      balance: balance ?? this.balance,
+      shopId: shopId ?? this.shopId,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
   Map<String, dynamic> toMap() {
     return {
       'id': id,

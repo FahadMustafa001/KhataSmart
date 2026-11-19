@@ -258,7 +258,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                   totalSales: totalSales,
                   grossProfit: netProfit,
                   netProfit: netProfit,
-                  totalExpenses: ledgerGave,
+                  totalExpenses: manualLedgerGave,
                   cashSales: cashSales,
                   creditSales: creditSales,
                   orderCount: filteredOrders.length,

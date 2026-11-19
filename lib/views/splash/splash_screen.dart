@@ -31,16 +31,24 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
+    final targetRoute = (ShopState.instance.activeShop.phone.isNotEmpty ||
+            ShopState.instance.activeShop.name != 'My Store')
+        ? AppRoutes.dashboard
+        : AppRoutes.auth;
+
     if (SecurityService.instance.isLockEnabled) {
       SecurityService.instance.lockApp();
-      Navigator.pushReplacementNamed(context, AppRoutes.appLock);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.appLock,
+        (route) => false,
+      );
     } else {
-      if (ShopState.instance.activeShop.phone.isNotEmpty ||
-          ShopState.instance.activeShop.name != 'My Store') {
-        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
-      } else {
-        Navigator.pushReplacementNamed(context, AppRoutes.auth);
-      }
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        targetRoute,
+        (route) => false,
+      );
     }
   }
 

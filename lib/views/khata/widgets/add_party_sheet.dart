@@ -101,10 +101,31 @@ class _AddPartySheetState extends State<AddPartySheet> {
     final address = _addressController.text.trim();
     final cnic = _cnicController.text.trim();
     final notes = _notesController.text.trim();
-    final creditLimit = double.tryParse(_creditLimitController.text.trim());
+    final rawCredit = _creditLimitController.text.trim().replaceAll(',', '');
+    double? creditLimit;
+    if (rawCredit.isNotEmpty) {
+      final parsed = double.tryParse(rawCredit);
+      if (parsed == null || !parsed.isFinite || parsed < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid positive credit limit')),
+        );
+        return;
+      }
+      creditLimit = parsed;
+    }
 
-    double rawBalance = double.tryParse(_balanceController.text.trim()) ?? 0.0;
-    rawBalance = rawBalance.abs();
+    final rawBalText = _balanceController.text.trim().replaceAll(',', '');
+    double rawBalance = 0.0;
+    if (rawBalText.isNotEmpty) {
+      final parsed = double.tryParse(rawBalText);
+      if (parsed == null || !parsed.isFinite || parsed < 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter a valid positive opening balance')),
+        );
+        return;
+      }
+      rawBalance = parsed;
+    }
 
     double finalBalance = 0.0;
     if (_balanceType == _BalanceType.receivable) {
@@ -118,6 +139,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
     final newPartyId = 'p_${DateTime.now().millisecondsSinceEpoch}';
     final activeShopId = ShopState.instance.activeShopId;
 
+    // Set initial balance to 0.0 so addTransaction applies the opening balance exactly once
     final newParty = PartyModel(
       id: newPartyId,
       name: name,
@@ -129,23 +151,32 @@ class _AddPartySheetState extends State<AddPartySheet> {
       cnic: cnic,
       creditLimit: creditLimit,
       notes: notes,
-      balance: finalBalance,
+      balance: 0.0,
       shopId: activeShopId,
       createdAt: DateTime.now(),
     );
 
-    // 1. Add Party to Khata
-    KhataState.instance.addParty(newParty);
+    // Atomic write with rollback on error
+    try {
+      // 1. Add Party to Khata
+      KhataState.instance.addParty(newParty);
 
-    // 2. If initial balance is non-zero, record opening balance entry
-    if (finalBalance != 0.0) {
-      KhataState.instance.addTransaction(
-        partyId: newPartyId,
-        type: finalBalance > 0 ? LedgerType.gave : LedgerType.got,
-        amount: finalBalance.abs(),
-        note: 'Opening Balance (Shuruaati Baqaya)',
-        shopId: activeShopId,
+      // 2. If initial balance is non-zero, record opening balance entry exactly once
+      if (finalBalance != 0.0) {
+        KhataState.instance.addTransaction(
+          partyId: newPartyId,
+          type: finalBalance > 0 ? LedgerType.gave : LedgerType.got,
+          amount: finalBalance.abs(),
+          note: 'Opening Balance (Shuruaati Baqaya)',
+          shopId: activeShopId,
+        );
+      }
+    } catch (e) {
+      KhataState.instance.deleteParty(newPartyId);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save party: $e')),
       );
+      return;
     }
 
     Navigator.pop(context, true);
@@ -316,6 +347,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
           Expanded(
             child: GestureDetector(
               onTap: () {
+                if (_partyType == PartyType.customer) return;
                 setState(() {
                   _partyType = PartyType.customer;
                   _balanceType = _BalanceType.receivable;
@@ -368,6 +400,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
           Expanded(
             child: GestureDetector(
               onTap: () {
+                if (_partyType == PartyType.supplier) return;
                 setState(() {
                   _partyType = PartyType.supplier;
                   _balanceType = _BalanceType.payable;
