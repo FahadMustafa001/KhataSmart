@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/party_model.dart';
 import '../models/ledger_entry_model.dart';
 import '../models/order_model.dart';
+import '../services/notification_service.dart';
 import 'inventory_state.dart';
 import 'mock_data.dart';
 import 'shop_state.dart';
@@ -113,6 +114,11 @@ class KhataState extends ChangeNotifier {
     // Update Party Balance
     if (type == LedgerType.gave) {
       party.balance += amount; // We gave goods/loan -> balance increases (owe us more)
+      if (party.creditLimit != null &&
+          party.creditLimit! > 0 &&
+          party.balance > party.creditLimit!) {
+        NotificationService.instance.notifyCreditLimitBreach(party);
+      }
     } else {
       party.balance -= amount; // We received cash -> balance decreases
     }

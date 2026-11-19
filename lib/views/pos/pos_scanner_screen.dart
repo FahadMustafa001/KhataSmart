@@ -651,7 +651,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                 // Barcode Pill (Tappable to return code)
                 InkWell(
                   borderRadius: BorderRadius.circular(6),
-                  onTap: () => Navigator.pop(context, product.barcode),
+                  onTap: () => _navigateBackWithResult(product.barcode),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                     decoration: BoxDecoration(

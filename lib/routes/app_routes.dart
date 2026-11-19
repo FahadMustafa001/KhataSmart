@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/order_model.dart';
 import '../models/party_model.dart';
 import '../models/product_model.dart';
+import '../state/khata_state.dart';
 import '../views/auth/auth_screen.dart';
 import '../views/auth/sign_up_screen.dart';
 import '../views/auth/shop_setup_screen.dart';
@@ -95,7 +96,13 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const KhataDirectoryScreen());
 
       case partyLedgerDetail:
-        final party = settings.arguments as PartyModel?;
+        PartyModel? party;
+        if (settings.arguments is PartyModel) {
+          party = settings.arguments as PartyModel;
+        } else if (settings.arguments is String) {
+          final id = settings.arguments as String;
+          party = KhataState.instance.allPartiesForDatabase.where((p) => p.id == id).firstOrNull;
+        }
         return MaterialPageRoute(builder: (_) => PartyLedgerDetailScreen(party: party));
 
       case AppRoutes.settings:

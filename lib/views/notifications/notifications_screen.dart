@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import '../../models/notification_model.dart';
+import '../../routes/app_routes.dart';
+import '../../services/google_drive_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/printing_and_sharing_service.dart';
+import '../../state/inventory_state.dart';
+import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -37,13 +42,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     if (_selectedFilter == 'Stock') {
       return list.where((n) => n.type == NotificationType.stockAlert).toList();
     } else if (_selectedFilter == 'Khata') {
-      return list.where((n) => n.type == NotificationType.paymentDue).toList();
+      return list
+          .where((n) =>
+              n.type == NotificationType.paymentDue ||
+              n.type == NotificationType.creditLimitBreach)
+          .toList();
+    } else if (_selectedFilter == 'Sales') {
+      return list.where((n) => n.type == NotificationType.saleSummary).toList();
     } else if (_selectedFilter == 'System') {
       return list
           .where((n) =>
               n.type == NotificationType.cloudBackup ||
-              n.type == NotificationType.security ||
-              n.type == NotificationType.saleSummary)
+              n.type == NotificationType.security)
           .toList();
     }
     return list;
@@ -64,7 +74,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     _notifService.markAsRead(notif.id);
 
     if (notif.route != null && notif.route!.isNotEmpty) {
-      Navigator.pushNamed(context, notif.route!);
+      if (notif.route == AppRoutes.partyLedgerDetail && notif.referenceId != null) {
+        Navigator.pushNamed(context, notif.route!, arguments: notif.referenceId);
+      } else {
+        Navigator.pushNamed(context, notif.route!);
+      }
     }
   }
 
@@ -146,20 +160,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           // 1. System Push Notification Permission Banner
           _buildPermissionBanner(),
 
-          // 2. Filter Tabs (All, Stock, Khata, System)
+          // 2. Filter Tabs (All, Stock, Khata, Sales, System)
           _buildFilterTabs(),
 
-          // 3. Notifications List
+          // 3. Notification List
           Expanded(
             child: _filteredList.isEmpty
                 ? _buildEmptyState()
                 : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
                     itemCount: _filteredList.length,
-                    itemBuilder: (context, index) {
-                      final notif = _filteredList[index];
-                      return _buildNotificationCard(notif);
-                    },
+                    itemBuilder: (ctx, i) => _buildNotificationCard(_filteredList[i]),
                   ),
           ),
         ],
@@ -171,32 +182,32 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final granted = _notifService.hasSystemPermission;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(14, 10, 14, 4),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(14, 12, 14, 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: granted ? const Color(0xFFF0FDF4) : const Color(0xFFFFFBEB),
+        color: granted ? const Color(0xFFF0FDF4) : const Color(0xFFFEF2F2),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: granted ? const Color(0xFFBBF7D0) : const Color(0xFFFDE68A),
+          color: granted ? const Color(0xFFBBF7D0) : const Color(0xFFFECACA),
         ),
       ),
       child: Row(
         children: [
           Icon(
-            granted ? Icons.notifications_active_rounded : Icons.notifications_off_outlined,
-            size: 18,
-            color: granted ? const Color(0xFF16A34A) : const Color(0xFFD97706),
+            granted ? Icons.notifications_active : Icons.notifications_off_outlined,
+            color: granted ? const Color(0xFF16A34A) : const Color(0xFFDC2626),
+            size: 20,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               granted
-                  ? 'Real-Time Device Notifications Active'
-                  : 'Phone notification permission required for background alerts',
+                  ? 'Real-Time App Notifications are Active'
+                  : 'Notifications are disabled on this device',
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: granted ? const Color(0xFF15803D) : const Color(0xFFB45309),
+                color: granted ? const Color(0xFF15803D) : const Color(0xFFB91C1C),
               ),
             ),
           ),
@@ -219,34 +230,37 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildFilterTabs() {
-    final filters = ['All', 'Stock', 'Khata', 'System'];
+    final filters = ['All', 'Stock', 'Khata', 'Sales', 'System'];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-      child: Row(
-        children: filters.map((tab) {
-          final isSelected = _selectedFilter == tab;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: ChoiceChip(
-              label: Text(tab),
-              labelStyle: TextStyle(
-                fontSize: 11.5,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? Colors.white : const Color(0xFF475569),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: filters.map((tab) {
+            final isSelected = _selectedFilter == tab;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(tab),
+                labelStyle: TextStyle(
+                  fontSize: 11.5,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                  color: isSelected ? Colors.white : const Color(0xFF475569),
+                ),
+                selected: isSelected,
+                selectedColor: const Color(0xFF0F172A),
+                backgroundColor: Colors.white,
+                side: BorderSide(
+                  color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+                ),
+                onSelected: (val) {
+                  if (val) setState(() => _selectedFilter = tab);
+                },
               ),
-              selected: isSelected,
-              selectedColor: const Color(0xFF0F172A),
-              backgroundColor: Colors.white,
-              side: BorderSide(
-                color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
-              ),
-              onSelected: (val) {
-                if (val) setState(() => _selectedFilter = tab);
-              },
-            ),
-          );
-        }).toList(),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -266,6 +280,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         icon = Icons.account_balance_wallet_rounded;
         iconColor = const Color(0xFF16A34A);
         iconBg = const Color(0xFFF0FDF4);
+        break;
+      case NotificationType.creditLimitBreach:
+        icon = Icons.error_outline_rounded;
+        iconColor = const Color(0xFFDC2626);
+        iconBg = const Color(0xFFFEF2F2);
         break;
       case NotificationType.cloudBackup:
         icon = Icons.cloud_done_rounded;
@@ -297,13 +316,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       child: GestureDetector(
         onTap: () => _onNotificationTap(notif),
         child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: notif.isRead ? Colors.white : const Color(0xFFF8FAFC),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: notif.isRead ? const Color(0xFFF1F5F9) : const Color(0xFFDBEAFE),
+              color: notif.type == NotificationType.creditLimitBreach
+                  ? const Color(0xFFFECACA)
+                  : (notif.isRead ? const Color(0xFFF1F5F9) : const Color(0xFFDBEAFE)),
               width: notif.isRead ? 1 : 1.5,
             ),
             boxShadow: [
@@ -329,7 +350,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               const SizedBox(width: 12),
 
-              // Title, Message & Timestamp
+              // Title, Message, Timestamp & Action Buttons
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -343,7 +364,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             style: TextStyle(
                               fontSize: 13,
                               fontWeight: notif.isRead ? FontWeight.w600 : FontWeight.bold,
-                              color: const Color(0xFF0F172A),
+                              color: notif.type == NotificationType.creditLimitBreach
+                                  ? const Color(0xFFDC2626)
+                                  : const Color(0xFF0F172A),
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -364,23 +387,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         height: 1.35,
                       ),
                     ),
-                    if (notif.route != null) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Text(
-                            _getActionLabel(notif.type),
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: iconColor,
-                            ),
-                          ),
-                          const SizedBox(width: 3),
-                          Icon(Icons.arrow_forward, size: 12, color: iconColor),
-                        ],
-                      ),
-                    ],
+
+                    // Direct Actionable Buttons
+                    _buildActionButtons(notif, context),
                   ],
                 ),
               ),
@@ -391,8 +400,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Container(
                   width: 8,
                   height: 8,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2563EB),
+                  decoration: BoxDecoration(
+                    color: notif.type == NotificationType.creditLimitBreach
+                        ? const Color(0xFFDC2626)
+                        : const Color(0xFF2563EB),
                     shape: BoxShape.circle,
                   ),
                 ),
@@ -404,18 +415,246 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 
-  String _getActionLabel(NotificationType type) {
-    switch (type) {
-      case NotificationType.stockAlert:
-        return 'Restock Karein';
+  Widget _buildActionButtons(NotificationModel notif, BuildContext context) {
+    switch (notif.type) {
       case NotificationType.paymentDue:
-        return 'Khata Check Karein';
+      case NotificationType.creditLimitBreach:
+        final partyId = notif.referenceId;
+        final party = partyId != null
+            ? KhataState.instance.allPartiesForDatabase.where((p) => p.id == partyId).firstOrNull
+            : null;
+        if (party == null) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              // 💬 WhatsApp Reminder Button
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    _notifService.markAsRead(notif.id);
+                    PrintingAndSharingService.instance.sendPartyLedgerViaWhatsApp(
+                      party: party,
+                      shop: ShopState.instance.activeShop,
+                    );
+                  },
+                  icon: const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Colors.white),
+                  label: const Text(
+                    'WhatsApp Reminder',
+                    style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF16A34A),
+                    padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // 📞 Direct Call Button
+              OutlinedButton.icon(
+                onPressed: () {
+                  _notifService.markAsRead(notif.id);
+                  if (party.phone.isNotEmpty) {
+                    PrintingAndSharingService.instance.makePhoneCall(party.phone);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No phone number saved for this party')),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.phone_outlined, size: 13, color: Color(0xFF2563EB)),
+                label: const Text(
+                  'Call',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  side: const BorderSide(color: Color(0xFF2563EB)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case NotificationType.stockAlert:
+        final productId = notif.referenceId;
+        final product = productId != null
+            ? InventoryState.instance.products.where((p) => p.id == productId).firstOrNull
+            : null;
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              // Quick +10 Stock Button
+              ElevatedButton.icon(
+                onPressed: () {
+                  if (productId != null) {
+                    InventoryState.instance.addStock(productId, 10);
+                    _notifService.markAsRead(notif.id);
+                    final updated = InventoryState.instance.products.where((p) => p.id == productId).firstOrNull;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: const Color(0xFF16A34A),
+                        content: Text('+10 Stock added for "${product?.name ?? "Product"}"! New Total: ${updated?.stockQty ?? ""}'),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.add, size: 13, color: Colors.white),
+                label: const Text(
+                  '+10 Stock Add',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEA580C),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              const SizedBox(width: 6),
+              // View in Inventory
+              OutlinedButton.icon(
+                onPressed: () {
+                  _notifService.markAsRead(notif.id);
+                  Navigator.pushNamed(context, AppRoutes.inventoryList);
+                },
+                icon: const Icon(Icons.inventory_2_outlined, size: 13, color: Color(0xFF475569)),
+                label: const Text(
+                  'Manage',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        );
+
       case NotificationType.cloudBackup:
-        return 'Cloud Backup Settings';
-      case NotificationType.security:
-        return 'Secure Terminal';
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () async {
+                  if (!GoogleDriveService.instance.isConnected) {
+                    Navigator.pushNamed(context, AppRoutes.settings);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Pehle Settings mein ja kar Google Drive link karein')),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Google Drive Backup shuru ho raha hai...')),
+                    );
+                    final res = await GoogleDriveService.instance.backupToDrive();
+                    if (res['success'] == true) {
+                      _notifService.markAsRead(notif.id);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            backgroundColor: const Color(0xFF16A34A),
+                            content: Text('Backup mukammal! Size: ${res['size']}'),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    } else if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Backup error: ${res['error']}')),
+                      );
+                    }
+                  }
+                },
+                icon: const Icon(Icons.cloud_upload_outlined, size: 13, color: Colors.white),
+                label: const Text(
+                  'Backup Now (Drive)',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              const SizedBox(width: 6),
+              OutlinedButton(
+                onPressed: () {
+                  _notifService.markAsRead(notif.id);
+                  Navigator.pushNamed(context, AppRoutes.settings);
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                child: const Text('Settings', style: TextStyle(fontSize: 10.5, color: Color(0xFF475569))),
+              ),
+            ],
+          ),
+        );
+
       case NotificationType.saleSummary:
-        return 'View Bills';
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  _notifService.markAsRead(notif.id);
+                  Navigator.pushNamed(context, AppRoutes.reports);
+                },
+                icon: const Icon(Icons.insights_rounded, size: 13, color: Colors.white),
+                label: const Text(
+                  'View Financial Reports',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF0891B2),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case NotificationType.security:
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Row(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  _notifService.markAsRead(notif.id);
+                  Navigator.pushNamed(context, AppRoutes.settings);
+                },
+                icon: const Icon(Icons.lock_outline, size: 13, color: Colors.white),
+                label: const Text(
+                  'Enable App Lock',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7C3AED),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        );
     }
   }
 

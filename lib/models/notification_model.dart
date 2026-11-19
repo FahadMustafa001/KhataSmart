@@ -4,6 +4,7 @@ enum NotificationType {
   saleSummary,
   cloudBackup,
   security,
+  creditLimitBreach,
 }
 
 class NotificationModel {

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/notification_model.dart';
+import '../models/party_model.dart';
 import '../routes/app_routes.dart';
 import '../state/inventory_state.dart';
 import '../state/khata_state.dart';
@@ -88,10 +89,33 @@ class NotificationService extends ChangeNotifier {
       }
     }
 
-    // 2. Pending Khata Debtors
-    for (final c in debtors.take(3)) {
+    // 2. Pending Khata Debtors & Credit Limit Breach
+    for (final c in debtors) {
+      // Check credit limit breach first
+      if (c.creditLimit != null && c.creditLimit! > 0 && c.balance > c.creditLimit!) {
+        final breachExists = _notifications.any(
+          (n) => n.type == NotificationType.creditLimitBreach && n.referenceId == c.id,
+        );
+        if (!breachExists) {
+          _notifications.insert(
+            0,
+            NotificationModel(
+              id: 'notif_limit_${c.id}_${DateTime.now().millisecondsSinceEpoch}',
+              title: '⚠️ Udhaar Limit Breach: ${c.name}',
+              message:
+                  'Warning: ${c.name} ka udhaar approved limit (PKR ${c.creditLimit!.toStringAsFixed(0)}) se barh kar PKR ${c.balance.toStringAsFixed(0)} ho gaya hai!',
+              type: NotificationType.creditLimitBreach,
+              timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
+              route: AppRoutes.partyLedgerDetail,
+              referenceId: c.id,
+            ),
+          );
+        }
+      }
+
+      // Regular debtor alert
       final exists = _notifications.any(
-        (n) => n.type == NotificationType.paymentDue && n.referenceId == c.id,
+        (n) => (n.type == NotificationType.paymentDue || n.type == NotificationType.creditLimitBreach) && n.referenceId == c.id,
       );
       if (!exists) {
         _notifications.insert(
@@ -103,14 +127,93 @@ class NotificationService extends ChangeNotifier {
                 'PKR ${c.balance.toStringAsFixed(0)} baqaya hain (${c.displayLocation.isNotEmpty ? c.displayLocation : "Khata Book"}). Payment reminder bheinjein.',
             type: NotificationType.paymentDue,
             timestamp: DateTime.now().subtract(const Duration(minutes: 20)),
-            route: AppRoutes.khataDirectory,
+            route: AppRoutes.partyLedgerDetail,
             referenceId: c.id,
           ),
         );
       }
     }
 
-    // 3. Security status alert if App Lock is off
+    // 3. Daily Sales & Profit Closing Alert
+    final orders = KhataState.instance.orders;
+    final now = DateTime.now();
+    final todayOrders = orders.where((o) =>
+      o.date.year == now.year &&
+      o.date.month == now.month &&
+      o.date.day == now.day
+    ).toList();
+
+    if (todayOrders.isNotEmpty) {
+      final totalSales = todayOrders.fold(0.0, (sum, o) => sum + o.total);
+      final totalCost = todayOrders.fold(0.0, (sum, o) =>
+        sum + o.items.fold(0.0, (isum, i) => isum + (i.costPriceAtSale * i.quantity))
+      );
+      final netProfit = totalSales - totalCost;
+      final todayDateStr = '${now.year}-${now.month}-${now.day}';
+
+      final existingIndex = _notifications.indexWhere(
+        (n) => n.type == NotificationType.saleSummary && n.referenceId == todayDateStr,
+      );
+
+      final message =
+          'Aaj ki Sale Summary: Kul bikri PKR ${totalSales.toStringAsFixed(0)} hui, aur andazan munafa PKR ${netProfit.toStringAsFixed(0)} bana. (${todayOrders.length} bills mukammal).';
+
+      if (existingIndex == -1) {
+        _notifications.insert(
+          0,
+          NotificationModel(
+            id: 'notif_sales_$todayDateStr',
+            title: '📊 Daily Sales & Profit Closing',
+            message: message,
+            type: NotificationType.saleSummary,
+            timestamp: DateTime.now(),
+            route: AppRoutes.reports,
+            referenceId: todayDateStr,
+          ),
+        );
+      } else {
+        final old = _notifications[existingIndex];
+        _notifications[existingIndex] = NotificationModel(
+          id: old.id,
+          title: '📊 Daily Sales & Profit Closing',
+          message: message,
+          type: NotificationType.saleSummary,
+          timestamp: DateTime.now(),
+          isRead: old.isRead,
+          route: AppRoutes.reports,
+          referenceId: todayDateStr,
+        );
+      }
+    }
+
+    // 4. Cloud Backup Due Alert (if not backed up in 3+ days or never)
+    final drive = GoogleDriveService.instance;
+    final lastBackup = drive.lastBackupTime;
+    final isDue = lastBackup == null || DateTime.now().difference(lastBackup).inDays >= 3;
+    if (isDue) {
+      final exists = _notifications.any(
+        (n) => n.type == NotificationType.cloudBackup && n.referenceId == 'backup_due',
+      );
+      if (!exists) {
+        final daysMsg = lastBackup == null
+            ? 'Abhi tak Google Drive par backup nahi liya gaya.'
+            : 'Pichle ${DateTime.now().difference(lastBackup).inDays} din se backup nahi hua.';
+        _notifications.insert(
+          0,
+          NotificationModel(
+            id: 'notif_backup_due_${DateTime.now().millisecondsSinceEpoch}',
+            title: '☁️ Cloud Backup Due Alert',
+            message: '$daysMsg Abhi sync karein taake dukan ka hisab mehfooz rahe.',
+            type: NotificationType.cloudBackup,
+            timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+            route: AppRoutes.settings,
+            referenceId: 'backup_due',
+          ),
+        );
+      }
+    }
+
+    // 5. Security status alert if App Lock is off
     if (!SecurityService.instance.isLockEnabled) {
       final exists = _notifications.any((n) => n.type == NotificationType.security);
       if (!exists) {
@@ -130,6 +233,29 @@ class NotificationService extends ChangeNotifier {
     }
 
     notifyListeners();
+  }
+
+  void notifyCreditLimitBreach(PartyModel party) {
+    final exists = _notifications.any(
+      (n) => n.type == NotificationType.creditLimitBreach && n.referenceId == party.id && !n.isRead,
+    );
+    if (!exists) {
+      _notifications.insert(
+        0,
+        NotificationModel(
+          id: 'notif_limit_${party.id}_${DateTime.now().millisecondsSinceEpoch}',
+          title: '⚠️ Udhaar Limit Breach: ${party.name}',
+          message:
+              'Warning: ${party.name} ka udhaar approved limit (PKR ${party.creditLimit?.toStringAsFixed(0) ?? "0"}) se barh kar PKR ${party.balance.toStringAsFixed(0)} ho gaya hai!',
+          type: NotificationType.creditLimitBreach,
+          timestamp: DateTime.now(),
+          route: AppRoutes.partyLedgerDetail,
+          referenceId: party.id,
+        ),
+      );
+      notifyListeners();
+      LocalDatabaseService.instance.persistToDisk();
+    }
   }
 
   void addNotification({
