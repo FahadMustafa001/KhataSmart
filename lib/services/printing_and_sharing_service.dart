@@ -751,7 +751,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(shop.name,
-                        style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                        style: const pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                     pw.Text('Stock Inventory Valuation Report',
                         style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
                   ],
@@ -878,7 +878,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
                       pw.Text(shop.name,
-                          style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                          style: const pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                       pw.Text('Financial Performance & P&L Statement ($periodName)',
                           style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
                     ],
@@ -928,7 +928,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
               // Detailed Financial Breakdown
               pw.Text(
                 'Financial Breakdown ($periodName)',
-                style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+                style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
               ),
               pw.SizedBox(height: 8),
               pw.Table(
@@ -972,7 +972,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
       child: pw.Text(
         text,
         textAlign: align,
-        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+        style: const pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold, color: PdfColors.white),
       ),
     );
   }
