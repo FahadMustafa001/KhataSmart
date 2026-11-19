@@ -21,6 +21,7 @@ class SmartKhataApp extends StatefulWidget {
 
 class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserver {
   DateTime? _pausedTime;
+  bool _isLockScreenActive = false;
 
   @override
   void initState() {
@@ -47,7 +48,12 @@ class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserv
           // Auto-lock when coming back from background (3+ seconds)
           if (elapsed >= 3) {
             SecurityService.instance.lockApp();
-            appNavigatorKey.currentState?.pushNamed(AppRoutes.appLock);
+            if (!_isLockScreenActive) {
+              _isLockScreenActive = true;
+              appNavigatorKey.currentState
+                  ?.pushNamed(AppRoutes.appLock)
+                  .then((_) => _isLockScreenActive = false);
+            }
           }
         }
       }

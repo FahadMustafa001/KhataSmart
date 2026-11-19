@@ -51,6 +51,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
   final _notesController = TextEditingController();
 
   bool _showAdvancedDetails = false;
+  bool _isSavingParty = false;
 
   final List<String> _popularCities = [
     'Lahore',
@@ -88,9 +89,13 @@ class _AddPartySheetState extends State<AddPartySheet> {
   }
 
   void _onSave() {
+    if (_isSavingParty) return;
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    _isSavingParty = true;
 
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim().isEmpty
@@ -106,6 +111,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
     if (rawCredit.isNotEmpty) {
       final parsed = double.tryParse(rawCredit);
       if (parsed == null || !parsed.isFinite || parsed < 0) {
+        _isSavingParty = false;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please enter a valid positive credit limit')),
         );
@@ -119,6 +125,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
     if (rawBalText.isNotEmpty) {
       final parsed = double.tryParse(rawBalText);
       if (parsed == null || !parsed.isFinite || parsed < 0) {
+        _isSavingParty = false;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please enter a valid positive opening balance')),
         );
@@ -172,6 +179,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
         );
       }
     } catch (e) {
+      _isSavingParty = false;
       KhataState.instance.deleteParty(newPartyId);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to save party: $e')),
