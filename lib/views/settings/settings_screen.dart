@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
 import '../../routes/app_routes.dart';
+import '../../services/auth_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../services/esc_pos_service.dart';
 import '../../services/security_service.dart';
 import '../../services/google_drive_service.dart';
@@ -23,6 +25,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     SecurityService.instance.addListener(_refresh);
     GoogleDriveService.instance.addListener(_refresh);
     ThemeState.instance.addListener(_refresh);
+    AuthService.instance.addListener(_refresh);
+    CloudSyncService.instance.addListener(_refresh);
   }
 
   @override
@@ -31,6 +35,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     SecurityService.instance.removeListener(_refresh);
     GoogleDriveService.instance.removeListener(_refresh);
     ThemeState.instance.removeListener(_refresh);
+    AuthService.instance.removeListener(_refresh);
+    CloudSyncService.instance.removeListener(_refresh);
     super.dispose();
   }
 
@@ -1113,6 +1119,267 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSectionCard(
+              title: 'Firebase Cloud Sync & Account',
+              icon: Icons.cloud_sync_rounded,
+              trailing: AuthService.instance.isSignedIn
+                  ? TextButton(
+                      onPressed: () async {
+                        final confirm = await showDialog<bool>(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                            title: const Text('Sign Out from Cloud?'),
+                            content: const Text(
+                              'Signing out will stop cloud sync. Your local database and store records will remain safe on this phone.',
+                            ),
+                            actions: [
+                              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFE11D48)),
+                                onPressed: () => Navigator.pop(ctx, true),
+                                child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                        if (confirm == true) {
+                          await AuthService.instance.signOut();
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Signed out from Firebase Cloud account')),
+                            );
+                          }
+                        }
+                      },
+                      child: const Text('Sign Out', style: TextStyle(color: Color(0xFFE11D48), fontSize: 11.5)),
+                    )
+                  : null,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AuthService.instance.isSignedIn
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              AuthService.instance.isSignedIn ? Icons.check_circle : Icons.cloud_off,
+                              size: 14,
+                              color: AuthService.instance.isSignedIn ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              AuthService.instance.isSignedIn ? 'Cloud Synced (Firebase)' : 'Offline / Guest Mode',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AuthService.instance.isSignedIn ? const Color(0xFF15803D) : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+                      const Text('Cloud Firestore', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (AuthService.instance.isSignedIn) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 16,
+                                backgroundColor: const Color(0xFF16A34A),
+                                child: Text(
+                                  (AuthService.instance.userDisplayName?.isNotEmpty == true
+                                          ? AuthService.instance.userDisplayName![0]
+                                          : 'U')
+                                      .toUpperCase(),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontSize: 14),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      AuthService.instance.userDisplayName ?? 'Cloud User',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                    ),
+                                    Text(
+                                      AuthService.instance.userEmail ?? '',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Last Cloud Sync:', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                              Text(
+                                CloudSyncService.instance.formattedLastSync,
+                                style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Auto-Sync Changes', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      subtitle: const Text('Real-time sync to Firestore on new transactions', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      value: CloudSyncService.instance.autoSyncEnabled,
+                      activeTrackColor: const Color(0xFF16A34A),
+                      onChanged: (v) => CloudSyncService.instance.setAutoSync(v),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: CloudSyncService.instance.isSyncing
+                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.cloud_upload_outlined, size: 16, color: Colors.white),
+                            label: Text(
+                              CloudSyncService.instance.isSyncing ? 'Syncing...' : 'Sync to Cloud',
+                              style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF16A34A),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: CloudSyncService.instance.isSyncing
+                                ? null
+                                : () async {
+                                    final res = await CloudSyncService.instance.uploadToCloud();
+                                    if (context.mounted) {
+                                      if (res['success'] == true) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Data synced to Cloud Firestore (${res['size']})!'),
+                                            backgroundColor: const Color(0xFF16A34A),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Sync failed: ${res['error']}'),
+                                            backgroundColor: const Color(0xFFE11D48),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.cloud_download_outlined, size: 16),
+                            label: const Text('Restore Cloud', style: TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: CloudSyncService.instance.isSyncing
+                                ? null
+                                : () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                        title: const Text('Restore from Cloud?'),
+                                        content: const Text(
+                                          'Restoring will replace current local database with your latest cloud snapshot.',
+                                        ),
+                                        actions: [
+                                          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
+                                          ElevatedButton(
+                                            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF16A34A)),
+                                            onPressed: () => Navigator.pop(ctx, true),
+                                            child: const Text('Restore', style: TextStyle(color: Colors.white)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true && context.mounted) {
+                                      final res = await CloudSyncService.instance.restoreFromCloud();
+                                      if (context.mounted) {
+                                        if (res['success'] == true) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Database restored successfully from Cloud Firestore!'),
+                                              backgroundColor: Color(0xFF16A34A),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(
+                                              content: Text('Restore note: ${res['error']}'),
+                                              backgroundColor: const Color(0xFFE11D48),
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    }
+                                  },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    const Text(
+                      'Sign in with your Google Account or Email to securely backup your khata, inventory, and ledger to Cloud Firestore across devices.',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.login, size: 16, color: Colors.white),
+                        label: const Text('Sign In or Register (Cloud Backup)', style: TextStyle(color: Colors.white, fontSize: 12)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF16A34A),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        onPressed: () {
+                          Navigator.pushNamed(context, AppRoutes.auth);
+                        },
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

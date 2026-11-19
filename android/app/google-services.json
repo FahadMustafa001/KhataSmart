@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "711388054106",
+    "project_id": "smartkhata-19806",
+    "storage_bucket": "smartkhata-19806.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:711388054106:android:6f620663503adea0230e63",
+        "android_client_info": {
+          "package_name": "com.example.khatasmart"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfyfa5beZ-VmcjNx3IxGB2hTya6u0sqBI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

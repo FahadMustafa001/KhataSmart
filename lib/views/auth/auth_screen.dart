@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
 import '../../routes/app_routes.dart';
+import '../../services/auth_service.dart';
+import '../../state/shop_state.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -13,6 +15,7 @@ class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -21,8 +24,69 @@ class _AuthScreenState extends State<AuthScreen> {
     super.dispose();
   }
 
-  void _onLogin() {
-    Navigator.pushReplacementNamed(context, AppRoutes.shopSetup);
+  Future<void> _onEmailLogin() async {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both email and password.')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      await AuthService.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      if (!mounted) return;
+      _proceedAfterAuth();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AuthService.formatAuthError(e)),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
+      );
+    }
+  }
+
+  Future<void> _onGoogleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      final cred = await AuthService.instance.signInWithGoogle();
+      if (!mounted) return;
+      if (cred != null) {
+        _proceedAfterAuth();
+      } else {
+        setState(() => _isLoading = false);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(AuthService.formatAuthError(e)),
+          backgroundColor: const Color(0xFFDC2626),
+        ),
+      );
+    }
+  }
+
+  void _proceedAfterAuth() {
+    final hasCompletedOnboarding = ShopState.instance.hasCompletedOnboarding ||
+        ShopState.instance.shops.length > 1 ||
+        ShopState.instance.activeShop.phone.isNotEmpty ||
+        ShopState.instance.activeShop.name != 'My Store';
+
+    Navigator.pushReplacementNamed(
+      context,
+      hasCompletedOnboarding ? AppRoutes.dashboard : AppRoutes.shopSetup,
+    );
   }
 
   void _showForgotPasswordDialog() {
@@ -44,8 +108,8 @@ class _AuthScreenState extends State<AuthScreen> {
           children: [
             Text(
               email.isNotEmpty
-                  ? 'A recovery verification email has been dispatched to:\n$email'
-                  : 'Enter your registered email address or store identifier to receive password reset instructions.',
+                  ? 'A recovery verification email will be dispatched to:\n$email'
+                  : 'Enter your registered email address to receive password reset instructions.',
               style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
             ),
             const SizedBox(height: 12),
@@ -72,14 +136,34 @@ class _AuthScreenState extends State<AuthScreen> {
               backgroundColor: const Color(0xFF2563EB),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            onPressed: () {
+            onPressed: () async {
+              if (email.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Please enter your email address first.')),
+                );
+                return;
+              }
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Password reset instructions sent!'),
-                  backgroundColor: Color(0xFF16A34A),
-                ),
-              );
+              try {
+                await AuthService.instance.sendPasswordResetEmail(email);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Password reset instructions sent to $email!'),
+                      backgroundColor: const Color(0xFF16A34A),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(AuthService.formatAuthError(e)),
+                      backgroundColor: const Color(0xFFDC2626),
+                    ),
+                  );
+                }
+              }
             },
             child: const Text('Send Reset Link', style: TextStyle(color: Colors.white)),
           ),
@@ -230,7 +314,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: _onLogin,
+                      onTap: _isLoading ? null : _onGoogleLogin,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -430,7 +514,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: _onLogin,
+                    onPressed: _isLoading ? null : _onEmailLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF1E3A5F),
                       foregroundColor: Colors.white,
@@ -439,22 +523,28 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       elevation: 0,
                     ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.storefront, size: 18),
-                        SizedBox(width: 8),
-                        Text(
-                          'Log In to Store',
-                          style: TextStyle(
-                            fontSize: 14.5,
-                            fontWeight: FontWeight.bold,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          )
+                        : const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.storefront, size: 18),
+                              SizedBox(width: 8),
+                              Text(
+                                'Log In to Store',
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(width: 6),
+                              Icon(Icons.arrow_forward, size: 16),
+                            ],
                           ),
-                        ),
-                        SizedBox(width: 6),
-                        Icon(Icons.arrow_forward, size: 16),
-                      ],
-                    ),
                   ),
                 ),
 

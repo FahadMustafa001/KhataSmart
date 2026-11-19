@@ -1,9 +1,12 @@
 import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../firebase_options.dart';
 import '../../routes/app_routes.dart';
+import '../../services/auth_service.dart';
 import '../../services/local_database_service.dart';
 import '../../services/security_service.dart';
 import '../../state/shop_state.dart';
@@ -26,7 +29,17 @@ class _SplashScreenState extends State<SplashScreen> {
     // 1. Initialize local database while splash screen is visible
     await LocalDatabaseService.instance.init();
 
-    // 2. Minimum display time (1.2 seconds) for smooth branding display
+    // 2. Initialize Firebase Core safely
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      AuthService.instance.markInitialized();
+    } catch (e) {
+      debugPrint('Firebase init note: $e');
+    }
+
+    // 3. Minimum display time (1.2 seconds) for smooth branding display
     await Future.delayed(const Duration(milliseconds: 1200));
 
     if (!mounted) return;
