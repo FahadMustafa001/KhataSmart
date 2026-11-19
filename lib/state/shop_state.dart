@@ -125,6 +125,9 @@ class ShopState extends ChangeNotifier {
     String? address,
     String? receiptFooter,
     String? paperSize,
+    String? preferredPrinterName,
+    String? preferredPrinterUrl,
+    bool clearPrinter = false,
   }) {
     final current = activeShop;
     if (name != null && name.trim().isNotEmpty) current.name = name.trim();
@@ -133,6 +136,13 @@ class ShopState extends ChangeNotifier {
     if (address != null) current.address = address.trim();
     if (receiptFooter != null) current.receiptFooter = receiptFooter.trim();
     if (paperSize != null) current.paperSize = paperSize;
+    if (clearPrinter) {
+      current.preferredPrinterName = null;
+      current.preferredPrinterUrl = null;
+    } else {
+      if (preferredPrinterName != null) current.preferredPrinterName = preferredPrinterName;
+      if (preferredPrinterUrl != null) current.preferredPrinterUrl = preferredPrinterUrl;
+    }
     notifyListeners();
   }
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../routes/app_routes.dart';
+import '../../services/esc_pos_service.dart';
 import '../../services/security_service.dart';
 import '../../services/google_drive_service.dart';
 import '../../state/shop_state.dart';
+import '../../state/theme_state.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -19,6 +21,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ShopState.instance.addListener(_refresh);
     SecurityService.instance.addListener(_refresh);
     GoogleDriveService.instance.addListener(_refresh);
+    ThemeState.instance.addListener(_refresh);
   }
 
   @override
@@ -26,6 +29,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ShopState.instance.removeListener(_refresh);
     SecurityService.instance.removeListener(_refresh);
     GoogleDriveService.instance.removeListener(_refresh);
+    ThemeState.instance.removeListener(_refresh);
     super.dispose();
   }
 
@@ -443,6 +447,121 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  void _showPrinterPickerModal() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 12),
+                Text('Scanning for printers...', style: TextStyle(fontSize: 13)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final printers = await EscPosService.instance.getAvailablePrinters();
+    if (mounted) Navigator.pop(context); // close loader
+
+    if (!mounted) return;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Select Bluetooth / ESC-POS Printer',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Paired Bluetooth and USB receipt printers detected on your device:',
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+            ),
+            const SizedBox(height: 16),
+            if (printers.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.bluetooth_searching, color: Color(0xFF64748B)),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'No printers detected. Pair your Bluetooth thermal printer in device Android Settings > Bluetooth, then reopen this list.',
+                        style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              ...printers.map((p) {
+                final isSelected = ShopState.instance.activeShop.preferredPrinterUrl == p.url;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: CircleAvatar(
+                    backgroundColor: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+                    child: Icon(
+                      Icons.print,
+                      color: isSelected ? Colors.white : const Color(0xFF64748B),
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    p.name,
+                    style: TextStyle(
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  subtitle: Text(p.url, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                  trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF2563EB)) : null,
+                  onTap: () {
+                    ShopState.instance.updateActiveShop(
+                      preferredPrinterName: p.name,
+                      preferredPrinterUrl: p.url,
+                    );
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Selected printer: ${p.name}'),
+                        backgroundColor: const Color(0xFF16A34A),
+                      ),
+                    );
+                  },
+                );
+              }),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _handleGoogleDriveConnect() {
     final emailCtrl = TextEditingController();
     showDialog(
@@ -773,7 +892,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 16),
 
             _buildSectionCard(
-              title: 'Thermal Printer & Receipt',
+              title: 'Thermal Printer & Receipt (ESC/POS)',
               icon: Icons.print_outlined,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -800,6 +919,94 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
+
+                  // Paired Bluetooth Printer Selector
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.bluetooth, color: Color(0xFF2563EB), size: 18),
+                            const SizedBox(width: 6),
+                            const Text(
+                              'Paired Bluetooth Printer',
+                              style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                            ),
+                            const Spacer(),
+                            if (activeShop.preferredPrinterName != null)
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () {
+                                  ShopState.instance.updateActiveShop(clearPrinter: true);
+                                },
+                                child: const Text('Disconnect', style: TextStyle(fontSize: 11, color: Color(0xFFE11D48))),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          activeShop.preferredPrinterName ?? 'No printer selected (Will use default/prompt)',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: activeShop.preferredPrinterName != null ? FontWeight.bold : FontWeight.normal,
+                            color: activeShop.preferredPrinterName != null ? const Color(0xFF15803D) : const Color(0xFF64748B),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.bluetooth_searching, size: 16),
+                                label: const Text('Select Printer', style: TextStyle(fontSize: 12)),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: _showPrinterPickerModal,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.receipt_long, size: 16, color: Colors.white),
+                                label: const Text('Test Slip', style: TextStyle(fontSize: 12, color: Colors.white)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E293B),
+                                  padding: const EdgeInsets.symmetric(vertical: 8),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: () async {
+                                  final ok = await EscPosService.instance.printTestSlip(shop: activeShop);
+                                  if (context.mounted && ok) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Test receipt slip sent to printer!'),
+                                        backgroundColor: Color(0xFF16A34A),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
                   const Text('Receipt Footer Note:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   TextFormField(
@@ -811,6 +1018,52 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                     ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            _buildSectionCard(
+              title: 'App Theme & Appearance',
+              icon: Icons.palette_outlined,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Choose display theme for day or night store operations:',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildThemeTile(
+                          title: 'Light Mode',
+                          icon: Icons.light_mode_outlined,
+                          isSelected: ThemeState.instance.themeMode == ThemeMode.light,
+                          onTap: () => ThemeState.instance.setThemeMode(ThemeMode.light),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildThemeTile(
+                          title: 'Dark (Night)',
+                          icon: Icons.dark_mode_outlined,
+                          isSelected: ThemeState.instance.themeMode == ThemeMode.dark,
+                          onTap: () => ThemeState.instance.setThemeMode(ThemeMode.dark),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _buildThemeTile(
+                          title: 'System Default',
+                          icon: Icons.brightness_auto_outlined,
+                          isSelected: ThemeState.instance.themeMode == ThemeMode.system,
+                          onTap: () => ThemeState.instance.setThemeMode(ThemeMode.system),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -1096,6 +1349,47 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 12),
           child,
         ],
+      ),
+    );
+  }
+
+  Widget _buildThemeTile({
+    required String title,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            width: isSelected ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 22,
+              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF475569),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

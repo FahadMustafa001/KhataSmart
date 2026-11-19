@@ -9,6 +9,7 @@ import '../views/auth/shop_setup_screen.dart';
 import '../views/dashboard/home_dashboard_screen.dart';
 import '../views/inventory/add_edit_product_screen.dart';
 import '../views/inventory/inventory_list_screen.dart';
+import '../views/inventory/purchase_inward_screen.dart';
 import '../views/khata/khata_directory_screen.dart';
 import '../views/khata/party_ledger_detail_screen.dart';
 import '../views/pos/checkout_settlement_screen.dart';
@@ -33,6 +34,7 @@ class AppRoutes {
   static const String receiptPreview = '/receipt-preview';
   static const String inventoryList = '/inventory-list';
   static const String addEditProduct = '/add-edit-product';
+  static const String purchaseInward = '/purchase-inward';
   static const String khataDirectory = '/khata-directory';
   static const String partyLedgerDetail = '/party-ledger-detail';
   static const String settings = '/settings';
@@ -72,6 +74,9 @@ class AppRoutes {
 
       case inventoryList:
         return MaterialPageRoute(builder: (_) => const InventoryListScreen());
+
+      case purchaseInward:
+        return MaterialPageRoute(builder: (_) => const PurchaseInwardScreen());
 
       case addEditProduct:
         if (settings.arguments is ProductModel) {

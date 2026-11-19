@@ -7,11 +7,13 @@ import 'package:path_provider/path_provider.dart';
 import '../models/order_model.dart';
 import '../models/party_model.dart';
 import '../models/product_model.dart';
+import '../models/purchase_invoice_model.dart';
 import '../models/ledger_entry_model.dart';
 import '../models/shop_model.dart';
 import '../state/inventory_state.dart';
 import '../state/khata_state.dart';
 import '../state/shop_state.dart';
+import '../state/theme_state.dart';
 import 'google_drive_service.dart';
 import 'notification_service.dart';
 import 'security_service.dart';
@@ -118,6 +120,7 @@ class LocalDatabaseService {
     KhataState.instance.addListener(schedulePersist);
     SecurityService.instance.addListener(schedulePersist);
     NotificationService.instance.addListener(schedulePersist);
+    ThemeState.instance.addListener(schedulePersist);
   }
 
   /// Parses every section into local data structures before mutating state singletons.
@@ -139,6 +142,13 @@ class LocalDatabaseService {
     if (data['products'] is List) {
       parsedProducts = (data['products'] as List)
           .map((m) => ProductModel.fromMap(Map<String, dynamic>.from(m)))
+          .toList();
+    }
+
+    List<PurchaseInvoiceModel>? parsedPurchases;
+    if (data['purchases'] is List) {
+      parsedPurchases = (data['purchases'] as List)
+          .map((m) => PurchaseInvoiceModel.fromMap(Map<String, dynamic>.from(m)))
           .toList();
     }
 
@@ -182,7 +192,7 @@ class LocalDatabaseService {
     }
 
     if (parsedProducts != null) {
-      InventoryState.instance.loadFromDatabase(parsedProducts);
+      InventoryState.instance.loadFromDatabase(parsedProducts, parsedPurchases);
     }
 
     if (hasKhataData) {
@@ -215,6 +225,10 @@ class LocalDatabaseService {
       NotificationService.instance.loadFromDatabase(parsedNotifications);
     } else {
       NotificationService.instance.init();
+    }
+
+    if (data['themeMode'] is String) {
+      ThemeState.instance.loadFromDatabase(data['themeMode'] as String);
     }
   }
 
@@ -284,12 +298,14 @@ class LocalDatabaseService {
         'hasCompletedOnboarding': ShopState.instance.hasCompletedOnboarding,
         'shops': ShopState.instance.shops.map((s) => s.toMap()).toList(),
         'products': InventoryState.instance.allProductsForDatabase.map((p) => p.toMap()).toList(),
+        'purchases': InventoryState.instance.allPurchasesForDatabase.map((p) => p.toMap()).toList(),
         'parties': KhataState.instance.allPartiesForDatabase.map((p) => p.toMap()).toList(),
         'entries': KhataState.instance.allEntriesForDatabase.map((e) => e.toMap()).toList(),
         'orders': KhataState.instance.allOrdersForDatabase.map((o) => o.toMap()).toList(),
         'security': SecurityService.instance.toDatabaseMap(),
         'googleDrive': GoogleDriveService.instance.toMap(),
         'notifications': NotificationService.instance.toDatabaseList(),
+        'themeMode': ThemeState.instance.toDatabaseValue(),
       };
 
       final jsonStr = jsonEncode(payload);
@@ -358,11 +374,12 @@ class LocalDatabaseService {
       await tmpFile.delete();
     }
     // Fully reset singleton states so no retained records persist on subsequent callbacks
-    InventoryState.instance.loadFromDatabase([]);
+    InventoryState.instance.loadFromDatabase([], []);
     KhataState.instance.loadFromDatabase(parties: [], entries: [], orders: []);
     ShopState.instance.loadFromDatabase(shops: [], activeShopId: 'shop_1', hasCompletedOnboarding: false);
     SecurityService.instance.setLockEnabled(false, pin: '');
     NotificationService.instance.clearAll();
+    ThemeState.instance.setThemeMode(ThemeMode.light);
     _debounceTimer?.cancel();
     _attachListeners();
     _debounceTimer?.cancel();

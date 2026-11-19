@@ -6,6 +6,8 @@ class ShopModel {
   String address;
   String receiptFooter;
   String paperSize; // '58mm' or '80mm'
+  String? preferredPrinterName;
+  String? preferredPrinterUrl;
   DateTime createdAt;
 
   ShopModel({
@@ -16,6 +18,8 @@ class ShopModel {
     this.address = '',
     this.receiptFooter = 'Thank you for shopping with us!',
     this.paperSize = '58mm',
+    this.preferredPrinterName,
+    this.preferredPrinterUrl,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -28,6 +32,8 @@ class ShopModel {
       'address': address,
       'receiptFooter': receiptFooter,
       'paperSize': paperSize,
+      'preferredPrinterName': preferredPrinterName,
+      'preferredPrinterUrl': preferredPrinterUrl,
       'createdAt': createdAt.toIso8601String(),
     };
   }
@@ -41,6 +47,8 @@ class ShopModel {
       address: map['address'] ?? '',
       receiptFooter: map['receiptFooter'] ?? 'Thank you for shopping with us!',
       paperSize: map['paperSize'] ?? '58mm',
+      preferredPrinterName: map['preferredPrinterName'] as String?,
+      preferredPrinterUrl: map['preferredPrinterUrl'] as String?,
       createdAt: map['createdAt'] != null
           ? DateTime.tryParse(map['createdAt']) ?? DateTime.now()
           : DateTime.now(),

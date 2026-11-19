@@ -3,6 +3,7 @@ import 'core/constants/app_strings.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
 import 'services/security_service.dart';
+import 'state/theme_state.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -26,12 +27,18 @@ class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserv
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    ThemeState.instance.addListener(_rebuildOnThemeChange);
   }
 
   @override
   void dispose() {
+    ThemeState.instance.removeListener(_rebuildOnThemeChange);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  void _rebuildOnThemeChange() {
+    if (mounted) setState(() {});
   }
 
   @override
@@ -77,6 +84,8 @@ class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserv
       debugShowCheckedModeBanner: false,
       title: AppStrings.appName,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeState.instance.themeMode,
       initialRoute: AppRoutes.splash,
       onGenerateRoute: AppRoutes.onGenerateRoute,
     );

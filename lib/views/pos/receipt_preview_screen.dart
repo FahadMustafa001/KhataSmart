@@ -4,6 +4,7 @@ import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../models/order_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/esc_pos_service.dart';
 import '../../services/printing_and_sharing_service.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
@@ -603,10 +604,23 @@ class ReceiptPreviewScreen extends StatelessWidget {
                       color: Colors.transparent,
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
-                        onTap: () {
-                          PrintingAndSharingService.instance.printOrShareReceipt(
+                        onTap: () async {
+                          final activeShop = ShopState.instance.activeShop;
+                          if (activeShop.preferredPrinterUrl != null) {
+                            final printers = await EscPosService.instance.getAvailablePrinters();
+                            final targetList = printers.where((p) => p.url == activeShop.preferredPrinterUrl).toList();
+                            if (targetList.isNotEmpty) {
+                              await EscPosService.instance.directPrintReceipt(
+                                order: effectiveOrder,
+                                shop: activeShop,
+                                printer: targetList.first,
+                              );
+                              return;
+                            }
+                          }
+                          await PrintingAndSharingService.instance.printOrShareReceipt(
                             order: effectiveOrder,
-                            shop: ShopState.instance.activeShop,
+                            shop: activeShop,
                             isDirectPrint: true,
                           );
                         },

@@ -6,6 +6,7 @@ import '../../models/ledger_entry_model.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
+import '../../services/csv_export_service.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 import '../shared_widgets/smart_bottom_navigation_bar.dart';
@@ -277,6 +278,26 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
             ],
           ),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.table_view_rounded, color: Color(0xFF16A34A)),
+              tooltip: 'Export Excel / CSV',
+              onPressed: () async {
+                final periodName = _selectedPeriod == ReportPeriod.today
+                    ? 'Today'
+                    : (_selectedPeriod == ReportPeriod.week
+                        ? 'This Week'
+                        : (_selectedPeriod == ReportPeriod.month ? 'This Month' : 'This Year'));
+                final file = await CsvExportService.instance.generateSalesOrdersCsv(
+                  orders: filteredOrders,
+                  shop: activeShop,
+                  reportPeriod: periodName,
+                );
+                await CsvExportService.instance.shareCsvFile(
+                  file,
+                  subject: 'Sales Report ($periodName) - ${activeShop.name}',
+                );
+              },
+            ),
             IconButton(
               icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFDC2626)),
               tooltip: 'Export Financial Report PDF',

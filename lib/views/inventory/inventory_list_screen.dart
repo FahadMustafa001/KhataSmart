@@ -4,6 +4,7 @@ import '../../core/constants/app_assets.dart';
 import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
+import '../../services/csv_export_service.dart';
 import '../../state/inventory_state.dart';
 import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
@@ -230,6 +231,94 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showBarcodeStickerDialog(ProductModel product) {
+    int count = 24;
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: const Row(
+                children: [
+                  Icon(Icons.qr_code_2, color: Color(0xFF2563EB)),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Print Barcode Stickers',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Barcode: ${product.barcode.isNotEmpty ? product.barcode : product.id} • Rs. ${product.salePrice.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text('Number of Stickers (A4 Sheet):', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [12, 24, 48, 72].map((c) {
+                      final isSelected = count == c;
+                      return ChoiceChip(
+                        label: Text('$c Stickers'),
+                        selected: isSelected,
+                        selectedColor: const Color(0xFF0F172A),
+                        labelStyle: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected ? Colors.white : const Color(0xFF475569),
+                        ),
+                        onSelected: (val) {
+                          if (val) setDialogState(() => count = c);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    PrintingAndSharingService.instance.exportBarcodeStickersPdf(
+                      shop: ShopState.instance.activeShop,
+                      product: product,
+                      stickerCount: count,
+                    );
+                  },
+                  icon: const Icon(Icons.print, size: 16),
+                  label: const Text('Generate & Print'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -544,7 +633,28 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
         ),
         Row(
           children: [
-            // Export button
+            // Stock Inward button
+            _actionIconBtn(
+              icon: Icons.input_rounded,
+              onTap: () => Navigator.pushNamed(context, AppRoutes.purchaseInward),
+            ),
+            const SizedBox(width: 8),
+            // Export CSV button
+            _actionIconBtn(
+              icon: Icons.table_view_rounded,
+              onTap: () async {
+                final file = await CsvExportService.instance.generateInventoryCsv(
+                  products: _inventoryState.products,
+                  shop: ShopState.instance.activeShop,
+                );
+                await CsvExportService.instance.shareCsvFile(
+                  file,
+                  subject: 'Inventory Stock Export - ${ShopState.instance.activeShop.name}',
+                );
+              },
+            ),
+            const SizedBox(width: 8),
+            // Export PDF button
             _actionIconBtn(
               icon: Icons.file_download_outlined,
               onTap: () {
@@ -1055,6 +1165,30 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                         ),
                       ),
                     ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () {
+                      final p = _inventoryState.products.where((prod) => prod.id == item.id).firstOrNull;
+                      if (p != null) _showBarcodeStickerDialog(p);
+                    },
+                    borderRadius: BorderRadius.circular(4),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.qr_code_2, size: 13, color: Color(0xFF2563EB)),
+                          SizedBox(width: 3),
+                          Text('Sticker', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

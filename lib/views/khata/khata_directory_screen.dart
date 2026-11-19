@@ -4,6 +4,7 @@ import '../../core/constants/app_assets.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
+import '../../services/csv_export_service.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
@@ -250,6 +251,22 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
         showMenu: true,
         actions: [
           const NotificationBellButton(),
+          IconButton(
+            icon: const Icon(Icons.table_view_rounded,
+                size: 20, color: Color(0xFF16A34A)),
+            tooltip: 'Export Khata to Excel / CSV',
+            onPressed: () async {
+              final file = await CsvExportService.instance.generateKhataPartiesCsv(
+                parties: _khataState.parties,
+                shop: ShopState.instance.activeShop,
+                filterType: _selectedTab == 0 ? PartyType.customer : PartyType.supplier,
+              );
+              await CsvExportService.instance.shareCsvFile(
+                file,
+                subject: 'Khata Accounts Export - ${ShopState.instance.activeShop.name}',
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined,
                 size: 20, color: Color(0xFFDC2626)),

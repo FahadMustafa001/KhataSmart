@@ -1084,4 +1084,95 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
       ),
     );
   }
+
+  // ── 9. Barcode Price Sticker Sheet Generator ─────────────────────────────
+  Future<void> exportBarcodeStickersPdf({
+    required ShopModel shop,
+    required ProductModel product,
+    int stickerCount = 24,
+  }) async {
+    final pdf = pw.Document();
+    final barcodeData = product.barcode.isNotEmpty ? product.barcode : (product.id.length > 12 ? product.id.substring(0, 12) : product.id);
+
+    // 24 stickers per A4 page (3 columns x 8 rows)
+    const stickersPerPage = 24;
+    final totalPages = (stickerCount / stickersPerPage).ceil();
+
+    for (int p = 0; p < totalPages; p++) {
+      final int countOnThisPage = (p == totalPages - 1)
+          ? stickerCount - (p * stickersPerPage)
+          : stickersPerPage;
+
+      pdf.addPage(
+        pw.Page(
+          pageFormat: PdfPageFormat.a4,
+          margin: const pw.EdgeInsets.all(12),
+          build: (pw.Context ctx) {
+            return pw.GridView(
+              crossAxisCount: 3,
+              childAspectRatio: 1.8,
+              crossAxisSpacing: 6,
+              mainAxisSpacing: 6,
+              children: List.generate(countOnThisPage, (i) {
+                return pw.Container(
+                  padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  decoration: pw.BoxDecoration(
+                    border: pw.Border.all(color: PdfColors.grey400, width: 0.5),
+                    borderRadius: pw.BorderRadius.circular(4),
+                  ),
+                  child: pw.Column(
+                    mainAxisAlignment: pw.MainAxisAlignment.center,
+                    crossAxisAlignment: pw.CrossAxisAlignment.center,
+                    children: [
+                      pw.Text(
+                        shop.name.toUpperCase(),
+                        style: pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
+                        maxLines: 1,
+                      ),
+                      pw.SizedBox(height: 1),
+                      pw.Text(
+                        product.name,
+                        style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                        maxLines: 1,
+                        overflow: pw.TextOverflow.clip,
+                      ),
+                      pw.SizedBox(height: 2),
+                      pw.Container(
+                        height: 26,
+                        child: pw.BarcodeWidget(
+                          barcode: pw.Barcode.code128(),
+                          data: barcodeData,
+                          drawText: false,
+                        ),
+                      ),
+                      pw.SizedBox(height: 1),
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                        children: [
+                          pw.Text(
+                            barcodeData,
+                            style: const pw.TextStyle(fontSize: 6.5, color: PdfColors.grey800),
+                          ),
+                          pw.Text(
+                            'Rs. ${product.salePrice.toStringAsFixed(0)}',
+                            style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            );
+          },
+        ),
+      );
+    }
+
+    final bytes = await pdf.save();
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => bytes,
+      name: 'Barcode_Stickers_${product.name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}.pdf',
+    );
+  }
 }

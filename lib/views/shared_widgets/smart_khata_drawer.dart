@@ -559,6 +559,17 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                   badgeColor: const Color(0xFFFEE2E2),
                   badgeTextColor: const Color(0xFFDC2626),
                 ),
+                _buildMenuItem(
+                  context,
+                  icon: Icons.input_rounded,
+                  title: 'Stock Inward (Purchases)',
+                  subtitle: 'Receive stock from vendors',
+                  route: AppRoutes.purchaseInward,
+                  isSelected: widget.currentRoute == AppRoutes.purchaseInward,
+                  badgeText: 'Inward',
+                  badgeColor: const Color(0xFFFFF7ED),
+                  badgeTextColor: const Color(0xFFEA580C),
+                ),
 
                 const SizedBox(height: 10),
 
