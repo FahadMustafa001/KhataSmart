@@ -92,6 +92,20 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       return;
     }
 
+    final barcodeVal = _barcodeController.text.trim();
+    if (barcodeVal.isNotEmpty) {
+      final existingWithBarcode = InventoryState.instance.findByBarcode(barcodeVal);
+      if (existingWithBarcode != null && existingWithBarcode.id != (widget.existingProduct?.id ?? '')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Barcode already in use by "${existingWithBarcode.name}"'),
+            backgroundColor: const Color(0xFFDC2626),
+          ),
+        );
+        return;
+      }
+    }
+
     final newProd = ProductModel(
       id: widget.existingProduct?.id ??
           'p_${DateTime.now().millisecondsSinceEpoch}',

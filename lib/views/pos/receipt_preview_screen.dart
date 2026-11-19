@@ -607,15 +607,19 @@ class ReceiptPreviewScreen extends StatelessWidget {
                         onTap: () async {
                           final activeShop = ShopState.instance.activeShop;
                           if (activeShop.preferredPrinterUrl != null) {
-                            final printers = await EscPosService.instance.getAvailablePrinters();
-                            final targetList = printers.where((p) => p.url == activeShop.preferredPrinterUrl).toList();
-                            if (targetList.isNotEmpty) {
-                              await EscPosService.instance.directPrintReceipt(
-                                order: effectiveOrder,
-                                shop: activeShop,
-                                printer: targetList.first,
-                              );
-                              return;
+                            try {
+                              final printers = await EscPosService.instance.getAvailablePrinters();
+                              final targetList = printers.where((p) => p.url == activeShop.preferredPrinterUrl).toList();
+                              if (targetList.isNotEmpty) {
+                                await EscPosService.instance.directPrintReceipt(
+                                  order: effectiveOrder,
+                                  shop: activeShop,
+                                  printer: targetList.first,
+                                );
+                                return;
+                              }
+                            } catch (e) {
+                              debugPrint('Direct printer connection error: $e');
                             }
                           }
                           await PrintingAndSharingService.instance.printOrShareReceipt(

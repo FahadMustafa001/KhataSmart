@@ -16,10 +16,10 @@ class CsvExportService {
     String val = text;
     final trimmed = val.trimLeft();
     // Mitigate CSV / Excel formula injection for non-numeric fields starting with =, +, -, @
-    // Handles formulas preceded by spaces, tabs, or control characters
+    // Neutralizes formula characters even if preceded by whitespace or tabs across open-save-reopen workflows
     if (trimmed.isNotEmpty && (trimmed.startsWith('=') || trimmed.startsWith('+') || trimmed.startsWith('-') || trimmed.startsWith('@'))) {
       if (double.tryParse(trimmed) == null) {
-        val = "'$val";
+        val = "'$trimmed";
       }
     }
     if (val.contains(',') || val.contains('"') || val.contains('\n') || val.contains('\r')) {

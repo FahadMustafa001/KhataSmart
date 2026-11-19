@@ -141,8 +141,8 @@ class InventoryState extends ChangeNotifier {
       final byBarcode = _products.where((p) => p.shopId == currentShopId && p.barcode == barcode).firstOrNull;
       if (byBarcode != null) return byBarcode;
 
-      // 2. Fall back to product ID match (for generated barcode stickers)
-      return _products.where((p) => p.shopId == currentShopId && p.id == barcode).firstOrNull;
+      // 2. Fall back to product ID match for products whose sticker was generated from their ID
+      return _products.where((p) => p.shopId == currentShopId && p.id == barcode && p.barcode.isEmpty).firstOrNull;
     } catch (_) {
       return null;
     }

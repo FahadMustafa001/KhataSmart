@@ -354,6 +354,11 @@ class LocalDatabaseService {
   Future<bool> restoreDatabaseFromJson(String jsonContent) async {
     try {
       final Map<String, dynamic> data = jsonDecode(jsonContent);
+      // Validate that if 'purchases' key is present, it MUST be a valid List
+      if (data.containsKey('purchases') && data['purchases'] is! List) {
+        debugPrint('Restore rejected: malformed purchases section');
+        return false;
+      }
       _loadIntoState(data);
       _loadFailed = false;
       _attachListeners();

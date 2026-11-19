@@ -24,13 +24,7 @@ class EscPosService {
 
   /// Discovers available system, USB, and paired Bluetooth thermal printers
   Future<List<Printer>> getAvailablePrinters() async {
-    try {
-      final list = await Printing.listPrinters();
-      return list;
-    } catch (e) {
-      debugPrint('Error listing printers: $e');
-      return [];
-    }
+    return await Printing.listPrinters();
   }
 
   /// Sends receipt directly to a specific Bluetooth/thermal printer without opening the OS print dialog
