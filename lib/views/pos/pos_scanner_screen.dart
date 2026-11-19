@@ -29,6 +29,25 @@ class _PosScannerScreenState extends State<PosScannerScreen>
   String? _lastScannedBarcode;
   DateTime? _lastScanTime;
   int _scannedQty = 1;
+  bool _isLookupMode = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['mode'] == 'lookup') {
+      _isLookupMode = true;
+    }
+  }
+
+  void _navigateBackWithResult([dynamic result]) {
+    if (!mounted) return;
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context, result);
+    } else {
+      Navigator.pushReplacementNamed(context, AppRoutes.posCart);
+    }
+  }
 
   @override
   void initState() {
@@ -72,7 +91,12 @@ class _PosScannerScreenState extends State<PosScannerScreen>
     }
   }
 
-  void _processBarcode(String code) {
+  void _processBarcode(String code, {bool isManual = false}) {
+    if (!mounted) return;
+    if (!isManual && (ModalRoute.of(context)?.isCurrent != true)) {
+      return;
+    }
+
     final now = DateTime.now();
     // Debounce to prevent multi-triggering within 1.2s for identical code
     if (_lastScannedBarcode == code &&
@@ -85,6 +109,12 @@ class _PosScannerScreenState extends State<PosScannerScreen>
 
     // Haptic feedback
     HapticFeedback.mediumImpact();
+
+    // In lookup mode, do not call _cartState.addItem; return code directly and close screen
+    if (_isLookupMode) {
+      _navigateBackWithResult(code);
+      return;
+    }
 
     // Check inventory
     ProductModel? match;
@@ -114,9 +144,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
       if (!_continuousScan) {
         // In single scan mode, return the barcode to caller
         Future.delayed(const Duration(milliseconds: 500), () {
-          if (mounted && Navigator.canPop(context)) {
-            Navigator.pop(context, code);
-          }
+          _navigateBackWithResult(code);
         });
       }
     } else {
@@ -239,7 +267,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                     child: OutlinedButton(
                       onPressed: () {
                         Navigator.pop(ctx);
-                        Navigator.pop(context, code); // Return barcode directly
+                        _navigateBackWithResult(code); // Return barcode directly
                       },
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -256,16 +284,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                         Navigator.pushNamed(
                           context,
                           AppRoutes.addEditProduct,
-                          arguments: ProductModel(
-                            id: 'p_${DateTime.now().millisecondsSinceEpoch}',
-                            barcode: code,
-                            title: '',
-                            costPrice: 0,
-                            salePrice: 0,
-                            stockQty: 1,
-                            category: 'General',
-                            unit: 'Pcs',
-                          ),
+                          arguments: code,
                         );
                       },
                       icon: const Icon(Icons.add, size: 17, color: Colors.white),
@@ -344,7 +363,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                 final code = textController.text.trim();
                 if (code.isNotEmpty) {
                   Navigator.pop(ctx);
-                  _processBarcode(code);
+                  _processBarcode(code, isManual: true);
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -365,11 +384,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        if (Navigator.canPop(context)) {
-          Navigator.pop(context, _lastScannedBarcode);
-        } else {
-          Navigator.pushReplacementNamed(context, AppRoutes.posCart);
-        }
+        _navigateBackWithResult();
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -507,13 +522,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
         children: [
           // Close button
           GestureDetector(
-            onTap: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context, _lastScannedBarcode);
-              } else {
-                Navigator.pushReplacementNamed(context, AppRoutes.posCart);
-              }
-            },
+            onTap: () => _navigateBackWithResult(),
             child: Container(
               width: 38,
               height: 38,

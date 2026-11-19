@@ -73,8 +73,23 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const InventoryListScreen());
 
       case addEditProduct:
-        final product = settings.arguments as ProductModel?;
-        return MaterialPageRoute(builder: (_) => AddEditProductScreen(existingProduct: product));
+        if (settings.arguments is ProductModel) {
+          final product = settings.arguments as ProductModel;
+          return MaterialPageRoute(builder: (_) => AddEditProductScreen(existingProduct: product));
+        } else if (settings.arguments is String) {
+          return MaterialPageRoute(
+            builder: (_) => AddEditProductScreen(initialBarcode: settings.arguments as String),
+          );
+        } else if (settings.arguments is Map) {
+          final map = settings.arguments as Map;
+          return MaterialPageRoute(
+            builder: (_) => AddEditProductScreen(
+              existingProduct: map['product'] as ProductModel?,
+              initialBarcode: map['barcode'] as String?,
+            ),
+          );
+        }
+        return MaterialPageRoute(builder: (_) => const AddEditProductScreen());
 
       case khataDirectory:
         return MaterialPageRoute(builder: (_) => const KhataDirectoryScreen());

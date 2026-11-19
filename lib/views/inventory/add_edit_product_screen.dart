@@ -8,8 +8,13 @@ import '../shared_widgets/custom_app_bar.dart';
 
 class AddEditProductScreen extends StatefulWidget {
   final ProductModel? existingProduct;
+  final String? initialBarcode;
 
-  const AddEditProductScreen({super.key, this.existingProduct});
+  const AddEditProductScreen({
+    super.key,
+    this.existingProduct,
+    this.initialBarcode,
+  });
 
   @override
   State<AddEditProductScreen> createState() => _AddEditProductScreenState();
@@ -43,7 +48,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   void initState() {
     super.initState();
     final p = widget.existingProduct;
-    _barcodeController = TextEditingController(text: p?.barcode ?? '');
+    final barcode = p?.barcode ?? widget.initialBarcode ?? '';
+    _barcodeController = TextEditingController(text: barcode);
     _nameController = TextEditingController(text: p?.title ?? '');
     _costPriceController = TextEditingController(
       text: p != null ? p.costPrice.toStringAsFixed(0) : '',
@@ -74,7 +80,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   double get _markupPercent =>
       _costPrice > 0 ? ((_retailPrice - _costPrice) / _costPrice) * 100 : 0.0;
 
-  bool get _isEditing => widget.existingProduct != null;
+  bool get _isEditing =>
+      widget.existingProduct != null &&
+      InventoryState.instance.products.any((p) => p.id == widget.existingProduct!.id);
 
   void _onSaveProduct() {
     final title = _nameController.text.trim();

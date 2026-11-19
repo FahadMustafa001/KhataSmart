@@ -721,10 +721,17 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
             const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
         suffixIcon: GestureDetector(
           onTap: () async {
-            final result =
-                await Navigator.pushNamed(context, AppRoutes.posScanner);
+            final result = await Navigator.pushNamed(
+              context,
+              AppRoutes.posScanner,
+              arguments: {'mode': 'lookup'},
+            );
+            if (!mounted) return;
             if (result is String && result.isNotEmpty) {
-              setState(() => _searchQuery = result);
+              setState(() {
+                _searchController.text = result;
+                _searchQuery = result;
+              });
             }
           },
           child: const Icon(Icons.qr_code_scanner,

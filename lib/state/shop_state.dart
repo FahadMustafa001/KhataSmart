@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/shop_model.dart';
+import 'cart_state.dart';
 import 'inventory_state.dart';
 import 'khata_state.dart';
 
@@ -71,6 +72,8 @@ class ShopState extends ChangeNotifier {
       // Inform Inventory & Khata to re-render for this active shop
       InventoryState.instance.onShopChanged();
       KhataState.instance.onShopChanged();
+      // Clear any pending cart so items from the previous shop are not checked out under the new shop
+      CartState.instance.clear();
     }
   }
 

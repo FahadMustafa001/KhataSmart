@@ -61,12 +61,15 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
   void _showShopSwitcherModal() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (ctx) {
+        final maxHeight = MediaQuery.of(ctx).size.height * 0.75;
         return Container(
+          constraints: BoxConstraints(maxHeight: maxHeight),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -100,68 +103,73 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                 style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 12),
-              ..._shopState.shops.map((shop) {
-                final isActive = shop.id == _shopState.activeShopId;
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: isActive ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(
-                      color: isActive ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-                      width: isActive ? 1.5 : 1,
-                    ),
-                  ),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
-                    leading: Container(
-                      width: 38,
-                      height: 38,
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: _shopState.shops.map((shop) {
+                    final isActive = shop.id == _shopState.activeShopId;
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
                       decoration: BoxDecoration(
-                        color: isActive ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
-                        shape: BoxShape.circle,
+                        color: isActive ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isActive ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                          width: isActive ? 1.5 : 1,
+                        ),
                       ),
-                      child: Center(
-                        child: Text(
-                          shop.name.isNotEmpty ? shop.name[0].toUpperCase() : 'S',
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: isActive ? Colors.white : const Color(0xFF475569),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                        leading: Container(
+                          width: 38,
+                          height: 38,
+                          decoration: BoxDecoration(
+                            color: isActive ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              shop.name.isNotEmpty ? shop.name[0].toUpperCase() : 'S',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: isActive ? Colors.white : const Color(0xFF475569),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
-                    ),
-                    title: Text(
-                      shop.name,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.bold,
-                        color: isActive ? const Color(0xFF1D4ED8) : const Color(0xFF0F172A),
-                      ),
-                    ),
-                    subtitle: Text(
-                      '${shop.ownerName} • ${shop.address.isNotEmpty ? shop.address : "Main Store"}',
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                    ),
-                    trailing: isActive
-                        ? const Icon(Icons.check_circle, color: Color(0xFF2563EB), size: 22)
-                        : const Icon(Icons.chevron_right, color: Color(0xFF94A3B8), size: 20),
-                    onTap: () {
-                      _shopState.switchShop(shop.id);
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          backgroundColor: const Color(0xFF0F172A),
-                          content: Text('Switched to "${shop.name}"'),
-                          behavior: SnackBarBehavior.floating,
+                        title: Text(
+                          shop.name,
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: isActive ? const Color(0xFF1D4ED8) : const Color(0xFF0F172A),
+                          ),
                         ),
-                      );
-                    },
-                  ),
-                );
-              }),
-              const SizedBox(height: 6),
+                        subtitle: Text(
+                          '${shop.ownerName} • ${shop.address.isNotEmpty ? shop.address : "Main Store"}',
+                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                        ),
+                        trailing: isActive
+                            ? const Icon(Icons.check_circle, color: Color(0xFF2563EB), size: 22)
+                            : const Icon(Icons.chevron_right, color: Color(0xFF94A3B8), size: 20),
+                        onTap: () {
+                          _shopState.switchShop(shop.id);
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: const Color(0xFF0F172A),
+                              content: Text('Switched to "${shop.name}"'),
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -306,20 +314,27 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Row(
-                          children: [
-                            const Icon(Icons.swap_horiz, size: 15, color: Color(0xFF60A5FA)),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Shop: ${activeShop.name} (${_shopState.shops.length} total)',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                        Expanded(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.swap_horiz, size: 15, color: Color(0xFF60A5FA)),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  'Shop: ${activeShop.name} (${_shopState.shops.length} total)',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
+                        const SizedBox(width: 4),
                         const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 18),
                       ],
                     ),
