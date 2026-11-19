@@ -112,6 +112,37 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     Navigator.pop(context);
   }
 
+  void _onDeleteProduct() async {
+    final title = widget.existingProduct?.name ?? 'this product';
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Product?'),
+        content: Text('Are you sure you want to delete "$title" from inventory?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      if (widget.existingProduct != null) {
+        InventoryState.instance.deleteProduct(widget.existingProduct!.id);
+      }
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -137,6 +168,12 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             }
           },
         actions: [
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete_outline, color: Color(0xFFDC2626), size: 20),
+              tooltip: 'Delete Product',
+              onPressed: _onDeleteProduct,
+            ),
           TextButton(
             onPressed: _onSaveProduct,
             child: const Text(

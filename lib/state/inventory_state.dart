@@ -64,6 +64,11 @@ class InventoryState extends ChangeNotifier {
     }
   }
 
+  void deleteProduct(String productId) {
+    _products.removeWhere((p) => p.id == productId);
+    notifyListeners();
+  }
+
   ProductModel? findByBarcode(String barcode) {
     try {
       final currentShopId = ShopState.instance.activeShopId;

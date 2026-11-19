@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/party_model.dart';
 import '../models/ledger_entry_model.dart';
 import '../models/order_model.dart';
+import 'inventory_state.dart';
 import 'mock_data.dart';
 import 'shop_state.dart';
 
@@ -116,6 +117,9 @@ class KhataState extends ChangeNotifier {
 
   void addOrder(OrderModel order) {
     _orders.insert(0, order);
+    for (final item in order.items) {
+      InventoryState.instance.deductStock(item.product.id, item.quantity);
+    }
     if (order.paymentMode == PaymentMode.udhaar && order.customer != null) {
       addTransaction(
         partyId: order.customer!.id,
