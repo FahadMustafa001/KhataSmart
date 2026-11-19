@@ -4,6 +4,7 @@ import '../../core/constants/app_assets.dart';
 import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
 import '../../state/inventory_state.dart';
+import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
 
 class AddEditProductScreen extends StatefulWidget {
@@ -80,9 +81,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   double get _markupPercent =>
       _costPrice > 0 ? ((_retailPrice - _costPrice) / _costPrice) * 100 : 0.0;
 
-  bool get _isEditing =>
-      widget.existingProduct != null &&
-      InventoryState.instance.products.any((p) => p.id == widget.existingProduct!.id);
+  bool get _isEditing => widget.existingProduct != null;
 
   void _onSaveProduct() {
     final title = _nameController.text.trim();
@@ -102,6 +101,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       salePrice: _retailPrice,
       stockQty: _stockQuantity,
       category: _selectedCategory,
+      shopId: widget.existingProduct?.shopId ?? ShopState.instance.activeShopId,
     );
 
     if (_isEditing) {
