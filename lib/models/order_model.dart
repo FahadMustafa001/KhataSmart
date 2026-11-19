@@ -28,6 +28,7 @@ class OrderModel {
 
   DateTime get dateTime => date;
   String get id => invoiceNo;
+  String? get customerName => customer?.name;
 
   Map<String, dynamic> toMap() {
     return {

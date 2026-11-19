@@ -7,7 +7,9 @@ import 'package:printing/printing.dart';
 
 import '../core/utils/currency_formatter.dart';
 import '../core/utils/date_formatter.dart';
+import '../models/cart_item_model.dart';
 import '../models/order_model.dart';
+import '../models/product_model.dart';
 import '../models/shop_model.dart';
 
 /// Professional ESC/POS Command Byte Generator & Thermal Printer Service
@@ -138,7 +140,7 @@ class EscPosService {
                           child: pw.Text(
                             CurrencyFormatter.format(item.totalPrice),
                             textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold),
+                            style: const pw.TextStyle(fontSize: 7.5, fontWeight: pw.FontWeight.bold),
                           ),
                         ),
                       ],
@@ -221,19 +223,27 @@ class EscPosService {
     final testOrder = OrderModel(
       invoiceNo: 'TEST-${DateTime.now().millisecondsSinceEpoch % 1000}',
       items: [
-        OrderItemModel(
-          productId: 'test_1',
-          productName: 'Sample Thermal Item A',
+        CartItemModel(
+          product: ProductModel(
+            id: 'test_1',
+            barcode: '12345678',
+            title: 'Sample Thermal Item A',
+            costPrice: 100,
+            salePrice: 150,
+            stockQty: 10,
+          ),
           quantity: 2,
-          unitPrice: 150,
-          sellingPrice: 150,
         ),
-        OrderItemModel(
-          productId: 'test_2',
-          productName: 'Sample Thermal Item B',
+        CartItemModel(
+          product: ProductModel(
+            id: 'test_2',
+            barcode: '87654321',
+            title: 'Sample Thermal Item B',
+            costPrice: 350,
+            salePrice: 500,
+            stockQty: 5,
+          ),
           quantity: 1,
-          unitPrice: 500,
-          sellingPrice: 500,
         ),
       ],
       total: 800,
@@ -293,10 +303,10 @@ class EscPosService {
     // Table Header
     if (is80mm) {
       // 48 columns: Item(22) Qty(6) Rate(9) Total(11)
-      bytes.addAll(utf8.encode(_padRight('Item', 22) + _padCenter('Qty', 6) + _padLeft('Rate', 9) + _padLeft('Total', 11) + '\n'));
+      bytes.addAll(utf8.encode('${_padRight('Item', 22)}${_padCenter('Qty', 6)}${_padLeft('Rate', 9)}${_padLeft('Total', 11)}\n'));
     } else {
       // 32 columns: Item(14) Qty(4) Rate(6) Total(8)
-      bytes.addAll(utf8.encode(_padRight('Item', 14) + _padCenter('Qty', 4) + _padLeft('Rate', 6) + _padLeft('Total', 8) + '\n'));
+      bytes.addAll(utf8.encode('${_padRight('Item', 14)}${_padCenter('Qty', 4)}${_padLeft('Rate', 6)}${_padLeft('Total', 8)}\n'));
     }
     bytes.addAll(utf8.encode('${"-" * maxCols}\n'));
 
@@ -308,24 +318,24 @@ class EscPosService {
 
       if (is80mm) {
         final name = item.productName.length > 21 ? item.productName.substring(0, 21) : item.productName;
-        bytes.addAll(utf8.encode(_padRight(name, 22) + _padCenter(qtyStr, 6) + _padLeft(rateStr, 9) + _padLeft(totStr, 11) + '\n'));
+        bytes.addAll(utf8.encode('${_padRight(name, 22)}${_padCenter(qtyStr, 6)}${_padLeft(rateStr, 9)}${_padLeft(totStr, 11)}\n'));
       } else {
         final name = item.productName.length > 13 ? item.productName.substring(0, 13) : item.productName;
-        bytes.addAll(utf8.encode(_padRight(name, 14) + _padCenter(qtyStr, 4) + _padLeft(rateStr, 6) + _padLeft(totStr, 8) + '\n'));
+        bytes.addAll(utf8.encode('${_padRight(name, 14)}${_padCenter(qtyStr, 4)}${_padLeft(rateStr, 6)}${_padLeft(totStr, 8)}\n'));
       }
     }
 
     bytes.addAll(utf8.encode('${"-" * maxCols}\n'));
 
     // Totals (Right aligned)
-    bytes.addAll(utf8.encode(_alignKeyValue('Subtotal:', CurrencyFormatter.format(order.subtotal), maxCols) + '\n'));
+    bytes.addAll(utf8.encode('${_alignKeyValue('Subtotal:', CurrencyFormatter.format(order.subtotal), maxCols)}\n'));
     if (order.discount > 0) {
-      bytes.addAll(utf8.encode(_alignKeyValue('Discount:', '-${CurrencyFormatter.format(order.discount)}', maxCols) + '\n'));
+      bytes.addAll(utf8.encode('${_alignKeyValue('Discount:', '-${CurrencyFormatter.format(order.discount)}', maxCols)}\n'));
     }
 
     // Bold Net Total
     bytes.addAll([_esc, 0x45, 0x01]);
-    bytes.addAll(utf8.encode(_alignKeyValue('NET PAYABLE:', CurrencyFormatter.format(order.total), maxCols) + '\n'));
+    bytes.addAll(utf8.encode('${_alignKeyValue('NET PAYABLE:', CurrencyFormatter.format(order.total), maxCols)}\n'));
     bytes.addAll([_esc, 0x45, 0x00]);
 
     bytes.addAll(utf8.encode('Pay Mode: ${order.paymentMode.name.toUpperCase()}\n'));

@@ -259,7 +259,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
               final file = await CsvExportService.instance.generateKhataPartiesCsv(
                 parties: _khataState.parties,
                 shop: ShopState.instance.activeShop,
-                filterType: _selectedTab == 0 ? PartyType.customer : PartyType.supplier,
+                filterType: _selectedTabIndex == 0 ? PartyType.customer : PartyType.supplier,
               );
               await CsvExportService.instance.shareCsvFile(
                 file,

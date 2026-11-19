@@ -1126,13 +1126,13 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                     children: [
                       pw.Text(
                         shop.name.toUpperCase(),
-                        style: pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
+                        style: const pw.TextStyle(fontSize: 6.5, fontWeight: pw.FontWeight.bold, color: PdfColors.grey700),
                         maxLines: 1,
                       ),
                       pw.SizedBox(height: 1),
                       pw.Text(
                         product.name,
-                        style: pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                        style: const pw.TextStyle(fontSize: 8.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                         maxLines: 1,
                         overflow: pw.TextOverflow.clip,
                       ),
@@ -1155,7 +1155,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                           ),
                           pw.Text(
                             'Rs. ${product.salePrice.toStringAsFixed(0)}',
-                            style: pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
+                            style: const pw.TextStyle(fontSize: 9.5, fontWeight: pw.FontWeight.bold, color: PdfColors.black),
                           ),
                         ],
                       ),

@@ -21,6 +21,9 @@ class DateFormatter {
     return '$day $month $year, $hour:$minute $period';
   }
 
+  /// Alias for format
+  static String formatDateTime(DateTime date) => format(date);
+
   /// Formats DateTime to "18 Oct 2026"
   static String formatShort(DateTime date) {
     return '${date.day} ${_months[date.month - 1]} ${date.year}';

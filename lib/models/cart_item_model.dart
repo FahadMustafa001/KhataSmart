@@ -12,6 +12,9 @@ class CartItemModel {
   }) : costPriceAtSale = costPriceAtSale ?? product.costPrice;
 
   double get subtotal => product.salePrice * quantity;
+  String get productName => product.name;
+  double get sellingPrice => product.salePrice;
+  double get totalPrice => subtotal;
 
   Map<String, dynamic> toMap() {
     return {

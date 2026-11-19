@@ -2,7 +2,7 @@ class ProductModel {
   final String id;
   final String barcode;
   final String title;
-  final double costPrice;
+  double costPrice;
   final double salePrice;
   int stockQty;
   final String category;
@@ -26,6 +26,7 @@ class ProductModel {
   String get name => title;
   int get stock => stockQty;
   set stock(int val) => stockQty = val;
+  int get minStockAlert => 5;
 
   double get marginPercentage {
     if (costPrice == 0) return 0.0;
