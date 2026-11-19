@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'core/constants/app_strings.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
+import 'services/local_database_service.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Initialize and load offline database
+  await LocalDatabaseService.instance.init();
   runApp(const SmartKhataApp());
 }
 

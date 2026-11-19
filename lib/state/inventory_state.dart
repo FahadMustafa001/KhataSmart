@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import 'mock_data.dart';
+import 'shop_state.dart';
 
 class InventoryState extends ChangeNotifier {
   static final InventoryState instance = InventoryState._();
@@ -10,12 +11,31 @@ class InventoryState extends ChangeNotifier {
 
   final List<ProductModel> _products = [];
 
-  List<ProductModel> get products => List.unmodifiable(_products);
+  // Multi-shop filtering: Only return products belonging to currently active shop
+  List<ProductModel> get products {
+    final currentShopId = ShopState.instance.activeShopId;
+    return _products.where((p) => p.shopId == currentShopId).toList();
+  }
 
-  int get lowStockCount => _products.where((p) => p.isLowStock || p.stockQty == 0).length;
-  double get totalValuation => _products.fold(0.0, (sum, p) => sum + (p.stockQty * p.salePrice));
+  List<ProductModel> get allProductsForDatabase => List.unmodifiable(_products);
+
+  void loadFromDatabase(List<ProductModel> loaded) {
+    _products.clear();
+    _products.addAll(loaded);
+    notifyListeners();
+  }
+
+  int get lowStockCount => products.where((p) => p.isLowStock || p.stockQty == 0).length;
+  double get totalValuation => products.fold(0.0, (sum, p) => sum + (p.stockQty * p.salePrice));
+
+  void onShopChanged() {
+    notifyListeners();
+  }
 
   void addProduct(ProductModel product) {
+    if (product.shopId.isEmpty) {
+      product.shopId = ShopState.instance.activeShopId;
+    }
     _products.insert(0, product);
     notifyListeners();
   }
@@ -46,7 +66,10 @@ class InventoryState extends ChangeNotifier {
 
   ProductModel? findByBarcode(String barcode) {
     try {
-      return _products.firstWhere((p) => p.barcode == barcode);
+      final currentShopId = ShopState.instance.activeShopId;
+      return _products.firstWhere(
+        (p) => p.shopId == currentShopId && p.barcode == barcode,
+      );
     } catch (_) {
       return null;
     }

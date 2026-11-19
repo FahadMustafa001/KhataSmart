@@ -15,6 +15,9 @@ import '../views/pos/pos_cart_screen.dart';
 import '../views/pos/pos_scanner_screen.dart';
 import '../views/pos/receipt_preview_screen.dart';
 import '../views/splash/splash_screen.dart';
+import '../views/settings/settings_screen.dart';
+import '../views/reports/reports_screen.dart';
+import '../views/security/app_lock_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -30,6 +33,9 @@ class AppRoutes {
   static const String addEditProduct = '/add-edit-product';
   static const String khataDirectory = '/khata-directory';
   static const String partyLedgerDetail = '/party-ledger-detail';
+  static const String settings = '/settings';
+  static const String reports = '/reports';
+  static const String appLock = '/app-lock';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -74,6 +80,15 @@ class AppRoutes {
       case partyLedgerDetail:
         final party = settings.arguments as PartyModel?;
         return MaterialPageRoute(builder: (_) => PartyLedgerDetailScreen(party: party));
+
+      case AppRoutes.settings:
+        return MaterialPageRoute(builder: (_) => const SettingsScreen());
+
+      case AppRoutes.reports:
+        return MaterialPageRoute(builder: (_) => const ReportsScreen());
+
+      case AppRoutes.appLock:
+        return MaterialPageRoute(builder: (_) => const AppLockScreen());
 
       default:
         return MaterialPageRoute(

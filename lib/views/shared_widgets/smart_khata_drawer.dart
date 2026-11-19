@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
 import '../../routes/app_routes.dart';
+import '../../services/security_service.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
+import '../../state/shop_state.dart';
 
 class SmartKhataDrawer extends StatelessWidget {
   final String currentRoute;
@@ -77,13 +79,13 @@ class SmartKhataDrawer extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'SmartKhata Store',
-                            style: TextStyle(
+                            ShopState.instance.activeShop.name,
+                            style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14.5,
                               fontWeight: FontWeight.bold,
@@ -91,10 +93,10 @@ class SmartKhataDrawer extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            'POS Operator ',
-                            style: TextStyle(
+                            ShopState.instance.activeShop.ownerName,
+                            style: const TextStyle(
                               color: Color(0xFF94A3B8),
                               fontSize: 10.5,
                               fontWeight: FontWeight.w500,
@@ -203,7 +205,7 @@ class SmartKhataDrawer extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               children: [
                 // SECTION 1: CORE
-                _buildSectionHeader('CORE APPS', 'بنیادی فیچرز'),
+                _buildSectionHeader("CORE APPS"),
                 _buildMenuItem(
                   context,
                   icon: Icons.dashboard_rounded,
@@ -224,7 +226,7 @@ class SmartKhataDrawer extends StatelessWidget {
                 _buildMenuItem(
                   context,
                   icon: Icons.menu_book_outlined,
-                  title: 'Khata Book (کھاتہ)',
+                  title: 'Khata Book',
                   route: AppRoutes.khataDirectory,
                   isSelected: currentRoute == AppRoutes.khataDirectory,
                   badgeText: KhataState.instance.customers
@@ -247,11 +249,26 @@ class SmartKhataDrawer extends StatelessWidget {
                   badgeColor: const Color(0xFFFEE2E2),
                   badgeTextColor: const Color(0xFFDC2626),
                 ),
+                _buildMenuItem(
+                  context,
+                  icon: Icons.bar_chart_rounded,
+                  title: 'Reports & Analytics',
+                  route: AppRoutes.reports,
+                  isSelected: currentRoute == AppRoutes.reports,
+                ),
 
                 const SizedBox(height: 12),
 
                 // SECTION 2: MANAGEMENT & CONFIGURATION
-                _buildSectionHeader('STORE SETTINGS', 'سیٹنگز اور پروفائل'),
+                _buildSectionHeader('STORE SETTINGS'),
+                _buildMenuItem(
+                  context,
+                  icon: Icons.settings_outlined,
+                  title: 'Settings & Multi-Store',
+                  route: AppRoutes.settings,
+                  isSelected: currentRoute == AppRoutes.settings,
+                  showArrow: true,
+                ),
                 _buildMenuItem(
                   context,
                   icon: Icons.storefront_outlined,
@@ -295,10 +312,21 @@ class SmartKhataDrawer extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('Terminal Locked for Safety')),
-                          );
+                          if (SecurityService.instance.isLockEnabled) {
+                            SecurityService.instance.lockApp();
+                            Navigator.pushNamed(context, AppRoutes.appLock);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('App Lock is currently OFF. You can turn it ON in Settings.'),
+                                action: SnackBarAction(
+                                  label: 'Settings',
+                                  textColor: Colors.yellow,
+                                  onPressed: () => Navigator.pushNamed(context, AppRoutes.settings),
+                                ),
+                              ),
+                            );
+                          }
                         },
                         icon: const Icon(Icons.lock_outline,
                             size: 16, color: Colors.white),
@@ -348,7 +376,7 @@ class SmartKhataDrawer extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      'SmartKhata v4.2.0 • Offline Ready',
+                      'SmartKhata • Offline Ready',
                       style: TextStyle(
                         fontSize: 10,
                         color: Color(0xFF94A3B8),
@@ -367,29 +395,17 @@ class SmartKhataDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String english, String urdu) {
+  Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, right: 8, top: 6, bottom: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            english,
-            style: const TextStyle(
-              fontSize: 9.5,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF64748B),
-              letterSpacing: 0.5,
-            ),
-          ),
-          Text(
-            urdu,
-            style: const TextStyle(
-              fontSize: 9.5,
-              color: Color(0xFF94A3B8),
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 4),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: Color(0xFF64748B),
+          letterSpacing: 0.6,
+        ),
       ),
     );
   }

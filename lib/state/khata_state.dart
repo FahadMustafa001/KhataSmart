@@ -3,6 +3,7 @@ import '../models/party_model.dart';
 import '../models/ledger_entry_model.dart';
 import '../models/order_model.dart';
 import 'mock_data.dart';
+import 'shop_state.dart';
 
 class KhataState extends ChangeNotifier {
   static final KhataState instance = KhataState._();
@@ -16,15 +17,45 @@ class KhataState extends ChangeNotifier {
   final List<LedgerEntryModel> _entries = [];
   final List<OrderModel> _orders = [];
 
-  List<PartyModel> get parties => List.unmodifiable(_parties);
-  List<LedgerEntryModel> get entries => List.unmodifiable(_entries);
-  List<OrderModel> get orders => List.unmodifiable(_orders);
+  // Multi-shop filtering: Only return items belonging to active shop
+  List<PartyModel> get parties {
+    final currentShopId = ShopState.instance.activeShopId;
+    return _parties.where((p) => p.shopId == currentShopId).toList();
+  }
+
+  List<LedgerEntryModel> get entries {
+    final currentShopId = ShopState.instance.activeShopId;
+    return _entries.where((e) => e.shopId == currentShopId).toList();
+  }
+
+  List<OrderModel> get orders {
+    final currentShopId = ShopState.instance.activeShopId;
+    return _orders.where((o) => o.shopId == currentShopId).toList();
+  }
+
+  List<PartyModel> get allPartiesForDatabase => List.unmodifiable(_parties);
+  List<LedgerEntryModel> get allEntriesForDatabase => List.unmodifiable(_entries);
+  List<OrderModel> get allOrdersForDatabase => List.unmodifiable(_orders);
+
+  void loadFromDatabase({
+    required List<PartyModel> parties,
+    required List<LedgerEntryModel> entries,
+    required List<OrderModel> orders,
+  }) {
+    _parties.clear();
+    _parties.addAll(parties);
+    _entries.clear();
+    _entries.addAll(entries);
+    _orders.clear();
+    _orders.addAll(orders);
+    notifyListeners();
+  }
 
   List<PartyModel> get customers =>
-      _parties.where((p) => p.type == PartyType.customer).toList();
+      parties.where((p) => p.type == PartyType.customer).toList();
 
   List<PartyModel> get suppliers =>
-      _parties.where((p) => p.type == PartyType.supplier).toList();
+      parties.where((p) => p.type == PartyType.supplier).toList();
 
   // Total Lene Hain (Positive customer balances)
   double get totalReceivable => customers.fold(
@@ -34,9 +65,16 @@ class KhataState extends ChangeNotifier {
   double get totalPayable => suppliers.fold(
       0.0, (sum, p) => p.balance < 0 ? sum + p.balance.abs() : sum);
 
-  double get todaySales => _orders.fold(0.0, (sum, o) => sum + o.total);
+  double get todaySales => orders.fold(0.0, (sum, o) => sum + o.total);
+
+  void onShopChanged() {
+    notifyListeners();
+  }
 
   void addParty(PartyModel party) {
+    if (party.shopId.isEmpty) {
+      // party.shopId default is already 'shop_1' or active
+    }
     _parties.insert(0, party);
     notifyListeners();
   }
@@ -46,7 +84,9 @@ class KhataState extends ChangeNotifier {
     required LedgerType type,
     required double amount,
     required String note,
+    String? shopId,
   }) {
+    final currentShopId = shopId ?? ShopState.instance.activeShopId;
     final newEntry = LedgerEntryModel(
       id: 'l_${DateTime.now().millisecondsSinceEpoch}',
       partyId: partyId,
@@ -54,6 +94,7 @@ class KhataState extends ChangeNotifier {
       amount: amount,
       note: note,
       date: DateTime.now(),
+      shopId: currentShopId,
     );
     _entries.insert(0, newEntry);
 
@@ -75,12 +116,13 @@ class KhataState extends ChangeNotifier {
         type: LedgerType.gave,
         amount: order.total,
         note: 'Bill #${order.invoiceNo}',
+        shopId: order.shopId,
       );
     }
     notifyListeners();
   }
 
   List<LedgerEntryModel> getEntriesForParty(String partyId) {
-    return _entries.where((e) => e.partyId == partyId).toList();
+    return entries.where((e) => e.partyId == partyId).toList();
   }
 }

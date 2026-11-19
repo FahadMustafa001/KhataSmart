@@ -4,6 +4,7 @@ import '../../models/order_model.dart';
 import '../../routes/app_routes.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
+import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
 import '../shared_widgets/smart_khata_drawer.dart';
 import '../shared_widgets/smart_bottom_navigation_bar.dart';
@@ -27,12 +28,14 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     super.initState();
     _khataState.addListener(_rebuild);
     _inventoryState.addListener(_rebuild);
+    ShopState.instance.addListener(_rebuild);
   }
 
   @override
   void dispose() {
     _khataState.removeListener(_rebuild);
     _inventoryState.removeListener(_rebuild);
+    ShopState.instance.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -224,42 +227,25 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
   // Dashboard Standard AppBar
   PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final active = ShopState.instance.activeShop;
     return CustomAppBar(
       showMenu: true,
       showBack: false,
       showLogo: true,
-      title: 'SmartKhata Store',
-      subtitle: 'Online • Terminal 01',
+      title: active.name,
+      subtitle: '${active.ownerName} • Branch 01',
       actions: [
-        // Notification Icon with Red Badge
-        Stack(
-          alignment: Alignment.topRight,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_none_rounded,
-                  color: Color(0xFF1E293B), size: 22),
-              tooltip: 'Notifications',
-              onPressed: () {},
-            ),
-            Positioned(
-              top: 10,
-              right: 12,
-              child: Container(
-                width: 7,
-                height: 7,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFDC2626),
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ],
+        // Quick Reports Analytics Icon
+        IconButton(
+          icon: const Icon(Icons.bar_chart_rounded, color: Color(0xFF2563EB), size: 22),
+          tooltip: 'Reports & Analytics',
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.reports),
         ),
-        // User Profile Avatar / Shop Setup Link
+        // Settings & Store Switcher Avatar
         Padding(
           padding: const EdgeInsets.only(right: 14.0, left: 2.0),
           child: GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRoutes.shopSetup),
+            onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
             child: Container(
               padding: const EdgeInsets.all(2),
               decoration: BoxDecoration(
@@ -269,7 +255,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               child: const CircleAvatar(
                 radius: 15,
                 backgroundColor: Color(0xFF1E293B),
-                child: Icon(Icons.storefront, color: Colors.white, size: 16),
+                child: Icon(Icons.settings_outlined, color: Colors.white, size: 16),
               ),
             ),
           ),
