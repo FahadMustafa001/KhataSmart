@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/google_drive_service.dart';
 import '../../services/security_service.dart';
+import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
+import '../khata/widgets/add_party_sheet.dart';
 
-class SmartKhataDrawer extends StatelessWidget {
+class SmartKhataDrawer extends StatefulWidget {
   final String currentRoute;
 
   const SmartKhataDrawer({
@@ -16,7 +20,173 @@ class SmartKhataDrawer extends StatelessWidget {
   });
 
   @override
+  State<SmartKhataDrawer> createState() => _SmartKhataDrawerState();
+}
+
+class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
+  final _shopState = ShopState.instance;
+  final _khataState = KhataState.instance;
+  final _inventoryState = InventoryState.instance;
+  final _securityService = SecurityService.instance;
+  final _driveService = GoogleDriveService.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _shopState.addListener(_rebuild);
+    _khataState.addListener(_rebuild);
+    _inventoryState.addListener(_rebuild);
+    _securityService.addListener(_rebuild);
+    _driveService.addListener(_rebuild);
+  }
+
+  @override
+  void dispose() {
+    _shopState.removeListener(_rebuild);
+    _khataState.removeListener(_rebuild);
+    _inventoryState.removeListener(_rebuild);
+    _securityService.removeListener(_rebuild);
+    _driveService.removeListener(_rebuild);
+    super.dispose();
+  }
+
+  void _rebuild() {
+    if (mounted) setState(() {});
+  }
+
+  void _showShopSwitcherModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.storefront_rounded, color: Color(0xFF0F172A), size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Switch Active Shop',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Text(
+                'Har dukan ka stock, khata, aur sales 100% alag alag save hota hai.',
+                style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 12),
+              ..._shopState.shops.map((shop) {
+                final isActive = shop.id == _shopState.activeShopId;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: isActive ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: isActive ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                      width: isActive ? 1.5 : 1,
+                    ),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+                    leading: Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: isActive ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          shop.name.isNotEmpty ? shop.name[0].toUpperCase() : 'S',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: isActive ? Colors.white : const Color(0xFF475569),
+                          ),
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      shop.name,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: isActive ? const Color(0xFF1D4ED8) : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    subtitle: Text(
+                      '${shop.ownerName} • ${shop.address.isNotEmpty ? shop.address : "Main Store"}',
+                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                    ),
+                    trailing: isActive
+                        ? const Icon(Icons.check_circle, color: Color(0xFF2563EB), size: 22)
+                        : const Icon(Icons.chevron_right, color: Color(0xFF94A3B8), size: 20),
+                    onTap: () {
+                      _shopState.switchShop(shop.id);
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          backgroundColor: const Color(0xFF0F172A),
+                          content: Text('Switched to "${shop.name}"'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }),
+              const SizedBox(height: 6),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    Navigator.pop(context);
+                    Navigator.pushNamed(context, AppRoutes.settings);
+                  },
+                  icon: const Icon(Icons.add_business_rounded, size: 18),
+                  label: const Text('+ Nayi Dukan Banayein (Settings)'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    side: const BorderSide(color: Color(0xFF2563EB)),
+                    foregroundColor: const Color(0xFF2563EB),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final activeShop = _shopState.activeShop;
+
     return Drawer(
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
@@ -27,9 +197,9 @@ class SmartKhataDrawer extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Dark Navy Header with Real App Logo & Store Status
+          // ── Header: Active Store Profile & Shop Switcher ───────────────────
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 44, 16, 18),
+            padding: const EdgeInsets.fromLTRB(16, 44, 16, 16),
             decoration: const BoxDecoration(
               color: Color(0xFF0F172A),
               borderRadius: BorderRadius.only(
@@ -40,7 +210,7 @@ class SmartKhataDrawer extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Top Row: App Logo, Name, Terminal & Close Button
+                // Top Row: App Logo, Name & Close
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -50,8 +220,8 @@ class SmartKhataDrawer extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12),
                           child: Image.asset(
                             AppAssets.appLogo,
-                            width: 46,
-                            height: 46,
+                            width: 44,
+                            height: 44,
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -59,20 +229,18 @@ class SmartKhataDrawer extends StatelessWidget {
                           right: -1,
                           bottom: -1,
                           child: Container(
-                            width: 14,
-                            height: 14,
+                            width: 13,
+                            height: 13,
                             decoration: BoxDecoration(
                               color: const Color(0xFF16A34A),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                  color: const Color(0xFF0F172A), width: 2),
+                                color: const Color(0xFF0F172A),
+                                width: 2,
+                              ),
                             ),
                             child: const Center(
-                              child: Icon(
-                                Icons.check,
-                                size: 8,
-                                color: Colors.white,
-                              ),
+                              child: Icon(Icons.check, size: 7, color: Colors.white),
                             ),
                           ),
                         ),
@@ -84,7 +252,7 @@ class SmartKhataDrawer extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            ShopState.instance.activeShop.name,
+                            activeShop.name,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 14.5,
@@ -95,10 +263,12 @@ class SmartKhataDrawer extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            ShopState.instance.activeShop.ownerName,
+                            activeShop.ownerName.isNotEmpty
+                                ? activeShop.ownerName
+                                : 'Store Manager',
                             style: const TextStyle(
                               color: Color(0xFF94A3B8),
-                              fontSize: 10.5,
+                              fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -108,8 +278,7 @@ class SmartKhataDrawer extends StatelessWidget {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close,
-                          color: Color(0xFF94A3B8), size: 20),
+                      icon: const Icon(Icons.close, color: Color(0xFF94A3B8), size: 20),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       onPressed: () => Navigator.pop(context),
@@ -119,14 +288,49 @@ class SmartKhataDrawer extends StatelessWidget {
 
                 const SizedBox(height: 12),
 
-                // Stat Cards: Today's Sale & Udhaar
+                // Multi-Shop Switcher Pill
+                InkWell(
+                  onTap: _showShopSwitcherModal,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.swap_horiz, size: 15, color: Color(0xFF60A5FA)),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Shop: ${activeShop.name} (${_shopState.shops.length} total)',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Icon(Icons.arrow_drop_down, color: Colors.white70, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // Stat Cards: Today's Sale & Total Udhaar
                 Row(
                   children: [
                     // Today's Sale
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E293B).withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(10),
@@ -146,7 +350,7 @@ class SmartKhataDrawer extends StatelessWidget {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              'PKR ${KhataState.instance.todaySales.toStringAsFixed(0)}',
+                              'PKR ${_khataState.todaySales.toStringAsFixed(0)}',
                               style: const TextStyle(
                                 color: Color(0xFF4ADE80),
                                 fontSize: 13,
@@ -161,8 +365,7 @@ class SmartKhataDrawer extends StatelessWidget {
                     // Udhaar
                     Expanded(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                         decoration: BoxDecoration(
                           color: const Color(0xFF1E293B).withValues(alpha: 0.8),
                           borderRadius: BorderRadius.circular(10),
@@ -172,7 +375,7 @@ class SmartKhataDrawer extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'UDHAAR',
+                              'UDHAAR (LENE HAIN)',
                               style: TextStyle(
                                 color: Color(0xFF94A3B8),
                                 fontSize: 8.5,
@@ -182,7 +385,7 @@ class SmartKhataDrawer extends StatelessWidget {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              'PKR ${KhataState.instance.totalReceivable.toStringAsFixed(0)}',
+                              'PKR ${_khataState.totalReceivable.toStringAsFixed(0)}',
                               style: const TextStyle(
                                 color: Color(0xFFF87171),
                                 fontSize: 13,
@@ -199,40 +402,128 @@ class SmartKhataDrawer extends StatelessWidget {
             ),
           ),
 
-          // 2. Navigation Items List
+          // ── Quick Action Shortcuts Row ────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Color(0xFFF8FAFC),
+              border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      AddPartySheet.show(context, initialType: PartyType.customer);
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.person_add_alt_1, size: 14, color: Color(0xFF2563EB)),
+                          SizedBox(width: 4),
+                          Text(
+                            '+ Naya Khata',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.pushNamed(context, AppRoutes.posScanner);
+                    },
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.qr_code_scanner, size: 14, color: Color(0xFF16A34A)),
+                          SizedBox(width: 4),
+                          Text(
+                            'Scan Barcode',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Navigation Menu Items ─────────────────────────────────────────
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               children: [
-                // SECTION 1: CORE
+                // SECTION 1: CORE APPS & SALES
                 _buildSectionHeader("CORE APPS"),
                 _buildMenuItem(
                   context,
                   icon: Icons.dashboard_rounded,
                   title: 'Dashboard',
                   route: AppRoutes.dashboard,
-                  isSelected: currentRoute == AppRoutes.dashboard,
+                  isSelected: widget.currentRoute == AppRoutes.dashboard,
                 ),
                 _buildMenuItem(
                   context,
                   icon: Icons.receipt_long_outlined,
-                  title: 'POS Billing',
+                  title: 'POS Billing & Checkout',
                   route: AppRoutes.posCart,
-                  isSelected: currentRoute == AppRoutes.posCart,
-                  badgeText: 'Quick Bill',
+                  isSelected: widget.currentRoute == AppRoutes.posCart,
+                  badgeText: CartState.instance.totalItemCount > 0
+                      ? '${CartState.instance.totalItemCount} in Cart'
+                      : 'Quick Bill',
                   badgeColor: const Color(0xFFDBEAFE),
                   badgeTextColor: const Color(0xFF1D4ED8),
                 ),
                 _buildMenuItem(
                   context,
+                  icon: Icons.qr_code_scanner,
+                  title: 'Live Barcode Scanner',
+                  route: AppRoutes.posScanner,
+                  isSelected: widget.currentRoute == AppRoutes.posScanner,
+                  badgeText: 'Camera Gun',
+                  badgeColor: const Color(0xFFDCFCE7),
+                  badgeTextColor: const Color(0xFF15803D),
+                ),
+                _buildMenuItem(
+                  context,
                   icon: Icons.menu_book_outlined,
-                  title: 'Khata Book',
+                  title: 'Khata Book (Directory)',
                   route: AppRoutes.khataDirectory,
-                  isSelected: currentRoute == AppRoutes.khataDirectory,
-                  badgeText: KhataState.instance.customers
-                          .where((c) => c.balance > 0)
-                          .isNotEmpty
-                      ? '${KhataState.instance.customers.where((c) => c.balance > 0).length} Pending'
+                  isSelected: widget.currentRoute == AppRoutes.khataDirectory,
+                  badgeText: _khataState.customers.where((c) => c.balance > 0).isNotEmpty
+                      ? '${_khataState.customers.where((c) => c.balance > 0).length} Pending'
                       : null,
                   badgeColor: const Color(0xFFDCFCE7),
                   badgeTextColor: const Color(0xFF15803D),
@@ -240,64 +531,90 @@ class SmartKhataDrawer extends StatelessWidget {
                 _buildMenuItem(
                   context,
                   icon: Icons.inventory_2_outlined,
-                  title: 'Inventory & Stock',
+                  title: 'Inventory & Products',
                   route: AppRoutes.inventoryList,
-                  isSelected: currentRoute == AppRoutes.inventoryList,
-                  badgeText: InventoryState.instance.lowStockCount > 0
-                      ? '${InventoryState.instance.lowStockCount} Low'
+                  isSelected: widget.currentRoute == AppRoutes.inventoryList,
+                  badgeText: _inventoryState.lowStockCount > 0
+                      ? '${_inventoryState.lowStockCount} Low'
                       : null,
                   badgeColor: const Color(0xFFFEE2E2),
                   badgeTextColor: const Color(0xFFDC2626),
                 ),
+
+                const SizedBox(height: 10),
+
+                // SECTION 2: REPORTS & ANALYTICS
+                _buildSectionHeader('REPORTS & FINANCES'),
                 _buildMenuItem(
                   context,
-                  icon: Icons.bar_chart_rounded,
+                  icon: Icons.insights_rounded,
                   title: 'Reports & Analytics',
+                  subtitle: 'Daily, Weekly, Monthly Profit & Loss',
                   route: AppRoutes.reports,
-                  isSelected: currentRoute == AppRoutes.reports,
-                ),
-
-                const SizedBox(height: 12),
-
-                // SECTION 2: MANAGEMENT & CONFIGURATION
-                _buildSectionHeader('STORE SETTINGS'),
-                _buildMenuItem(
-                  context,
-                  icon: Icons.settings_outlined,
-                  title: 'Settings & Multi-Store',
-                  route: AppRoutes.settings,
-                  isSelected: currentRoute == AppRoutes.settings,
-                  showArrow: true,
-                ),
-                _buildMenuItem(
-                  context,
-                  icon: Icons.storefront_outlined,
-                  title: 'Shop Profile & Setup',
-                  route: AppRoutes.shopSetup,
-                  isSelected: currentRoute == AppRoutes.shopSetup,
-                  showArrow: true,
+                  isSelected: widget.currentRoute == AppRoutes.reports,
+                  badgeText: 'P&L Graphs',
+                  badgeColor: const Color(0xFFEFF6FF),
+                  badgeTextColor: const Color(0xFF1D4ED8),
                 ),
                 _buildMenuItem(
                   context,
                   icon: Icons.print_outlined,
                   title: 'Receipt & Thermal Printer',
                   route: AppRoutes.receiptPreview,
-                  isSelected: currentRoute == AppRoutes.receiptPreview,
+                  isSelected: widget.currentRoute == AppRoutes.receiptPreview,
+                  badgeText: '58/80mm',
+                ),
+
+                const SizedBox(height: 10),
+
+                // SECTION 3: SYSTEM, MULTI-STORE & SECURITY
+                _buildSectionHeader('MANAGEMENT & SECURITY'),
+                _buildMenuItem(
+                  context,
+                  icon: Icons.settings_outlined,
+                  title: 'Settings & Multi-Store',
+                  subtitle: 'Switch shops, printer & Google Drive',
+                  route: AppRoutes.settings,
+                  isSelected: widget.currentRoute == AppRoutes.settings,
                   showArrow: true,
                 ),
                 _buildMenuItem(
                   context,
-                  icon: Icons.qr_code_scanner,
-                  title: 'Barcode Scanner Gun',
-                  route: AppRoutes.posScanner,
-                  isSelected: currentRoute == AppRoutes.posScanner,
-                  showArrow: true,
+                  icon: Icons.cloud_sync_outlined,
+                  title: 'Google Drive Backup',
+                  subtitle: _driveService.lastBackupTime != null
+                      ? 'Backup: ${_driveService.lastBackupTime!.hour}:${_driveService.lastBackupTime!.minute.toString().padLeft(2, '0')}'
+                      : 'Automatic cloud sync',
+                  route: AppRoutes.settings,
+                  badgeText: _driveService.isConnected ? 'Connected' : 'Offline Ready',
+                  badgeColor: _driveService.isConnected
+                      ? const Color(0xFFDCFCE7)
+                      : const Color(0xFFF1F5F9),
+                  badgeTextColor: _driveService.isConnected
+                      ? const Color(0xFF15803D)
+                      : const Color(0xFF64748B),
+                ),
+                _buildMenuItem(
+                  context,
+                  icon: Icons.security_rounded,
+                  title: 'App Lock & Biometrics',
+                  subtitle: _securityService.isLockEnabled
+                      ? 'Biometric & PIN Enabled'
+                      : 'Protection is currently OFF',
+                  route: AppRoutes.settings,
+                  badgeText: _securityService.isLockEnabled ? 'Active' : 'Disabled',
+                  badgeColor: _securityService.isLockEnabled
+                      ? const Color(0xFFDCFCE7)
+                      : const Color(0xFFFEE2E2),
+                  badgeTextColor: _securityService.isLockEnabled
+                      ? const Color(0xFF15803D)
+                      : const Color(0xFFDC2626),
                 ),
               ],
             ),
           ),
 
-          // 3. Bottom Lock & Logout Actions
+          // ── Bottom Section: Lock & Local Storage Status ────────────────────
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: const BoxDecoration(
@@ -312,28 +629,32 @@ class SmartKhataDrawer extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: () {
                           Navigator.pop(context);
-                          if (SecurityService.instance.isLockEnabled) {
-                            SecurityService.instance.lockApp();
+                          if (_securityService.isLockEnabled) {
+                            _securityService.lockApp();
                             Navigator.pushNamed(context, AppRoutes.appLock);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: const Text('App Lock is currently OFF. You can turn it ON in Settings.'),
+                                content: const Text(
+                                  'App Lock off hai. Aap Settings se PIN set karke on kar sakte hain.',
+                                ),
                                 action: SnackBarAction(
                                   label: 'Settings',
                                   textColor: Colors.yellow,
-                                  onPressed: () => Navigator.pushNamed(context, AppRoutes.settings),
+                                  onPressed: () =>
+                                      Navigator.pushNamed(context, AppRoutes.settings),
                                 ),
                               ),
                             );
                           }
                         },
-                        icon: const Icon(Icons.lock_outline,
-                            size: 16, color: Colors.white),
-                        label: const Text(
-                          'Lock Terminal',
-                          style: TextStyle(
-                            fontSize: 12.5,
+                        icon: const Icon(Icons.lock_outline, size: 16, color: Colors.white),
+                        label: Text(
+                          _securityService.isLockEnabled
+                              ? 'Lock Terminal'
+                              : 'Enable App Lock',
+                          style: const TextStyle(
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
@@ -348,7 +669,8 @@ class SmartKhataDrawer extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
+
                     // Logout Exit Button
                     Container(
                       width: 42,
@@ -372,19 +694,21 @@ class SmartKhataDrawer extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
+
+                // Offline Local Database Auto-Save Status
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    Icon(Icons.check_circle, size: 11, color: Color(0xFF16A34A)),
+                    SizedBox(width: 4),
                     Text(
-                      'SmartKhata • Offline Ready',
+                      'Local Database: Auto-Saved & Offline Ready',
                       style: TextStyle(
-                        fontSize: 10,
-                        color: Color(0xFF94A3B8),
-                        fontWeight: FontWeight.w500,
+                        fontSize: 9.5,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-                    SizedBox(width: 4),
-                    Icon(Icons.bolt, size: 12, color: Color(0xFF16A34A)),
                   ],
                 ),
               ],
@@ -425,14 +749,14 @@ class SmartKhataDrawer extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         Navigator.pop(context); // Close drawer
-        if (route != null && route != currentRoute) {
+        if (route != null && route != widget.currentRoute) {
           if (route == AppRoutes.dashboard) {
             Navigator.pushNamedAndRemoveUntil(
               context,
               AppRoutes.dashboard,
               (r) => false,
             );
-          } else if (currentRoute == AppRoutes.dashboard) {
+          } else if (widget.currentRoute == AppRoutes.dashboard) {
             Navigator.pushNamed(context, route);
           } else {
             Navigator.pushReplacementNamed(context, route);
@@ -464,8 +788,7 @@ class SmartKhataDrawer extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 12.5,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                       color: isSelected
                           ? const Color(0xFF1E1B4B)
                           : const Color(0xFF1E293B),
@@ -495,8 +818,7 @@ class SmartKhataDrawer extends StatelessWidget {
               )
             else if (badgeText != null)
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
                   color: badgeColor ?? const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),

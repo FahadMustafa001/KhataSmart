@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../routes/app_routes.dart';
 
-/// Unified 4-Tab Bottom Navigation Bar for KhataSmart
-/// Connected across Home, POS Sale, Inventory, and Khata Book
+/// Unified 5-Tab Bottom Navigation Bar for KhataSmart
+/// Connected across Home, POS Sale, Inventory, Khata Book, and Reports
 class SmartBottomNavigationBar extends StatelessWidget {
   final String currentRoute;
 
@@ -41,7 +41,7 @@ class SmartBottomNavigationBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 5),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -73,6 +73,13 @@ class SmartBottomNavigationBar extends StatelessWidget {
                 label: 'Khata',
                 route: AppRoutes.khataDirectory,
               ),
+              _buildNavItem(
+                context: context,
+                icon: Icons.insights_rounded,
+                inactiveIcon: Icons.insights_outlined,
+                label: 'Reports',
+                route: AppRoutes.reports,
+              ),
             ],
           ),
         ),
@@ -91,21 +98,21 @@ class SmartBottomNavigationBar extends StatelessWidget {
 
     return InkWell(
       onTap: () => _onTabTapped(context, route),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(14),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3.5),
               decoration: BoxDecoration(
                 color: isActive ? const Color(0xFF0F172A) : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 isActive ? icon : inactiveIcon,
-                size: 20,
+                size: 19,
                 color: isActive ? Colors.white : const Color(0xFF64748B),
               ),
             ),
@@ -113,7 +120,7 @@ class SmartBottomNavigationBar extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 10.5,
+                fontSize: 10,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
                 color: isActive
                     ? const Color(0xFF0F172A)
