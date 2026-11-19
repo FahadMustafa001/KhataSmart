@@ -8,6 +8,7 @@ import '../shared_widgets/custom_app_bar.dart';
 import '../shared_widgets/empty_state_widget.dart';
 import '../shared_widgets/smart_khata_drawer.dart';
 import '../shared_widgets/smart_bottom_navigation_bar.dart';
+import 'widgets/add_party_sheet.dart';
 
 class KhataCustomerItem {
   final String id;
@@ -16,11 +17,16 @@ class KhataCustomerItem {
   final Color avatarBg;
   final Color avatarTextColor;
   final String phone;
+  final String city;
+  final String area;
+  final String address;
+  final double? creditLimit;
   final String activity;
   final double balance;
   final bool isReceivable;
   final bool hasActiveDot;
   final String? note;
+  final PartyType type;
 
   const KhataCustomerItem({
     required this.id,
@@ -29,12 +35,27 @@ class KhataCustomerItem {
     required this.avatarBg,
     required this.avatarTextColor,
     required this.phone,
+    this.city = '',
+    this.area = '',
+    this.address = '',
+    this.creditLimit,
     required this.activity,
     required this.balance,
     this.isReceivable = true,
     this.hasActiveDot = false,
     this.note,
+    this.type = PartyType.customer,
   });
+
+  String get displayLocation {
+    final components = <String>[];
+    if (area.trim().isNotEmpty) components.add(area.trim());
+    if (city.trim().isNotEmpty) components.add(city.trim());
+    if (components.isEmpty && address.trim().isNotEmpty) {
+      components.add(address.trim());
+    }
+    return components.join(', ');
+  }
 }
 
 class KhataDirectoryScreen extends StatefulWidget {
@@ -69,23 +90,29 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
   }
 
   KhataCustomerItem _partyToCustomerItem(PartyModel p) {
-    final parts = p.name.trim().split(' ');
-    final initials =
-        parts.map((e) => e.isNotEmpty ? e[0] : '').take(2).join().toUpperCase();
     return KhataCustomerItem(
       id: p.id,
       name: p.name,
-      initials: initials.isEmpty ? 'KH' : initials,
-      avatarBg:
-          p.balance > 0 ? const Color(0xFFE0F2FE) : const Color(0xFFFFE4E6),
-      avatarTextColor:
-          p.balance > 0 ? const Color(0xFF0369A1) : const Color(0xFFBE123C),
+      initials: p.initials,
+      avatarBg: p.balance > 0
+          ? const Color(0xFFE0F2FE)
+          : (p.balance < 0 ? const Color(0xFFFFE4E6) : const Color(0xFFF1F5F9)),
+      avatarTextColor: p.balance > 0
+          ? const Color(0xFF0369A1)
+          : (p.balance < 0 ? const Color(0xFFBE123C) : const Color(0xFF475569)),
       phone: p.phone,
-      activity: 'Active in Khata',
+      city: p.city,
+      area: p.area,
+      address: p.address,
+      creditLimit: p.creditLimit,
+      activity: p.displayLocation.isNotEmpty
+          ? p.displayLocation
+          : 'Active in Khata',
       balance: p.balance.abs(),
       isReceivable: p.balance >= 0,
-      hasActiveDot: p.balance > 0,
-      note: p.balance < 0 ? 'Advance' : null,
+      hasActiveDot: p.balance != 0,
+      note: p.balance < 0 ? 'Advance / Payable' : null,
+      type: p.type,
     );
   }
 
@@ -94,9 +121,13 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
         _selectedTabIndex == 0 ? _khataState.customers : _khataState.suppliers;
     final list = parties.map(_partyToCustomerItem).toList();
     return list.where((item) {
-      final matchesSearch =
-          item.name.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              item.phone.contains(_searchQuery);
+      final q = _searchQuery.trim().toLowerCase();
+      final matchesSearch = q.isEmpty ||
+          item.name.toLowerCase().contains(q) ||
+          item.phone.contains(q) ||
+          item.city.toLowerCase().contains(q) ||
+          item.area.toLowerCase().contains(q) ||
+          item.address.toLowerCase().contains(q);
       if (!matchesSearch) return false;
 
       if (_selectedFilter == '> 30 Days Due') {
@@ -113,132 +144,10 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
   }
 
   void _showAddNewAccountDialog() {
-    final nameCtrl = TextEditingController();
-    final phoneCtrl = TextEditingController();
-    final balanceCtrl = TextEditingController(text: '0');
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return Container(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    _selectedTabIndex == 0
-                        ? 'Add New Customer'
-                        : 'Add New Supplier',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
-                    ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(ctx),
-                  ),
-                ],
-              ),
-              const Divider(height: 16),
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Full Name',
-                  hintText: 'Enter name',
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: phoneCtrl,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  hintText: '03XXXXXXXXX',
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: balanceCtrl,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: 'Opening Balance (PKR)',
-                  hintText: '0',
-                  filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 18),
-              ElevatedButton(
-                onPressed: () {
-                  final name = nameCtrl.text.trim();
-                  if (name.isNotEmpty) {
-                    final party = PartyModel(
-                      id: 'p_${DateTime.now().millisecondsSinceEpoch}',
-                      name: name,
-                      phone: phoneCtrl.text.trim().isEmpty
-                          ? '+92 300 0000000'
-                          : phoneCtrl.text.trim(),
-                      type: _selectedTabIndex == 0
-                          ? PartyType.customer
-                          : PartyType.supplier,
-                      balance: double.tryParse(balanceCtrl.text) ?? 0.0,
-                    );
-                    KhataState.instance.addParty(party);
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Added $name to Khata Book')),
-                    );
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F172A),
-                  minimumSize: const Size(double.infinity, 46),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text(
-                  'Save to Khata Book',
-                  style: TextStyle(
-                      color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    AddPartySheet.show(
+      context,
+      initialType:
+          _selectedTabIndex == 0 ? PartyType.customer : PartyType.supplier,
     );
   }
 
@@ -762,14 +671,22 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
   Widget _buildKhataCard(KhataCustomerItem item) {
     return GestureDetector(
       onTap: () {
-        final party = PartyModel(
-          id: item.id,
-          name: item.name,
-          phone: item.phone,
-          type:
-              _selectedTabIndex == 0 ? PartyType.customer : PartyType.supplier,
-          balance: item.balance,
-        );
+        PartyModel party;
+        try {
+          party = _khataState.parties.firstWhere((p) => p.id == item.id);
+        } catch (_) {
+          party = PartyModel(
+            id: item.id,
+            name: item.name,
+            phone: item.phone,
+            type: item.type,
+            city: item.city,
+            area: item.area,
+            address: item.address,
+            creditLimit: item.creditLimit,
+            balance: item.isReceivable ? item.balance : -item.balance,
+          );
+        }
         Navigator.pushNamed(context, AppRoutes.partyLedgerDetail,
             arguments: party);
       },
@@ -812,7 +729,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
             ),
             const SizedBox(width: 12),
 
-            // Name, Phone & Activity
+            // Name, Phone, Location & Activity
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -857,23 +774,51 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time,
-                          size: 10, color: Color(0xFF94A3B8)),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          item.activity,
-                          style: const TextStyle(
-                              fontSize: 9.5, color: Color(0xFF94A3B8)),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+
+                  // Kahan Se Hai (Location Badge)
+                  if (item.displayLocation.isNotEmpty) ...[
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 11, color: Color(0xFF2563EB)),
+                        const SizedBox(width: 3),
+                        Expanded(
+                          child: Text(
+                            item.displayLocation,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF2563EB),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  // Credit limit indicator
+                  if (item.creditLimit != null && item.creditLimit! > 0) ...[
+                    const SizedBox(height: 3),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Text(
+                        'Udhaar Limit: PKR ${item.creditLimit!.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF475569),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -887,9 +832,11 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: item.isReceivable
-                        ? const Color(0xFF15803D)
-                        : const Color(0xFFDC2626),
+                    color: item.balance == 0
+                        ? const Color(0xFF64748B)
+                        : (item.isReceivable
+                            ? const Color(0xFF15803D)
+                            : const Color(0xFFDC2626)),
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -897,24 +844,30 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                   decoration: BoxDecoration(
-                    color: item.isReceivable
-                        ? const Color(0xFFDCFCE7)
-                        : const Color(0xFFFEE2E2),
+                    color: item.balance == 0
+                        ? const Color(0xFFF1F5F9)
+                        : (item.isReceivable
+                            ? const Color(0xFFDCFCE7)
+                            : const Color(0xFFFEE2E2)),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   child: Text(
-                    item.isReceivable ? 'Receivable' : 'Advance (Payable)',
+                    item.balance == 0
+                        ? 'Chukta (Settled)'
+                        : (item.isReceivable ? 'Receivable' : 'Advance (Payable)'),
                     style: TextStyle(
                       fontSize: 8.5,
                       fontWeight: FontWeight.bold,
-                      color: item.isReceivable
-                          ? const Color(0xFF15803D)
-                          : const Color(0xFFDC2626),
+                      color: item.balance == 0
+                          ? const Color(0xFF475569)
+                          : (item.isReceivable
+                              ? const Color(0xFF15803D)
+                              : const Color(0xFFDC2626)),
                     ),
                   ),
                 ),
                 const SizedBox(height: 4),
-                if (item.isReceivable)
+                if (item.isReceivable && item.balance > 0)
                   GestureDetector(
                     onTap: () {
                       ScaffoldMessenger.of(context).showSnackBar(

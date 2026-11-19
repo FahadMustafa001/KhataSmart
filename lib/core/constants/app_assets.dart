@@ -7,6 +7,7 @@ class AppAssets {
 
   // Images paths
   static const String appLogo = 'assets/images/smartkhata_app_icon.png';
+  static const String appLockIllustration = 'assets/images/app_lock_illustration.png';
   static const String emptyState = 'assets/images/emptyState.png';
   static const String receiptWatermark = 'assets/images/receiptWatermark.png';
 }

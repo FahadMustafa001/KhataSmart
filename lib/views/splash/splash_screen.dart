@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
 import '../../routes/app_routes.dart';
+import '../../services/local_database_service.dart';
+import '../../services/security_service.dart';
+import '../../state/shop_state.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -13,22 +16,32 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  Timer? _timer;
-
   @override
   void initState() {
     super.initState();
-    _timer = Timer(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, AppRoutes.auth);
-      }
-    });
+    _initializeApp();
   }
 
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
+  Future<void> _initializeApp() async {
+    // 1. Initialize local database while splash screen is visible
+    await LocalDatabaseService.instance.init();
+
+    // 2. Minimum display time (1.2 seconds) for smooth branding display
+    await Future.delayed(const Duration(milliseconds: 1200));
+
+    if (!mounted) return;
+
+    if (SecurityService.instance.isLockEnabled) {
+      SecurityService.instance.lockApp();
+      Navigator.pushReplacementNamed(context, AppRoutes.appLock);
+    } else {
+      if (ShopState.instance.activeShop.phone.isNotEmpty ||
+          ShopState.instance.activeShop.name != 'My Store') {
+        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      } else {
+        Navigator.pushReplacementNamed(context, AppRoutes.auth);
+      }
+    }
   }
 
   @override

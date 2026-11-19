@@ -114,7 +114,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     final p = widget.party;
     _partyName = p?.name ?? 'Account';
     _partyPhone = p?.phone ?? '';
-    _partyAddress = p?.address.isNotEmpty == true ? p!.address : '';
+    _partyAddress = p?.displayLocation.isNotEmpty == true
+        ? p!.displayLocation
+        : (p?.address ?? '');
     _partyId = p?.id ?? '';
     _balance = p?.balance ?? 0.0;
 
@@ -174,25 +176,25 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               }
             },
           ),
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Customer Ledger',
-              style: TextStyle(
+              '${_currentParty?.type == PartyType.supplier ? "Supplier" : "Customer"} Ledger',
+              style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 1),
+            const SizedBox(height: 1),
             Row(
               children: [
-                Icon(Icons.circle, color: Color(0xFF22C55E), size: 6),
-                SizedBox(width: 4),
+                const Icon(Icons.circle, color: Color(0xFF22C55E), size: 6),
+                const SizedBox(width: 4),
                 Text(
-                  'ID: CUST-0492 • Khata Book',
-                  style: TextStyle(
+                  'ID: ${_partyId.length > 8 ? _partyId.substring(0, 8) : _partyId} • Khata Book',
+                  style: const TextStyle(
                     color: Color(0xFF94A3B8),
                     fontSize: 10.5,
                   ),
@@ -314,6 +316,14 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
 
   // 1. Customer Profile Card
   Widget _buildCustomerProfileCard() {
+    final party = _currentParty;
+    final initials = party?.initials ??
+        (_partyName.isNotEmpty ? _partyName[0].toUpperCase() : 'KH');
+    final isSupplier = party?.type == PartyType.supplier;
+    final locationText = party?.displayLocation.isNotEmpty == true
+        ? party!.displayLocation
+        : _partyAddress;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -322,23 +332,26 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Initials Avatar
           Stack(
             children: [
               Container(
-                width: 44,
-                height: 44,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF0F172A),
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: isSupplier
+                      ? const Color(0xFFEA580C)
+                      : const Color(0xFF0F172A),
                   shape: BoxShape.circle,
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
-                    'TM',
-                    style: TextStyle(
+                    initials,
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -371,37 +384,66 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               children: [
                 Row(
                   children: [
-                    Text(
-                      _partyName,
-                      style: const TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                    Flexible(
+                      child: Text(
+                        _partyName,
+                        style: const TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1.5),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFDBEAFE),
+                        color: isSupplier
+                            ? const Color(0xFFFFF7ED)
+                            : const Color(0xFFDBEAFE),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: const Text(
-                        'Verified',
+                      child: Text(
+                        isSupplier ? 'Supplier' : 'Customer',
                         style: TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1D4ED8),
+                          color: isSupplier
+                              ? const Color(0xFFC2410C)
+                              : const Color(0xFF1D4ED8),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  _partyAddress,
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
-                ),
+
+                // Location / Kahan Se Hai
+                if (locationText.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.location_on_outlined,
+                          size: 11, color: Color(0xFF2563EB)),
+                      const SizedBox(width: 3),
+                      Expanded(
+                        child: Text(
+                          locationText,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF2563EB),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+
                 const SizedBox(height: 2),
                 Row(
                   children: [
@@ -417,14 +459,29 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                     ),
                   ],
                 ),
+
+                // Credit Limit
+                if (party?.creditLimit != null && party!.creditLimit! > 0) ...[
+                  const SizedBox(height: 3),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 5, vertical: 1.5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Udhaar Limit: PKR ${party.creditLimit!.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF475569),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
-          ),
-
-          // Edit Icon
-          IconButton(
-            icon: const Icon(Icons.edit_outlined, size: 18, color: Color(0xFF94A3B8)),
-            onPressed: () {},
           ),
         ],
       ),

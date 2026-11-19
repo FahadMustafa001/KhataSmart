@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_assets.dart';
+import '../../routes/app_routes.dart';
 import '../../services/security_service.dart';
 import '../../state/shop_state.dart';
 
@@ -19,6 +21,17 @@ class AppLockScreen extends StatefulWidget {
 class _AppLockScreenState extends State<AppLockScreen> {
   String _enteredPin = '';
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    // Auto-prompt biometric scan if biometric unlock is enabled
+    if (SecurityService.instance.isBiometricEnabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _handleBiometric();
+      });
+    }
+  }
 
   void _onKeyPress(String val) {
     if (_enteredPin.length < 4) {
@@ -42,14 +55,20 @@ class _AppLockScreenState extends State<AppLockScreen> {
     }
   }
 
+  void _completeUnlock() {
+    if (widget.onSuccess != null) {
+      widget.onSuccess!();
+    } else if (Navigator.canPop(context)) {
+      Navigator.pop(context, true);
+    } else {
+      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+    }
+  }
+
   void _verifyPin() {
     final valid = SecurityService.instance.verifyPin(_enteredPin);
     if (valid) {
-      if (widget.onSuccess != null) {
-        widget.onSuccess!();
-      } else {
-        Navigator.pop(context, true);
-      }
+      _completeUnlock();
     } else {
       setState(() {
         _errorMessage = 'Incorrect PIN. Please try again.';
@@ -59,13 +78,9 @@ class _AppLockScreenState extends State<AppLockScreen> {
   }
 
   Future<void> _handleBiometric() async {
-    final success = await SecurityService.instance.simulateBiometricAuth();
+    final success = await SecurityService.instance.authenticateWithBiometrics();
     if (success && mounted) {
-      if (widget.onSuccess != null) {
-        widget.onSuccess!();
-      } else {
-        Navigator.pop(context, true);
-      }
+      _completeUnlock();
     }
   }
 
@@ -180,11 +195,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                         backgroundColor: Color(0xFF16A34A),
                       ),
                     );
-                    if (widget.onSuccess != null) {
-                      widget.onSuccess!();
-                    } else {
-                      Navigator.pop(context, true);
-                    }
+                    _completeUnlock();
                   } else {
                     setDialogState(() => dialogError = 'Incorrect answer. Try again.');
                   }
@@ -211,19 +222,28 @@ class _AppLockScreenState extends State<AppLockScreen> {
           child: Column(
             children: [
               const SizedBox(height: 24),
-              // Header Icon & Title
+              // 3D Padlock Security Illustration with Glow
               Container(
-                width: 64,
-                height: 64,
+                width: 92,
+                height: 92,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF334155), width: 1.5),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                      blurRadius: 26,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-                child: const Icon(
-                  Icons.shield_outlined,
-                  color: Color(0xFF38BDF8),
-                  size: 32,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: Image.asset(
+                    AppAssets.appLockIllustration,
+                    width: 92,
+                    height: 92,
+                    fit: BoxFit.contain,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),

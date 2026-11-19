@@ -6,8 +6,14 @@ class PartyModel {
   final String phone;
   final PartyType type;
   final String address;
+  final String city;
+  final String area;
+  final String cnic;
+  final double? creditLimit;
+  final String notes;
   double balance; // Positive: They owe us (Lene Hain), Negative: We owe them (Dene Hain)
   final String shopId;
+  final DateTime? createdAt;
 
   PartyModel({
     required this.id,
@@ -15,12 +21,37 @@ class PartyModel {
     required this.phone,
     required this.type,
     this.address = '',
+    this.city = '',
+    this.area = '',
+    this.cnic = '',
+    this.creditLimit,
+    this.notes = '',
     this.balance = 0.0,
     this.shopId = 'shop_1',
-  });
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
 
   bool get willGet => balance > 0;
   bool get willGive => balance < 0;
+
+  String get initials {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts[0].isEmpty) return 'KH';
+    if (parts.length == 1) {
+      return parts[0].substring(0, parts[0].length >= 2 ? 2 : 1).toUpperCase();
+    }
+    return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+  }
+
+  String get displayLocation {
+    final components = <String>[];
+    if (area.trim().isNotEmpty) components.add(area.trim());
+    if (city.trim().isNotEmpty) components.add(city.trim());
+    if (components.isEmpty && address.trim().isNotEmpty) {
+      components.add(address.trim());
+    }
+    return components.join(', ');
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -29,8 +60,14 @@ class PartyModel {
       'phone': phone,
       'type': type == PartyType.customer ? 'customer' : 'supplier',
       'address': address,
+      'city': city,
+      'area': area,
+      'cnic': cnic,
+      'creditLimit': creditLimit,
+      'notes': notes,
       'balance': balance,
       'shopId': shopId,
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 
@@ -41,8 +78,16 @@ class PartyModel {
       phone: map['phone'] ?? '',
       type: map['type'] == 'supplier' ? PartyType.supplier : PartyType.customer,
       address: map['address'] ?? '',
+      city: map['city'] ?? '',
+      area: map['area'] ?? '',
+      cnic: map['cnic'] ?? '',
+      creditLimit: (map['creditLimit'] as num?)?.toDouble(),
+      notes: map['notes'] ?? '',
       balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
       shopId: map['shopId'] ?? 'shop_1',
+      createdAt: map['createdAt'] != null
+          ? DateTime.tryParse(map['createdAt'])
+          : null,
     );
   }
 }

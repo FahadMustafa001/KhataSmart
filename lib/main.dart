@@ -2,21 +2,60 @@ import 'package:flutter/material.dart';
 import 'core/constants/app_strings.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
-import 'services/local_database_service.dart';
+import 'services/security_service.dart';
 
-void main() async {
+final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
+
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize and load offline database
-  await LocalDatabaseService.instance.init();
+  // Mount Flutter root immediately so splash screen renders at 0ms without delay
   runApp(const SmartKhataApp());
 }
 
-class SmartKhataApp extends StatelessWidget {
+class SmartKhataApp extends StatefulWidget {
   const SmartKhataApp({super.key});
+
+  @override
+  State<SmartKhataApp> createState() => _SmartKhataAppState();
+}
+
+class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserver {
+  DateTime? _pausedTime;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _pausedTime = DateTime.now();
+    } else if (state == AppLifecycleState.resumed) {
+      if (SecurityService.instance.isLockEnabled) {
+        final elapsed = _pausedTime != null
+            ? DateTime.now().difference(_pausedTime!).inSeconds
+            : 10;
+        // Auto-lock when coming back from background (3+ seconds)
+        if (elapsed >= 3) {
+          SecurityService.instance.lockApp();
+          appNavigatorKey.currentState?.pushNamed(AppRoutes.appLock);
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: appNavigatorKey,
       debugShowCheckedModeBanner: false,
       title: AppStrings.appName,
       theme: AppTheme.lightTheme,
