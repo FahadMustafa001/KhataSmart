@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../models/ledger_entry_model.dart';
+import '../../routes/app_routes.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
+import '../shared_widgets/smart_bottom_navigation_bar.dart';
 
 enum ReportPeriod { today, week, month, year }
 
@@ -308,6 +310,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
             _buildDetailedBillsSection(filteredOrders),
             const SizedBox(height: 30),
           ],
+        ),
+        bottomNavigationBar: const SmartBottomNavigationBar(
+          currentRoute: AppRoutes.reports,
         ),
       ),
     );
