@@ -48,6 +48,10 @@ dependencies:
   cloud_firestore: ^5.4.4
   google_sign_in: ^6.2.1
 
+  # 11. Google Drive REST API & HTTP Client
+  googleapis: ^13.2.0
+  http: ^1.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

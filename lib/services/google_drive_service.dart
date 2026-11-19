@@ -1,10 +1,43 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:http/http.dart' as http;
 import 'local_database_service.dart';
 
+/// Authenticated HTTP Client adapter for Google Drive API
+class GoogleAuthClient extends http.BaseClient {
+  final Map<String, String> _headers;
+  final http.Client _client = http.Client();
+
+  GoogleAuthClient(this._headers);
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    return _client.send(request..headers.addAll(_headers));
+  }
+
+  @override
+  void close() {
+    _client.close();
+    super.close();
+  }
+}
+
+/// Real Google Drive Cloud Backup Service
+/// Securely saves store backups to each user's personal 15 GB Google Drive
 class GoogleDriveService extends ChangeNotifier {
   static final GoogleDriveService instance = GoogleDriveService._();
   GoogleDriveService._();
+
+  static const String _backupFileName = 'KhataSmart_Backup.json';
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: [
+      drive.DriveApi.driveFileScope,
+      'email',
+    ],
+  );
 
   bool _isConnected = false;
   String? _userEmail;
@@ -40,24 +73,31 @@ class GoogleDriveService extends ChangeNotifier {
     return '${kb.toStringAsFixed(1)} KB';
   }
 
-  /// Connects account credentials for Drive backup management.
-  Future<bool> connectAccount({required String email, String? displayName}) async {
+  /// Connects user's personal Google account with Drive scope
+  Future<bool> connectAccount({String? email, String? displayName}) async {
     _isSyncing = true;
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(milliseconds: 700));
+      GoogleSignInAccount? account = await _googleSignIn.signInSilently();
+      account ??= await _googleSignIn.signIn();
+
+      if (account == null) {
+        _isSyncing = false;
+        notifyListeners();
+        return false;
+      }
 
       _isConnected = true;
-      _userEmail = email.trim();
-      _userName = displayName ?? email.split('@').first;
+      _userEmail = account.email;
+      _userName = account.displayName ?? (displayName ?? account.email.split('@').first);
       _isSyncing = false;
       notifyListeners();
 
       await LocalDatabaseService.instance.persistToDisk();
       return true;
     } catch (e) {
-      debugPrint('GoogleDrive connect error: $e');
+      debugPrint('Google Drive connect error: $e');
       _isSyncing = false;
       notifyListeners();
       return false;
@@ -66,6 +106,10 @@ class GoogleDriveService extends ChangeNotifier {
 
   /// Disconnects the active Drive account and clears cached metadata.
   Future<void> disconnectAccount() async {
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
+
     _isConnected = false;
     _userEmail = null;
     _userName = null;
@@ -83,22 +127,67 @@ class GoogleDriveService extends ChangeNotifier {
     LocalDatabaseService.instance.persistToDisk();
   }
 
-  /// Exports local database JSON payload and uploads backup to Drive storage.
+  /// Exports local database JSON payload and uploads backup to user's Google Drive.
   Future<Map<String, dynamic>> backupToDrive() async {
-    if (!_isConnected) {
-      return {'success': false, 'error': 'Google Drive account is not connected'};
-    }
-
     _isSyncing = true;
     notifyListeners();
 
     try {
-      await LocalDatabaseService.instance.persistToDisk();
+      GoogleSignInAccount? account = await _googleSignIn.signInSilently();
+      account ??= await _googleSignIn.signIn();
 
+      if (account == null) {
+        _isSyncing = false;
+        notifyListeners();
+        return {'success': false, 'error': 'Google account is not connected'};
+      }
+
+      _isConnected = true;
+      _userEmail = account.email;
+      _userName = account.displayName ?? account.email.split('@').first;
+
+      final authHeaders = await account.authHeaders;
+      final authClient = GoogleAuthClient(authHeaders);
+      final driveApi = drive.DriveApi(authClient);
+
+      await LocalDatabaseService.instance.persistToDisk();
       final jsonPayload = await LocalDatabaseService.instance.exportDatabaseJson();
       final bytes = utf8.encode(jsonPayload);
 
-      await Future.delayed(const Duration(milliseconds: 900));
+      final media = drive.Media(
+        Stream.value(bytes),
+        bytes.length,
+        contentType: 'application/json',
+      );
+
+      // Search for existing file in user's Drive
+      final fileList = await driveApi.files.list(
+        q: "name = '$_backupFileName' and trashed = false",
+        spaces: 'drive',
+        $fields: 'files(id, name, modifiedTime, size)',
+      );
+
+      if (fileList.files != null && fileList.files!.isNotEmpty) {
+        // Update existing backup file
+        final fileId = fileList.files!.first.id!;
+        final fileUpdate = drive.File();
+        await driveApi.files.update(
+          fileUpdate,
+          fileId,
+          uploadMedia: media,
+        );
+      } else {
+        // Create new backup file in Google Drive
+        final newFile = drive.File()
+          ..name = _backupFileName
+          ..description = 'KhataSmart Store Ledger & Inventory Database Backup'
+          ..mimeType = 'application/json';
+
+        await driveApi.files.create(
+          newFile,
+          uploadMedia: media,
+        );
+      }
 
       _lastBackupTime = DateTime.now();
       _lastBackupSizeBytes = bytes.length;
@@ -111,43 +200,93 @@ class GoogleDriveService extends ChangeNotifier {
         'success': true,
         'size': formattedBackupSize,
         'timestamp': formattedLastBackup,
-        'fileName': 'khatasmart_backup_${_lastBackupTime!.millisecondsSinceEpoch}.json',
+        'fileName': _backupFileName,
       };
     } catch (e) {
+      debugPrint('Google Drive Backup Error: $e');
       _isSyncing = false;
       notifyListeners();
       return {'success': false, 'error': e.toString()};
     }
   }
 
-  /// Restores database state from cloud backup snapshot.
+  /// Restores database state from cloud backup snapshot in user's personal Drive.
   Future<Map<String, dynamic>> restoreFromDrive() async {
-    if (!_isConnected) {
-      return {'success': false, 'error': 'Google Drive is not linked'};
-    }
-
     _isSyncing = true;
     notifyListeners();
 
     try {
-      await Future.delayed(const Duration(milliseconds: 900));
+      GoogleSignInAccount? account = await _googleSignIn.signInSilently();
+      account ??= await _googleSignIn.signIn();
 
-      final existingJson = await LocalDatabaseService.instance.exportDatabaseJson();
-      if (existingJson.isEmpty || existingJson == '{}') {
+      if (account == null) {
         _isSyncing = false;
         notifyListeners();
-        return {'success': false, 'error': 'No backup found in Google Drive'};
+        return {'success': false, 'error': 'Google account is not connected'};
       }
 
-      final success = await LocalDatabaseService.instance.restoreDatabaseFromJson(existingJson);
-      _isSyncing = false;
-      notifyListeners();
+      _isConnected = true;
+      _userEmail = account.email;
+      _userName = account.displayName ?? account.email.split('@').first;
 
-      return {
-        'success': success,
-        'timestamp': formattedLastBackup,
-      };
+      final authHeaders = await account.authHeaders;
+      final authClient = GoogleAuthClient(authHeaders);
+      final driveApi = drive.DriveApi(authClient);
+
+      final fileList = await driveApi.files.list(
+        q: "name = '$_backupFileName' and trashed = false",
+        spaces: 'drive',
+        $fields: 'files(id, name, modifiedTime, size)',
+      );
+
+      if (fileList.files == null || fileList.files!.isEmpty) {
+        _isSyncing = false;
+        notifyListeners();
+        return {
+          'success': false,
+          'error': 'No $_backupFileName found in your Google Drive. Please create a backup first.'
+        };
+      }
+
+      final file = fileList.files!.first;
+      final fileId = file.id!;
+
+      final drive.Media downloadedMedia = await driveApi.files.get(
+        fileId,
+        downloadOptions: drive.DownloadOptions.fullMedia,
+      ) as drive.Media;
+
+      final List<int> bytes = [];
+      await for (final chunk in downloadedMedia.stream) {
+        bytes.addAll(chunk);
+      }
+
+      final jsonContent = utf8.decode(bytes);
+      final success = await LocalDatabaseService.instance.restoreDatabaseFromJson(jsonContent);
+
+      _isSyncing = false;
+      if (success) {
+        _lastBackupTime = file.modifiedTime ?? DateTime.now();
+        if (file.size != null) {
+          _lastBackupSizeBytes = int.tryParse(file.size!) ?? bytes.length;
+        } else {
+          _lastBackupSizeBytes = bytes.length;
+        }
+        notifyListeners();
+        await LocalDatabaseService.instance.persistToDisk();
+        return {
+          'success': true,
+          'timestamp': formattedLastBackup,
+        };
+      } else {
+        notifyListeners();
+        return {
+          'success': false,
+          'error': 'Failed to parse database backup from Google Drive',
+        };
+      }
     } catch (e) {
+      debugPrint('Google Drive Restore Error: $e');
       _isSyncing = false;
       notifyListeners();
       return {'success': false, 'error': e.toString()};

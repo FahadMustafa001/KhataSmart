@@ -616,72 +616,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _handleGoogleDriveConnect() {
-    final emailCtrl = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Row(
-          children: [
-            Icon(Icons.add_to_drive, color: Color(0xFF2563EB)),
-            SizedBox(width: 8),
-            Text('Connect Google Drive', style: TextStyle(fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Enter your Google account email to link your personal 15 GB Google Drive for automated ledger backup:',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: 'Google Email',
-                hintText: 'e.g. store.owner@gmail.com',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+  Future<void> _handleGoogleDriveConnect() async {
+    final ok = await GoogleDriveService.instance.connectAccount();
+    if (mounted) {
+      if (ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google Drive linked successfully: ${GoogleDriveService.instance.userEmail}!'),
+            backgroundColor: const Color(0xFF16A34A),
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
-            ),
-            onPressed: () async {
-              final email = emailCtrl.text.trim();
-              if (email.isNotEmpty && email.contains('@')) {
-                Navigator.pop(ctx);
-                final ok = await GoogleDriveService.instance.connectAccount(email: email);
-                if (ok && mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Google Drive linked successfully with $email!'),
-                      backgroundColor: const Color(0xFF16A34A),
-                    ),
-                  );
-                }
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter a valid Google email address')),
-                );
-              }
-            },
-            child: const Text('Link Drive', style: TextStyle(color: Colors.white)),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not link Google Drive or sign-in cancelled.'),
           ),
-        ],
-      ),
-    );
+        );
+      }
+    }
   }
 
   @override
