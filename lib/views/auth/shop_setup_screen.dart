@@ -91,7 +91,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
           ),
           title: Row(
             children: [
-              // App Mini Icon
               ClipRRect(
                 borderRadius: BorderRadius.circular(7),
                 child: Image.asset(
@@ -128,7 +127,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Step Tracker
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -169,7 +167,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
               const SizedBox(height: 8),
 
-              // Two Progress Bars
               Row(
                 children: [
                   Expanded(
@@ -196,7 +193,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
               const SizedBox(height: 4),
 
-              // Step Labels below bars
               const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -219,7 +215,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
               const SizedBox(height: 18),
 
-              // Main Store Setup Card
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -230,7 +225,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Card Header Row
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -276,7 +270,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        // Store Icon with Badge
                         Stack(
                           alignment: Alignment.topRight,
                           children: [
@@ -312,7 +305,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Store Name *
                     _buildFieldLabel(
                       label: 'Store Name',
                       isRequired: true,
@@ -327,7 +319,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
                     const SizedBox(height: 14),
 
-                    // Owner / Proprietor Name *
                     _buildFieldLabel(
                       label: 'Owner / Proprietor Name',
                       isRequired: true,
@@ -341,7 +332,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
                     const SizedBox(height: 14),
 
-                    // Mobile / WhatsApp Number *
                     _buildFieldLabel(
                       label: 'Mobile / WhatsApp Number',
                       isRequired: true,
@@ -430,7 +420,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
                     const SizedBox(height: 14),
 
-                    // City & Market Location *
                     _buildFieldLabel(
                       label: 'City & Market Location',
                       isRequired: true,
@@ -446,7 +435,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
               ),
 
               const SizedBox(height: 18),
-              // Offline Info Banner
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -498,7 +486,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
 
               const SizedBox(height: 20),
 
-              // Main Action Button
               SizedBox(
                 width: double.infinity,
                 height: 50,
@@ -537,7 +524,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
     );
   }
 
-  // Helper widget for clean field labels
   Widget _buildFieldLabel({
     required String label,
     required bool isRequired,
@@ -579,7 +565,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
     );
   }
 
-  // Helper widget for clean inputs
   Widget _buildInputField({
     required TextEditingController controller,
     required IconData prefixIcon,

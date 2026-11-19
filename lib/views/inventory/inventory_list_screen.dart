@@ -420,27 +420,22 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title Row: Stock & Products count + action buttons
                   _buildTitleRow(context),
 
                   const SizedBox(height: 10),
 
-                  // Metrics Banner: Total Valuation & Low Stock Alerts
                   _buildMetricsRow(),
 
                   const SizedBox(height: 12),
 
-                  // Search field
                   _buildSearchField(),
 
                   const SizedBox(height: 10),
 
-                  // Horizontal Filter Chips
                   _buildFilterChips(),
 
                   const SizedBox(height: 12),
 
-                  // Section heading
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -478,7 +473,6 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
 
                   const SizedBox(height: 8),
 
-                  // Product list or empty state
                   if (products.isEmpty)
                     _buildEmptyState()
                   else ...[
@@ -495,7 +489,6 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
         ],
       ),
 
-      // FAB: Add Product
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 50),
         child: FloatingActionButton(
@@ -509,7 +502,6 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
         ),
       ),
 
-      // Bottom Navigation Bar
       bottomNavigationBar: const SmartBottomNavigationBar(
         currentRoute: AppRoutes.inventoryList,
       ),

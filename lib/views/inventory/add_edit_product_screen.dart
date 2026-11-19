@@ -200,27 +200,14 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // CARD 1: PRODUCT IDENTIFICATION
             _buildProductIdentificationCard(),
-
             const SizedBox(height: 12),
-
-            // CARD 2: PRICING & RETAIL MARGIN
             _buildPricingMarginCard(),
-
             const SizedBox(height: 12),
-
-            // CARD 3: INITIAL STOCK & ALERTS
             _buildInitialStockAlertsCard(),
-
             const SizedBox(height: 12),
-
-            // CARD 4: TRACK EXPIRY & BATCH SWITCH
             _buildTrackExpiryCard(),
-
             const SizedBox(height: 20),
-
-            // Primary Save Button
             ElevatedButton(
               onPressed: _onSaveProduct,
               style: ElevatedButton.styleFrom(
@@ -248,10 +235,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 10),
-
-            // Footer note
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [

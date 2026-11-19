@@ -540,7 +540,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
         body: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           children: [
-            // 1. MULTI-SHOP MANAGEMENT SECTION
             _buildSectionCard(
               title: 'Multi-Store & Branches',
               icon: Icons.store_rounded,
@@ -551,7 +550,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               child: Column(
                 children: [
-                  // Active Shop Banner
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -620,7 +618,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // All registered shops list
                   const Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -681,7 +678,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 2. SECURITY & APP LOCK SECTION (By default OFF as requested)
             _buildSectionCard(
               title: 'Security & App Lock',
               icon: Icons.security_rounded,
@@ -777,7 +773,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 3. PRINTER & THERMAL RECEIPT SECTION
             _buildSectionCard(
               title: 'Thermal Printer & Receipt',
               icon: Icons.print_outlined,
@@ -823,7 +818,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 4. REAL GOOGLE DRIVE BACKUP & RESTORE SECTION
             _buildSectionCard(
               title: 'Google Drive Cloud Backup',
               icon: Icons.cloud_done_outlined,

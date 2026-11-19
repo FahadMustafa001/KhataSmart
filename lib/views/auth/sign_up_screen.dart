@@ -92,7 +92,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 1. Top Logo with Status Dot Badge
                   Stack(
                     alignment: Alignment.bottomRight,
                     clipBehavior: Clip.none,
@@ -144,7 +143,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 2. Headings
                   const Text(
                     'Create Account',
                     style: TextStyle(
@@ -166,7 +164,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 24),
 
-                  // 3. Full Name
                   _buildField(
                     label: 'Full Name / Business Owner',
                     controller: _fullNameController,
@@ -177,7 +174,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 14),
 
-                  // 4. Mobile Number
                   _buildField(
                     label: 'Mobile Number (WhatsApp)',
                     controller: _phoneController,
@@ -193,7 +189,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 14),
 
-                  // 5. Email Address
                   _buildField(
                     label: 'Email Address',
                     controller: _emailController,
@@ -209,7 +204,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 14),
 
-                  // 6. Password
                   _buildField(
                     label: 'Create Password',
                     controller: _passwordController,
@@ -227,7 +221,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 14),
 
-                  // 7. Confirm Password
                   _buildField(
                     label: 'Confirm Password',
                     controller: _confirmPasswordController,
@@ -245,7 +238,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 16),
 
-                  // 8. Terms Checkbox
                   Row(
                     children: [
                       SizedBox(
@@ -270,7 +262,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 20),
 
-                  // 9. Sign Up Submit Button
                   SizedBox(
                     width: double.infinity,
                     height: 48,
@@ -303,7 +294,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 18),
 
-                  // 10. Already have an account? Sign In Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

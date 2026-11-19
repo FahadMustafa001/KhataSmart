@@ -366,44 +366,36 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
 
       body: Column(
         children: [
-          // Scrollable Body
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 1. Customer Profile Card
                   _buildCustomerProfileCard(),
 
                   const SizedBox(height: 10),
 
-                  // 2. Net Outstanding Balance Card
                   _buildNetBalanceCard(),
 
                   const SizedBox(height: 10),
 
-                  // 3. Quick Action Buttons Row: WhatsApp, Direct Call, Statement
                   _buildActionButtonsRow(),
 
                   const SizedBox(height: 10),
 
-                  // 4. Debit & Credit Totals Row
                   _buildTotalsRow(),
 
                   const SizedBox(height: 14),
 
-                  // 5. Transaction Statement Header
                   _buildTransactionStatementHeader(),
 
                   const SizedBox(height: 8),
 
-                  // 6. Subheader Table Column Names
                   _buildTableColumnHeader(),
 
                   const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
-                  // 7. Transaction Feed Entries
                   if (_partyTransactions.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),

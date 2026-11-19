@@ -62,13 +62,11 @@ class _SplashScreenState extends State<SplashScreen> {
             child: Column(
               children: [
                 const Spacer(flex: 2),
-                // Central Brand Icon with "SYNC ON" Badge
                 Center(
                   child: Stack(
                     alignment: Alignment.bottomCenter,
                     clipBehavior: Clip.none,
                     children: [
-                      // Outer Card with App Icon Image
                       Container(
                         width: 135,
                         height: 135,
@@ -93,7 +91,6 @@ class _SplashScreenState extends State<SplashScreen> {
                         ),
                       ),
 
-                      // "● SYNC ON" Pill Badge
                       Positioned(
                         bottom: -10,
                         child: Container(
@@ -136,7 +133,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 32),
 
-                // Brand Name: "Smart Khata"
                 RichText(
                   text: const TextSpan(
                     style: TextStyle(
@@ -159,7 +155,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 6),
 
-                // Tagline
                 const Text(
                   'Smart Retail POS & Digital Ledger',
                   style: TextStyle(
@@ -171,7 +166,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 20),
                 const Spacer(flex: 3),
-                // Loading Indicator with Status Message
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -198,7 +192,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 16),
 
-                // System Info & Security Badges
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -228,7 +221,6 @@ class _SplashScreenState extends State<SplashScreen> {
 
                 const SizedBox(height: 14),
 
-                // Mobile Home Indicator Bar
                 Container(
                   width: 120,
                   height: 4,

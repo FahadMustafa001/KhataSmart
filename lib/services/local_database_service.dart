@@ -113,10 +113,8 @@ class LocalDatabaseService {
     NotificationService.instance.addListener(schedulePersist);
   }
 
-  // 2. Populate App Singletons with Loaded Data
-  // Parses every section into local variables first before applying state
+  /// Parses every section into local data structures before mutating state singletons.
   void _loadIntoState(Map<String, dynamic> data) {
-    // 1. Parse Shops
     List<ShopModel>? parsedShops;
     String? parsedActiveShopId;
     if (data['shops'] is List) {
@@ -126,7 +124,6 @@ class LocalDatabaseService {
       parsedActiveShopId = data['activeShopId'] as String?;
     }
 
-    // 2. Parse Products
     List<ProductModel>? parsedProducts;
     if (data['products'] is List) {
       parsedProducts = (data['products'] as List)
@@ -134,7 +131,6 @@ class LocalDatabaseService {
           .toList();
     }
 
-    // 3. Parse Parties, Entries, Orders
     List<PartyModel>? parsedParties;
     List<LedgerEntryModel>? parsedEntries;
     List<OrderModel>? parsedOrders;
@@ -151,25 +147,21 @@ class LocalDatabaseService {
           .toList();
     }
 
-    // 4. Parse Security
     Map<String, dynamic>? parsedSecurity;
     if (data['security'] is Map) {
       parsedSecurity = Map<String, dynamic>.from(data['security']);
     }
 
-    // 5. Parse Google Drive
     Map<String, dynamic>? parsedGoogleDrive;
     if (data['googleDrive'] is Map) {
       parsedGoogleDrive = Map<String, dynamic>.from(data['googleDrive']);
     }
 
-    // 6. Parse Notifications
     List<dynamic>? parsedNotifications;
     if (data['notifications'] is List) {
       parsedNotifications = List<dynamic>.from(data['notifications']);
     }
 
-    // ALL parsing succeeded: apply state to singletons
     if (parsedShops != null && parsedShops.isNotEmpty) {
       ShopState.instance.loadFromDatabase(
         shops: parsedShops,

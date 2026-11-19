@@ -141,7 +141,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bill Header Row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -188,7 +187,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
             const SizedBox(height: 12),
 
-            // Grand Payable Total Card
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
@@ -266,7 +264,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
             const SizedBox(height: 16),
 
-            // Payment Method Section Header
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -299,10 +296,8 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
             const SizedBox(height: 10),
 
-            // 3 Payment Method Cards (Cash, Store Credit, Raast QR)
             Row(
               children: [
-                // Cash
                 _buildMethodCard(
                   title: 'Cash',
                   subtitle: 'Direct Box',
@@ -312,7 +307,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                 ),
                 const SizedBox(width: 10),
 
-                // Store Credit (Selected)
                 _buildMethodCard(
                   title: 'Store Credit',
                   subtitle: 'Udhaar Book',
@@ -324,7 +318,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                 ),
                 const SizedBox(width: 10),
 
-                // Raast QR
                 _buildMethodCard(
                   title: 'Raast QR',
                   subtitle: '0% Fee',
@@ -338,7 +331,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
             const SizedBox(height: 16),
 
-            // Customer Khata Ledger Card
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -349,7 +341,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Card Header
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -396,7 +387,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Selected Customer Banner
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
@@ -541,7 +531,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Cash Received (Partial) Box
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -580,7 +569,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                         const SizedBox(height: 8),
 
-                        // Input Box: PKR | 1000
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 12),
                           decoration: BoxDecoration(
@@ -625,7 +613,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                         const SizedBox(height: 8),
 
-                        // Quick Amount Pills
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -640,7 +627,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                         const SizedBox(height: 10),
 
-                        // New Udhaar (Credit to Post) Warning Box
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
@@ -705,7 +691,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                         const SizedBox(height: 8),
 
-                        // Send Instant SMS & WhatsApp Ledger Bill Checkbox
                         GestureDetector(
                           onTap: () => setState(
                               () => _sendNotifications = !_sendNotifications),
@@ -739,7 +724,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
             const SizedBox(height: 14),
 
-            // Device & Print Toggles Card
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
@@ -749,7 +733,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
               ),
               child: Column(
                 children: [
-                  // Row 1: 58mm Thermal Printer
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -799,7 +782,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                   const Divider(height: 12),
 
-                  // Row 2: Email Digital Copy
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -852,7 +834,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
             const SizedBox(height: 16),
 
-            // Bottom Status & Complete Sale Button
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -892,7 +873,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
             const SizedBox(height: 8),
 
-            // Primary Green Button
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -934,7 +914,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
             const SizedBox(height: 8),
 
-            // Footer Tag: INSTANT SQLITE JOURNAL • LEDGER SYNCED
             const Center(
               child: Row(
                 mainAxisSize: MainAxisSize.min,

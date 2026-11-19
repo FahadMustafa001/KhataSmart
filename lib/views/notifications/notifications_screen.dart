@@ -157,13 +157,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
       body: Column(
         children: [
-          // 1. System Push Notification Permission Banner
           _buildPermissionBanner(),
-
-          // 2. Filter Tabs (All, Stock, Khata, Sales, System)
           _buildFilterTabs(),
-
-          // 3. Notification List
           Expanded(
             child: _filteredList.isEmpty
                 ? _buildEmptyState()
@@ -338,7 +333,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Category Icon
               Container(
                 width: 38,
                 height: 38,
@@ -350,7 +344,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ),
               const SizedBox(width: 12),
 
-              // Title, Message, Timestamp & Action Buttons
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -388,13 +381,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                     ),
 
-                    // Direct Actionable Buttons
                     _buildActionButtons(notif, context),
                   ],
                 ),
               ),
 
-              // Unread indicator dot
               if (!notif.isRead) ...[
                 const SizedBox(width: 8),
                 Container(
@@ -429,7 +420,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           padding: const EdgeInsets.only(top: 8),
           child: Row(
             children: [
-              // 💬 WhatsApp Reminder Button
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
@@ -453,7 +443,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              // 📞 Direct Call Button
               OutlinedButton.icon(
                 onPressed: () {
                   _notifService.markAsRead(notif.id);
@@ -490,7 +479,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           padding: const EdgeInsets.only(top: 8),
           child: Row(
             children: [
-              // Quick +10 Stock Button
               ElevatedButton.icon(
                 onPressed: () {
                   if (productId != null) {
@@ -519,7 +507,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
               ),
               const SizedBox(width: 6),
-              // View in Inventory
               OutlinedButton.icon(
                 onPressed: () {
                   _notifService.markAsRead(notif.id);

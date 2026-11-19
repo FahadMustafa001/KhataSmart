@@ -160,7 +160,6 @@ class _PosCartScreenState extends State<PosCartScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Scan Barcode via Camera Card
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -255,7 +254,6 @@ class _PosCartScreenState extends State<PosCartScreen> {
 
                   const SizedBox(height: 12),
 
-                  // Search Item & Loose/Weight Button
                   Row(
                     children: [
                       Expanded(
@@ -322,7 +320,6 @@ class _PosCartScreenState extends State<PosCartScreen> {
 
                   const SizedBox(height: 16),
 
-                  // Section Header: ITEM DETAILS & STEPPERS
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [

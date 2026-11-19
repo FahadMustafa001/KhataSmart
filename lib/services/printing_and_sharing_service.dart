@@ -14,7 +14,7 @@ class PrintingAndSharingService {
   PrintingAndSharingService._();
   static final PrintingAndSharingService instance = PrintingAndSharingService._();
 
-  // ── Helper: Format Pakistani Phone Numbers ────────────────────────────────
+  /// Formats raw phone input into international format for WhatsApp.
   static String formatPhoneForWhatsApp(String phone) {
     String clean = phone.replaceAll(RegExp(r'[^0-9+]'), '');
     if (clean.startsWith('0')) {
@@ -25,7 +25,7 @@ class PrintingAndSharingService {
     return clean;
   }
 
-  // ── 1. Native Direct Call ─────────────────────────────────────────────────
+  /// Initiates a native phone dialer call.
   Future<bool> makePhoneCall(String phoneNumber) async {
     final clean = phoneNumber.replaceAll(RegExp(r'[^0-9+]'), '');
     if (clean.isEmpty) return false;
@@ -36,7 +36,7 @@ class PrintingAndSharingService {
     return false;
   }
 
-  // ── 2. WhatsApp Receipt Slip ──────────────────────────────────────────────
+  /// Formats and dispatches a customer receipt via WhatsApp or system share.
   Future<void> sendReceiptViaWhatsApp({
     required OrderModel order,
     required ShopModel shop,
@@ -90,7 +90,7 @@ _Powered by KhataSmart Retail POS_
     }
   }
 
-  // ── 3. SMS Receipt ────────────────────────────────────────────────────────
+  /// Sends a brief SMS invoice summary to the customer.
   Future<void> sendReceiptViaSms({
     required OrderModel order,
     required ShopModel shop,
@@ -110,7 +110,7 @@ _Powered by KhataSmart Retail POS_
     await Share.share(message, subject: 'Invoice #${order.invoiceNo}');
   }
 
-  // ── 4. Thermal Print or PDF Save for POS Receipt ──────────────────────────
+  /// Generates thermal-ready 58mm/80mm receipt format and invokes printing or sharing.
   Future<void> printOrShareReceipt({
     required OrderModel order,
     required ShopModel shop,

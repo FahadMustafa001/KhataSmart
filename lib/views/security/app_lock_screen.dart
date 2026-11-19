@@ -337,7 +337,6 @@ class _AppLockScreenState extends State<AppLockScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        // Biometric or Empty Button
                         if (isBiometricOn)
                           _buildActionButton(
                             icon: Icons.fingerprint,
@@ -362,7 +361,6 @@ class _AppLockScreenState extends State<AppLockScreen> {
 
               const Spacer(),
 
-              // Forgot / Reset PIN Button
               TextButton(
                 onPressed: _showResetDialog,
                 child: const Text(

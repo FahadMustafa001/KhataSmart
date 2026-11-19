@@ -290,7 +290,6 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
         body: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           children: [
-            // 1. TIME PERIOD SELECTOR
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -308,7 +307,6 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
             ),
             const SizedBox(height: 16),
 
-            // 2. MAIN 100% REAL KPI CARDS
             Row(
               children: [
                 Expanded(
@@ -362,15 +360,12 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
             ),
             const SizedBox(height: 20),
 
-            // 3. 100% REAL EARNINGS TREND GRAPH
             _buildRealChartCard(filteredOrders),
             const SizedBox(height: 20),
 
-            // 4. REAL PAYMENT MODE BREAKDOWN
             _buildPaymentBreakdownCard(filteredOrders),
             const SizedBox(height: 20),
 
-            // 5. DETAILED INVOICES & BILLS LIST FOR THIS PERIOD
             _buildDetailedBillsSection(filteredOrders),
             const SizedBox(height: 30),
           ],

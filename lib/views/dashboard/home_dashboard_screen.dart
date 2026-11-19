@@ -61,7 +61,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. Core Metrics: Today's Sales & Total Udhaar
               Row(
                 children: [
                   Expanded(
@@ -108,7 +107,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
               const SizedBox(height: 18),
 
-              // 3. Quick Operations Section (4 Core Real Actions)
               const Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -132,10 +130,8 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
               const SizedBox(height: 10),
 
-              // Operations 2x2 Grid
               Row(
                 children: [
-                  // Action 1: New Sale (Featured POS Card)
                   Expanded(
                     child: QuickActionButton(
                       label: 'New Sale',
@@ -149,7 +145,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Action 2: Add Product
                   Expanded(
                     child: QuickActionButton(
                       label: 'Add Product',
@@ -168,7 +163,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
               Row(
                 children: [
-                  // Action 3: Khata Ledger
                   Expanded(
                     child: QuickActionButton(
                       label: 'Khata Ledger',
@@ -181,7 +175,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Action 4: Inventory List
                   Expanded(
                     child: QuickActionButton(
                       label: 'Inventory',
@@ -197,7 +190,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 ],
               ),
 
-              // 4. Low Stock Alert (Conditional)
               if (lowStockCount > 0) ...[
                 const SizedBox(height: 16),
                 _buildLowStockBanner(context, lowStockCount),
@@ -205,12 +197,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
               const SizedBox(height: 16),
 
-              // 5. Today's Settlement Split
               _buildSettlementSplit(orders),
 
               const SizedBox(height: 16),
 
-              // 6. Recent Invoices
               _buildRecentInvoicesSection(context, orders),
 
               const SizedBox(height: 20),
@@ -219,14 +209,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
         ),
       ),
 
-      // 7. Executive 4-Tab Bottom Navigation Bar
       bottomNavigationBar: const SmartBottomNavigationBar(
         currentRoute: AppRoutes.dashboard,
       ),
     );
   }
 
-  // Dashboard Standard AppBar
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final active = ShopState.instance.activeShop;
     return CustomAppBar(
@@ -236,15 +224,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       title: active.name,
       subtitle: '${active.ownerName} • Branch 01',
       actions: [
-        // Real Notifications Bell Icon with Live Unread Counter
         const NotificationBellButton(),
-        // Quick Reports Analytics Icon
         IconButton(
           icon: const Icon(Icons.bar_chart_rounded, color: Color(0xFF2563EB), size: 22),
           tooltip: 'Reports & Analytics',
           onPressed: () => Navigator.pushNamed(context, AppRoutes.reports),
         ),
-        // Settings & Store Switcher Avatar
         Padding(
           padding: const EdgeInsets.only(right: 14.0, left: 2.0),
           child: GestureDetector(

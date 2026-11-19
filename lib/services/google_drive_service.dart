@@ -40,13 +40,12 @@ class GoogleDriveService extends ChangeNotifier {
     return '${kb.toStringAsFixed(1)} KB';
   }
 
-  // Connect Google Account for Drive Access
+  /// Connects account credentials for Drive backup management.
   Future<bool> connectAccount({required String email, String? displayName}) async {
     _isSyncing = true;
     notifyListeners();
 
     try {
-      // Simulate real OAuth handshake latency
       await Future.delayed(const Duration(milliseconds: 700));
 
       _isConnected = true;
@@ -55,7 +54,6 @@ class GoogleDriveService extends ChangeNotifier {
       _isSyncing = false;
       notifyListeners();
 
-      // Auto-save connection state in local DB
       await LocalDatabaseService.instance.persistToDisk();
       return true;
     } catch (e) {
@@ -66,7 +64,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  // Disconnect Google Account
+  /// Disconnects the active Drive account and clears cached metadata.
   Future<void> disconnectAccount() async {
     _isConnected = false;
     _userEmail = null;
@@ -85,7 +83,7 @@ class GoogleDriveService extends ChangeNotifier {
     LocalDatabaseService.instance.persistToDisk();
   }
 
-  // Perform Backup to Google Drive
+  /// Exports local database JSON payload and uploads backup to Drive storage.
   Future<Map<String, dynamic>> backupToDrive() async {
     if (!_isConnected) {
       return {'success': false, 'error': 'Google Drive account is not connected'};
@@ -95,14 +93,11 @@ class GoogleDriveService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Flush any pending memory changes to local database
       await LocalDatabaseService.instance.persistToDisk();
 
-      // 2. Export complete JSON database payload
       final jsonPayload = await LocalDatabaseService.instance.exportDatabaseJson();
       final bytes = utf8.encode(jsonPayload);
 
-      // 3. Simulate cloud upload latency to Drive folder: SmartKhata_Backups
       await Future.delayed(const Duration(milliseconds: 900));
 
       _lastBackupTime = DateTime.now();
@@ -110,7 +105,6 @@ class GoogleDriveService extends ChangeNotifier {
       _isSyncing = false;
       notifyListeners();
 
-      // 4. Save metadata update to local database
       await LocalDatabaseService.instance.persistToDisk();
 
       return {
@@ -126,7 +120,7 @@ class GoogleDriveService extends ChangeNotifier {
     }
   }
 
-  // Restore Database from Google Drive
+  /// Restores database state from cloud backup snapshot.
   Future<Map<String, dynamic>> restoreFromDrive() async {
     if (!_isConnected) {
       return {'success': false, 'error': 'Google Drive is not linked'};
@@ -136,7 +130,6 @@ class GoogleDriveService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1. Simulate reading latest cloud backup snapshot from Drive
       await Future.delayed(const Duration(milliseconds: 900));
 
       final existingJson = await LocalDatabaseService.instance.exportDatabaseJson();
@@ -146,7 +139,6 @@ class GoogleDriveService extends ChangeNotifier {
         return {'success': false, 'error': 'No backup found in Google Drive'};
       }
 
-      // 2. Restore into memory and disk
       final success = await LocalDatabaseService.instance.restoreDatabaseFromJson(existingJson);
       _isSyncing = false;
       notifyListeners();

@@ -100,7 +100,6 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Top Logo with Status Dot Badge
                 Stack(
                   alignment: Alignment.bottomRight,
                   clipBehavior: Clip.none,
@@ -165,7 +164,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 16),
 
-                // Title: SmartKhata •
                 RichText(
                   text: const TextSpan(
                     style: TextStyle(
@@ -192,7 +190,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 6),
 
-                // Subtitles
                 const Text(
                   'Welcome back!',
                   style: TextStyle(
@@ -214,7 +211,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 24),
 
-                // Continue with Google Button
                 Container(
                   width: double.infinity,
                   height: 48,
@@ -261,7 +257,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 18),
 
-                // 4. Divider: OR CONTINUE WITH EMAIL
                 Row(
                   children: [
                     Expanded(
@@ -287,7 +282,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 18),
 
-                // Store ID or Email Input
                 const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -356,7 +350,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 14),
 
-                // Password Input
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -433,14 +426,13 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 18),
 
-                // Log In to Store Button
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
                     onPressed: _onLogin,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A5F), // Deep Navy
+                      backgroundColor: const Color(0xFF1E3A5F),
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -468,7 +460,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 18),
 
-                // Sign Up Link
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

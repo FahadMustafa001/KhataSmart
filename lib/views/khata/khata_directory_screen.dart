@@ -271,7 +271,6 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Scrollable Body
             Expanded(
               child: SingleChildScrollView(
                 padding:
@@ -279,27 +278,22 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Top 2 Metric Cards: Total Receivables vs Total Payables
                     _buildMetricCardsRow(),
 
                     const SizedBox(height: 12),
 
-                    // Customers vs Suppliers Segmented Tabs
                     _buildSegmentedTabs(),
 
                     const SizedBox(height: 10),
 
-                    // Search & Sort Row
                     _buildSearchSortRow(),
 
                     const SizedBox(height: 10),
 
-                    // Horizontal Filter Chips
                     _buildFilterChipsRow(),
 
                     const SizedBox(height: 10),
 
-                    // Directory Cards List
                     if (list.isEmpty)
                       EmptyStateWidget(
                         imageAsset: AppAssets.emptyState,
@@ -314,7 +308,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                     else
                       ...list.map((item) => _buildKhataCard(item)),
 
-                    const SizedBox(height: 80), // Padding for FAB & Bottom Nav
+                    const SizedBox(height: 80),
                   ],
                 ),
               ),
@@ -323,7 +317,6 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
         ),
       ),
 
-      // Floating Action Button (+ New Account)
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 45),
         child: FloatingActionButton.extended(
@@ -339,7 +332,6 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
         ),
       ),
 
-      // Bottom Navigation Bar
       bottomNavigationBar: const SmartBottomNavigationBar(
         currentRoute: AppRoutes.khataDirectory,
       ),
