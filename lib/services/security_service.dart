@@ -21,6 +21,7 @@ class SecurityService extends ChangeNotifier {
   bool _isAppUnlocked = false;
   bool _hasCredentialError = false;
   bool _isAuthenticating = false;
+  int _currentAuthAttemptId = 0;
   bool isLockScreenActive = false;
   bool isMandatoryLockActive = false;
   bool isVerificationLockActive = false;
@@ -254,10 +255,12 @@ class SecurityService extends ChangeNotifier {
 
   // Real Hardware Biometric Authentication (Never simulated)
   Future<bool> authenticateWithBiometrics() async {
+    final attemptId = ++_currentAuthAttemptId;
     _isAuthenticating = true;
     try {
       final available = await isBiometricHardwareAvailable();
-      if (!available) {
+      // Invalidate if cancellation occurred while querying hardware
+      if (attemptId != _currentAuthAttemptId || !available) {
         return false;
       }
 
@@ -270,6 +273,11 @@ class SecurityService extends ChangeNotifier {
         ),
       );
 
+      // Invalidate if cancelled while prompt was running
+      if (attemptId != _currentAuthAttemptId) {
+        return false;
+      }
+
       if (didAuth) {
         _isAppUnlocked = true;
         notifyListeners();
@@ -279,15 +287,30 @@ class SecurityService extends ChangeNotifier {
       debugPrint('Biometric auth error: $e');
       return false;
     } finally {
-      _isAuthenticating = false;
+      // Clear _isAuthenticating only for the attempt it belongs to
+      if (attemptId == _currentAuthAttemptId) {
+        _isAuthenticating = false;
+      }
     }
   }
 
   // Cancel any in-flight biometric prompt
   Future<void> cancelBiometricAuth() async {
+    // Invalidate the pending attempt before awaiting cancellation
+    final cancelledAttemptId = _currentAuthAttemptId;
+    _currentAuthAttemptId++;
+
+    if (_isAuthenticating) {
+      _isAuthenticating = false;
+    }
+
     try {
       await _localAuth.stopAuthentication();
     } catch (_) {}
-    _isAuthenticating = false;
+
+    // Preserve any active newer attempt that started in the interim
+    if (_currentAuthAttemptId == cancelledAttemptId + 1) {
+      _isAuthenticating = false;
+    }
   }
 }
