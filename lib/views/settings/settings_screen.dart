@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../models/shop_model.dart';
 import '../../services/security_service.dart';
-import '../../services/local_database_service.dart';
+import '../../services/google_drive_service.dart';
 import '../../state/shop_state.dart';
 import '../security/app_lock_screen.dart';
 
@@ -13,20 +12,19 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isGoogleDriveConnected = false;
-  String _linkedGoogleEmail = '';
-
   @override
   void initState() {
     super.initState();
     ShopState.instance.addListener(_refresh);
     SecurityService.instance.addListener(_refresh);
+    GoogleDriveService.instance.addListener(_refresh);
   }
 
   @override
   void dispose() {
     ShopState.instance.removeListener(_refresh);
     SecurityService.instance.removeListener(_refresh);
+    GoogleDriveService.instance.removeListener(_refresh);
     super.dispose();
   }
 
@@ -424,20 +422,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF2563EB),
             ),
-            onPressed: () {
+            onPressed: () async {
               final email = emailCtrl.text.trim();
               if (email.isNotEmpty && email.contains('@')) {
-                setState(() {
-                  _isGoogleDriveConnected = true;
-                  _linkedGoogleEmail = email;
-                });
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Google Drive linked with $email!'),
-                    backgroundColor: const Color(0xFF16A34A),
-                  ),
-                );
+                final ok = await GoogleDriveService.instance.connectAccount(email: email);
+                if (ok && mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Google Drive linked successfully with $email!'),
+                      backgroundColor: const Color(0xFF16A34A),
+                    ),
+                  );
+                }
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Please enter a valid Google email address')),
@@ -643,7 +640,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     value: sec.isLockEnabled,
-                    activeColor: const Color(0xFF2563EB),
+                    activeTrackColor: const Color(0xFF2563EB),
                     onChanged: (val) {
                       if (val) {
                         _showSetPinDialog();
@@ -665,7 +662,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                       ),
                       value: sec.isBiometricEnabled,
-                      activeColor: const Color(0xFF2563EB),
+                      activeTrackColor: const Color(0xFF2563EB),
                       onChanged: (v) => sec.setBiometricEnabled(v),
                     ),
                     const Divider(height: 1),
@@ -746,6 +743,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             _buildSectionCard(
               title: 'Google Drive Cloud Backup',
               icon: Icons.cloud_done_outlined,
+              trailing: GoogleDriveService.instance.isConnected
+                  ? TextButton(
+                      onPressed: () async {
+                        await GoogleDriveService.instance.disconnectAccount();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Google Drive account disconnected')),
+                          );
+                        }
+                      },
+                      child: const Text('Disconnect', style: TextStyle(color: Color(0xFFE11D48), fontSize: 11.5)),
+                    )
+                  : null,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -754,23 +764,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _isGoogleDriveConnected ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                          color: GoogleDriveService.instance.isConnected
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFF1F5F9),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
                           children: [
                             Icon(
-                              _isGoogleDriveConnected ? Icons.check_circle : Icons.cloud_off,
+                              GoogleDriveService.instance.isConnected ? Icons.check_circle : Icons.cloud_off,
                               size: 14,
-                              color: _isGoogleDriveConnected ? const Color(0xFF16A34A) : const Color(0xFF64748B),
+                              color: GoogleDriveService.instance.isConnected ? const Color(0xFF16A34A) : const Color(0xFF64748B),
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              _isGoogleDriveConnected ? 'Drive Connected' : 'Drive Not Linked',
+                              GoogleDriveService.instance.isConnected ? 'Drive Connected' : 'Drive Not Linked',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
-                                color: _isGoogleDriveConnected ? const Color(0xFF15803D) : const Color(0xFF64748B),
+                                color: GoogleDriveService.instance.isConnected ? const Color(0xFF15803D) : const Color(0xFF64748B),
                               ),
                             ),
                           ],
@@ -780,15 +792,163 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const Text('15 GB Free Cloud', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _isGoogleDriveConnected
-                        ? 'Linked Account: $_linkedGoogleEmail\nLedger and invoices backup safely to your personal Google Drive.'
-                        : 'Connect your personal Google account to backup your ledger to your 15 GB free Google Drive.',
-                    style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
-                  ),
-                  const SizedBox(height: 12),
-                  if (!_isGoogleDriveConnected)
+                  const SizedBox(height: 10),
+                  if (GoogleDriveService.instance.isConnected) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 14,
+                                backgroundColor: Color(0xFF2563EB),
+                                child: Icon(Icons.person, size: 16, color: Colors.white),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      GoogleDriveService.instance.userName ?? 'Google User',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
+                                    ),
+                                    Text(
+                                      GoogleDriveService.instance.userEmail ?? '',
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text('Last Cloud Backup:', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    GoogleDriveService.instance.formattedLastBackup,
+                                    style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                                  ),
+                                ],
+                              ),
+                              if (GoogleDriveService.instance.lastBackupSizeBytes > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF1F5F9),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    GoogleDriveService.instance.formattedBackupSize,
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Auto-Backup to Drive', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      subtitle: const Text('Sync transactions to Drive automatically', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                      value: GoogleDriveService.instance.isAutoBackupEnabled,
+                      activeTrackColor: const Color(0xFF2563EB),
+                      onChanged: (v) => GoogleDriveService.instance.toggleAutoBackup(v),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            icon: GoogleDriveService.instance.isSyncing
+                                ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : const Icon(Icons.cloud_upload_outlined, size: 16, color: Colors.white),
+                            label: Text(
+                              GoogleDriveService.instance.isSyncing ? 'Uploading...' : 'Backup Now',
+                              style: const TextStyle(fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2563EB),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: GoogleDriveService.instance.isSyncing
+                                ? null
+                                : () async {
+                                    final res = await GoogleDriveService.instance.backupToDrive();
+                                    if (context.mounted) {
+                                      if (res['success'] == true) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Backup uploaded to Google Drive successfully (${res['size']})!'),
+                                            backgroundColor: const Color(0xFF16A34A),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Backup failed: ${res['error']}'),
+                                            backgroundColor: const Color(0xFFE11D48),
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            icon: const Icon(Icons.cloud_download_outlined, size: 16),
+                            label: const Text('Restore Backup', style: TextStyle(fontSize: 12)),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            onPressed: GoogleDriveService.instance.isSyncing
+                                ? null
+                                : () async {
+                                    final res = await GoogleDriveService.instance.restoreFromDrive();
+                                    if (context.mounted) {
+                                      if (res['success'] == true) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Latest backup restored from Google Drive!'),
+                                            backgroundColor: Color(0xFF16A34A),
+                                          ),
+                                        );
+                                      } else {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Restore note: ${res['error'] ?? "Data is already fresh"}')),
+                                        );
+                                      }
+                                    }
+                                  },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ] else ...[
+                    const Text(
+                      'Connect your personal Google account to store your entire khata database and invoices in your personal 15 GB Google Drive for free.',
+                      style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                    ),
+                    const SizedBox(height: 12),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -796,50 +956,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         label: const Text('Connect Google Account (15 GB Free)', style: TextStyle(color: Colors.white, fontSize: 12)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF2563EB),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                         onPressed: _handleGoogleDriveConnect,
                       ),
-                    )
-                  else
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.backup_outlined, size: 16),
-                            label: const Text('Backup Now', style: TextStyle(fontSize: 12)),
-                            onPressed: () async {
-                              await LocalDatabaseService.instance.persistToDisk();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Database backed up locally & synced with Google Drive ($_linkedGoogleEmail)!'),
-                                    backgroundColor: const Color(0xFF16A34A),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.restore_page_outlined, size: 16),
-                            label: const Text('Restore Backup', style: TextStyle(fontSize: 12)),
-                            onPressed: () async {
-                              await LocalDatabaseService.instance.init();
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Checked local & cloud database. Data is fresh and up to date!'),
-                                  ),
-                                );
-                              }
-                            },
-                          ),
-                        ),
-                      ],
                     ),
+                  ],
                 ],
               ),
             ),

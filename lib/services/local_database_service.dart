@@ -11,6 +11,7 @@ import '../models/shop_model.dart';
 import '../state/inventory_state.dart';
 import '../state/khata_state.dart';
 import '../state/shop_state.dart';
+import 'google_drive_service.dart';
 import 'security_service.dart';
 
 class LocalDatabaseService {
@@ -117,6 +118,12 @@ class LocalDatabaseService {
         answer: sec['securityAnswer'],
       );
     }
+
+    // 5. Google Drive Cloud State
+    if (data['googleDrive'] is Map) {
+      final gd = Map<String, dynamic>.from(data['googleDrive']);
+      GoogleDriveService.instance.loadFromDatabase(gd);
+    }
   }
 
   // 3. Atomic Disk Persistence
@@ -143,6 +150,7 @@ class LocalDatabaseService {
           'securityQuestion': SecurityService.instance.securityQuestion,
           'securityAnswer': SecurityService.instance.rawAnswer,
         },
+        'googleDrive': GoogleDriveService.instance.toMap(),
       };
 
       final jsonStr = jsonEncode(payload);

@@ -34,6 +34,13 @@ dependencies:
   # 7. Formatting Helpers (Dates & Numbers)
   intl: ^0.19.0
 
+  # 8. Local Storage & File Path Handling
+  path_provider: ^2.1.4
+  path: ^1.9.0
+
+  # 9. Real Biometric Hardware Authentication (Fingerprint & Face Lock)
+  local_auth: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
