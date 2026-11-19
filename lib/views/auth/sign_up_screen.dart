@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
 
@@ -38,12 +39,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (_formKey.currentState?.validate() != true) return;
 
     if (!_agreeToTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please accept the Terms & Privacy Policy to continue.'),
-          backgroundColor: Color(0xFFDC2626),
-        ),
-      );
+      AppToast.showWarning(context, 'Please accept the Terms & Privacy Policy to continue.');
       return;
     }
 
@@ -59,22 +55,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
         displayName: fullName,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Account created successfully! Proceeding to Shop Setup...'),
-          backgroundColor: Color(0xFF16A34A),
-        ),
-      );
+      AppToast.showSuccess(context, 'Account created successfully! Proceeding to Shop Setup...');
       Navigator.pushReplacementNamed(context, AppRoutes.shopSetup);
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AuthService.formatAuthError(e)),
-          backgroundColor: const Color(0xFFDC2626),
-        ),
-      );
+      AppToast.showError(context, AuthService.formatAuthError(e));
     }
   }
 

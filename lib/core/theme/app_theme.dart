@@ -71,6 +71,20 @@ class AppTheme {
           borderSide: const BorderSide(color: Color(0xFF16A34A), width: 1.5),
         ),
       ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF0F172A),
+        contentTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFF334155), width: 1),
+        ),
+        elevation: 6,
+      ),
     );
   }
 
@@ -144,6 +158,20 @@ class AppTheme {
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 1.5),
         ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF1E293B),
+        contentTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFF475569), width: 1),
+        ),
+        elevation: 6,
       ),
     );
   }

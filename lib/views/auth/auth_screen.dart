@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
 import '../../state/shop_state.dart';
@@ -29,9 +30,7 @@ class _AuthScreenState extends State<AuthScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter both email and password.')),
-      );
+      AppToast.showWarning(context, 'Please enter both email and password.');
       return;
     }
 
@@ -46,12 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AuthService.formatAuthError(e)),
-          backgroundColor: const Color(0xFFDC2626),
-        ),
-      );
+      AppToast.showError(context, AuthService.formatAuthError(e));
     }
   }
 
@@ -68,12 +62,7 @@ class _AuthScreenState extends State<AuthScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(AuthService.formatAuthError(e)),
-          backgroundColor: const Color(0xFFDC2626),
-        ),
-      );
+      AppToast.showError(context, AuthService.formatAuthError(e));
     }
   }
 
@@ -138,30 +127,18 @@ class _AuthScreenState extends State<AuthScreen> {
             ),
             onPressed: () async {
               if (email.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Please enter your email address first.')),
-                );
+                AppToast.showWarning(context, 'Please enter your email address first.');
                 return;
               }
               Navigator.pop(ctx);
               try {
                 await AuthService.instance.sendPasswordResetEmail(email);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Password reset instructions sent to $email!'),
-                      backgroundColor: const Color(0xFF16A34A),
-                    ),
-                  );
+                  AppToast.showSuccess(context, 'Password reset instructions sent to $email!');
                 }
               } catch (e) {
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(AuthService.formatAuthError(e)),
-                      backgroundColor: const Color(0xFFDC2626),
-                    ),
-                  );
+                  AppToast.showError(context, AuthService.formatAuthError(e));
                 }
               }
             },

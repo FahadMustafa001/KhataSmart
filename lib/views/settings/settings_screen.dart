@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:printing/printing.dart';
+import '../../core/utils/app_toast.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
 import '../../services/cloud_sync_service.dart';
@@ -620,18 +621,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final ok = await GoogleDriveService.instance.connectAccount();
     if (mounted) {
       if (ok) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google Drive linked successfully: ${GoogleDriveService.instance.userEmail}!'),
-            backgroundColor: const Color(0xFF16A34A),
-          ),
-        );
+        AppToast.showSuccess(context, 'Google Drive linked: ${GoogleDriveService.instance.userEmail}!');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not link Google Drive or sign-in cancelled.'),
-          ),
-        );
+        AppToast.showWarning(context, 'Could not link Google Drive or sign-in cancelled.');
       }
     }
   }
@@ -996,12 +988,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                 onPressed: () async {
                                   final ok = await EscPosService.instance.printTestSlip(shop: activeShop);
                                   if (context.mounted && ok) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Test receipt slip sent to printer!'),
-                                        backgroundColor: Color(0xFF16A34A),
-                                      ),
-                                    );
+                                    AppToast.showSuccess(context, 'Test receipt slip sent to printer!');
                                   }
                                 },
                               ),
@@ -1103,9 +1090,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         if (confirm == true) {
                           await AuthService.instance.signOut();
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Signed out from Firebase Cloud account')),
-                            );
+                            AppToast.showInfo(context, 'Signed out from Firebase Cloud account');
                           }
                         }
                       },
@@ -1237,18 +1222,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     final res = await CloudSyncService.instance.uploadToCloud();
                                     if (context.mounted) {
                                       if (res['success'] == true) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Data synced to Cloud Firestore (${res['size']})!'),
-                                            backgroundColor: const Color(0xFF16A34A),
-                                          ),
+                                        AppToast.showSuccess(
+                                          context,
+                                          'Data synced to Cloud Firestore (${res['size']})!',
                                         );
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Sync failed: ${res['error']}'),
-                                            backgroundColor: const Color(0xFFE11D48),
-                                          ),
+                                        AppToast.showError(
+                                          context,
+                                          'Sync failed: ${res['error']}',
                                         );
                                       }
                                     }
@@ -1289,18 +1270,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                       final res = await CloudSyncService.instance.restoreFromCloud();
                                       if (context.mounted) {
                                         if (res['success'] == true) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('Database restored successfully from Cloud Firestore!'),
-                                              backgroundColor: Color(0xFF16A34A),
-                                            ),
+                                          AppToast.showSuccess(
+                                            context,
+                                            'Database restored successfully from Cloud Firestore!',
                                           );
                                         } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(
-                                              content: Text('Restore note: ${res['error']}'),
-                                              backgroundColor: const Color(0xFFE11D48),
-                                            ),
+                                          AppToast.showError(
+                                            context,
+                                            'Restore note: ${res['error']}',
                                           );
                                         }
                                       }
@@ -1345,9 +1322,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onPressed: () async {
                         await GoogleDriveService.instance.disconnectAccount();
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Google Drive account disconnected')),
-                          );
+                          AppToast.showInfo(context, 'Google Drive account disconnected');
                         }
                       },
                       child: const Text('Disconnect', style: TextStyle(color: Color(0xFFE11D48), fontSize: 11.5)),
@@ -1490,18 +1465,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     final res = await GoogleDriveService.instance.backupToDrive();
                                     if (context.mounted) {
                                       if (res['success'] == true) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Backup uploaded to Google Drive successfully (${res['size']})!'),
-                                            backgroundColor: const Color(0xFF16A34A),
-                                          ),
+                                        AppToast.showSuccess(
+                                          context,
+                                          'Backup uploaded to Google Drive successfully (${res['size']})!',
                                         );
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Backup failed: ${res['error']}'),
-                                            backgroundColor: const Color(0xFFE11D48),
-                                          ),
+                                        AppToast.showError(
+                                          context,
+                                          'Backup failed: ${res['error']}',
                                         );
                                       }
                                     }
@@ -1523,15 +1494,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     final res = await GoogleDriveService.instance.restoreFromDrive();
                                     if (context.mounted) {
                                       if (res['success'] == true) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Latest backup restored from Google Drive!'),
-                                            backgroundColor: Color(0xFF16A34A),
-                                          ),
+                                        AppToast.showSuccess(
+                                          context,
+                                          'Latest backup restored from Google Drive!',
                                         );
                                       } else {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(content: Text('Restore note: ${res['error'] ?? "Data is already fresh"}')),
+                                        AppToast.showInfo(
+                                          context,
+                                          'Restore note: ${res['error'] ?? "Data is already fresh"}',
                                         );
                                       }
                                     }
