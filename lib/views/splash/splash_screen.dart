@@ -45,6 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
         context,
         AppRoutes.appLock,
         (route) => false,
+        arguments: {'destinationRoute': targetRoute},
       );
     } else {
       Navigator.pushNamedAndRemoveUntil(

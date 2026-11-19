@@ -762,7 +762,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Navigator.pushNamed(
                           context,
                           AppRoutes.appLock,
-                          arguments: {'isVerificationOnly': true},
+                          arguments: {'isVerificationOnly': false},
                         );
                       },
                     ),

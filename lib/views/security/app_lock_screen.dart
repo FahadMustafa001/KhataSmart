@@ -10,11 +10,13 @@ import '../../state/shop_state.dart';
 class AppLockScreen extends StatefulWidget {
   final bool isVerificationOnly;
   final VoidCallback? onSuccess;
+  final String? destinationRoute;
 
   const AppLockScreen({
     super.key,
     this.isVerificationOnly = false,
     this.onSuccess,
+    this.destinationRoute,
   });
 
   @override
@@ -42,6 +44,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
 
   @override
   void dispose() {
+    SecurityService.instance.cancelBiometricAuth();
     SecurityService.instance.isLockScreenActive = false;
     super.dispose();
   }
@@ -73,22 +76,23 @@ class _AppLockScreenState extends State<AppLockScreen> {
   void _completeUnlock() {
     if (_hasCompletedUnlock) return;
     _hasCompletedUnlock = true;
+    SecurityService.instance.cancelBiometricAuth();
     SecurityService.instance.isLockScreenActive = false;
     if (widget.onSuccess != null) {
       widget.onSuccess!();
     } else if (Navigator.canPop(context)) {
       Navigator.pop(context, true);
     } else {
-      final hasCompletedOnboarding = ShopState.instance.hasCompletedOnboarding ||
-          ShopState.instance.shops.length > 1 ||
-          ShopState.instance.activeShop.phone.isNotEmpty ||
-          ShopState.instance.activeShop.name != 'My Store' ||
-          InventoryState.instance.allProductsForDatabase.isNotEmpty ||
-          KhataState.instance.allPartiesForDatabase.isNotEmpty ||
-          LocalDatabaseService.instance.isInitialized;
-      final destination = hasCompletedOnboarding
-          ? AppRoutes.dashboard
-          : AppRoutes.auth;
+      final destination = widget.destinationRoute ??
+          ((ShopState.instance.hasCompletedOnboarding ||
+                  ShopState.instance.shops.length > 1 ||
+                  ShopState.instance.activeShop.phone.isNotEmpty ||
+                  ShopState.instance.activeShop.name != 'My Store' ||
+                  InventoryState.instance.allProductsForDatabase.isNotEmpty ||
+                  KhataState.instance.allPartiesForDatabase.isNotEmpty ||
+                  LocalDatabaseService.instance.isInitialized)
+              ? AppRoutes.dashboard
+              : AppRoutes.auth);
       Navigator.pushReplacementNamed(context, destination);
     }
   }

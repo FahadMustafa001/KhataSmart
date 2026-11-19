@@ -214,11 +214,25 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
         .where((o) => o.paymentMode == PaymentMode.udhaar)
         .fold(0.0, (sum, o) => sum + o.total);
 
+    final existingCreditOrderInvoices = {
+      for (var o in KhataState.instance.orders)
+        if (o.paymentMode == PaymentMode.udhaar) o.invoiceNo.trim().toLowerCase()
+    };
+
+    bool isOrderBillEntry(LedgerEntryModel e) {
+      final match = RegExp(r'^Bill\s*#\s*(.+)$', caseSensitive: false).firstMatch(e.note.trim());
+      if (match != null) {
+        final inv = match.group(1)?.trim().toLowerCase() ?? '';
+        return existingCreditOrderInvoices.contains(inv);
+      }
+      return false;
+    }
+
     final manualCreditGiven = filteredEntries
         .where((e) =>
             e.type == LedgerType.gave &&
             partyTypeMap[e.partyId] == PartyType.customer &&
-            !RegExp(r'^Bill\s*#', caseSensitive: false).hasMatch(e.note))
+            !isOrderBillEntry(e))
         .fold(0.0, (sum, e) => sum + e.amount);
 
     final totalUdhaar = creditSales + manualCreditGiven;
@@ -230,7 +244,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
             (partyTypeMap[e.partyId] == PartyType.supplier ||
                 e.note.toLowerCase().contains('expense') ||
                 e.note.toLowerCase().contains('bill # electricity') ||
-                RegExp(r'\brent\b', caseSensitive: false).hasMatch(e.note) ||
+                RegExp(r'(?<![a-zA-Z])rent(?![a-zA-Z])', caseSensitive: false).hasMatch(e.note) ||
                 e.note.toLowerCase().contains('utility')))
         .fold(0.0, (sum, e) => sum + e.amount);
 

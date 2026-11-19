@@ -114,6 +114,7 @@ class AppRoutes {
       case AppRoutes.appLock:
         bool isVerificationOnly = false;
         VoidCallback? onSuccess;
+        String? destinationRoute;
         if (settings.arguments is Map) {
           final args = settings.arguments as Map;
           if (args['isVerificationOnly'] is bool) {
@@ -122,11 +123,15 @@ class AppRoutes {
           if (args['onSuccess'] is VoidCallback) {
             onSuccess = args['onSuccess'] as VoidCallback;
           }
+          if (args['destinationRoute'] is String) {
+            destinationRoute = args['destinationRoute'] as String;
+          }
         }
         return MaterialPageRoute(
           builder: (_) => AppLockScreen(
             isVerificationOnly: isVerificationOnly,
             onSuccess: onSuccess,
+            destinationRoute: destinationRoute,
           ),
         );
 

@@ -98,6 +98,7 @@ class KhataState extends ChangeNotifier {
     required double amount,
     required String note,
     String? shopId,
+    DateTime? date,
   }) {
     final party = _parties.firstWhere((p) => p.id == partyId);
     final targetShopId = shopId ?? party.shopId;
@@ -107,7 +108,7 @@ class KhataState extends ChangeNotifier {
       type: type,
       amount: amount,
       note: note,
-      date: DateTime.now(),
+      date: date ?? DateTime.now(),
       shopId: targetShopId,
     );
     _entries.insert(0, newEntry);
@@ -138,6 +139,7 @@ class KhataState extends ChangeNotifier {
         amount: order.total,
         note: 'Bill #${order.invoiceNo}',
         shopId: order.shopId,
+        date: order.date,
       );
     }
     notifyListeners();

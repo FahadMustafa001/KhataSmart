@@ -280,4 +280,12 @@ class SecurityService extends ChangeNotifier {
       _isAuthenticating = false;
     }
   }
+
+  // Cancel any in-flight biometric prompt
+  Future<void> cancelBiometricAuth() async {
+    try {
+      await _localAuth.stopAuthentication();
+    } catch (_) {}
+    _isAuthenticating = false;
+  }
 }

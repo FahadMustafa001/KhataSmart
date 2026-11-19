@@ -111,7 +111,6 @@ class LocalDatabaseService {
     InventoryState.instance.addListener(schedulePersist);
     KhataState.instance.addListener(schedulePersist);
     SecurityService.instance.addListener(schedulePersist);
-    schedulePersist();
     NotificationService.instance.addListener(schedulePersist);
   }
 
@@ -225,7 +224,9 @@ class LocalDatabaseService {
   void schedulePersist() {
     _debounceTimer?.cancel();
     _debounceTimer = Timer(const Duration(milliseconds: 300), () {
-      persistToDisk();
+      persistToDisk().catchError((e) {
+        debugPrint('Automatic persistence skipped or failed: $e');
+      });
     });
   }
 
@@ -350,6 +351,13 @@ class LocalDatabaseService {
     if (await tmpFile.exists()) {
       await tmpFile.delete();
     }
+    // Fully reset singleton states so no retained records persist on subsequent callbacks
+    InventoryState.instance.loadFromDatabase([]);
+    KhataState.instance.loadFromDatabase(parties: [], entries: [], orders: []);
+    ShopState.instance.loadFromDatabase(shops: [], activeShopId: 'shop_1', hasCompletedOnboarding: false);
+    SecurityService.instance.setLockEnabled(false, pin: '');
+    NotificationService.instance.clearAll();
+    _debounceTimer?.cancel();
     _attachListeners();
   }
 }
