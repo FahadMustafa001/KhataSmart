@@ -41,6 +41,16 @@ class InventoryState extends ChangeNotifier {
 
   // Record Stock Inward / Purchase Invoice
   void processPurchaseInvoice(PurchaseInvoiceModel invoice, {bool updateCostPrice = true}) {
+    // Validate every item before modifying any stock
+    for (final item in invoice.items) {
+      if (!item.quantity.isFinite || item.quantity <= 0 || item.quantity % 1 != 0) {
+        throw ArgumentError('Purchase item quantity must be a positive whole number, received: ${item.quantity}');
+      }
+      if (!item.costPrice.isFinite || item.costPrice < 0) {
+        throw ArgumentError('Purchase item cost price must be a non-negative finite number, received: ${item.costPrice}');
+      }
+    }
+
     invoice = PurchaseInvoiceModel(
       id: invoice.id.isEmpty ? 'purch_${DateTime.now().millisecondsSinceEpoch}' : invoice.id,
       invoiceNo: invoice.invoiceNo,
@@ -55,7 +65,7 @@ class InventoryState extends ChangeNotifier {
       shopId: ShopState.instance.activeShopId,
     );
 
-    // 1. Increment product stocks
+    // 1. Increment product stocks (all pre-validated)
     for (final item in invoice.items) {
       final idx = _products.indexWhere((p) => p.id == item.productId);
       if (idx != -1) {
@@ -67,6 +77,7 @@ class InventoryState extends ChangeNotifier {
     }
 
     // 2. Add ledger entry to supplier's khata if there is a remaining credit balance
+    // LedgerType.got subtracts balance (p.balance -= amount), correctly establishing a payable balance
     if (invoice.creditBalanceAdded > 0 && invoice.supplierId.isNotEmpty) {
       KhataState.instance.addTransaction(
         partyId: invoice.supplierId,
@@ -127,7 +138,7 @@ class InventoryState extends ChangeNotifier {
     try {
       final currentShopId = ShopState.instance.activeShopId;
       return _products.firstWhere(
-        (p) => p.shopId == currentShopId && p.barcode == barcode,
+        (p) => p.shopId == currentShopId && (p.barcode == barcode || p.id == barcode),
       );
     } catch (_) {
       return null;

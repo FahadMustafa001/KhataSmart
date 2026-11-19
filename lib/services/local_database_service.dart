@@ -192,7 +192,7 @@ class LocalDatabaseService {
     }
 
     if (parsedProducts != null) {
-      InventoryState.instance.loadFromDatabase(parsedProducts, parsedPurchases);
+      InventoryState.instance.loadFromDatabase(parsedProducts, parsedPurchases ?? []);
     }
 
     if (hasKhataData) {

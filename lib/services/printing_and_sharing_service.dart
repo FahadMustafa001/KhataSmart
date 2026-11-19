@@ -1092,7 +1092,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
     int stickerCount = 24,
   }) async {
     final pdf = pw.Document();
-    final barcodeData = product.barcode.isNotEmpty ? product.barcode : (product.id.length > 12 ? product.id.substring(0, 12) : product.id);
+    final barcodeData = product.barcode.isNotEmpty ? product.barcode : product.id;
 
     // 24 stickers per A4 page (3 columns x 8 rows)
     const stickersPerPage = 24;

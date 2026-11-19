@@ -103,10 +103,10 @@ class EscPosService {
                 pw.Divider(thickness: 0.8),
                 pw.Row(
                   children: [
-                    pw.Expanded(flex: 4, child: pw.Text('Item', style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
-                    pw.Expanded(flex: 2, child: pw.Text('Qty', textAlign: pw.TextAlign.center, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
-                    pw.Expanded(flex: 2, child: pw.Text('Rate', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
-                    pw.Expanded(flex: 3, child: pw.Text('Total', textAlign: pw.TextAlign.right, style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                    pw.Expanded(flex: 4, child: pw.Text('Item', style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                    pw.Expanded(flex: 2, child: pw.Text('Qty', textAlign: pw.TextAlign.center, style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                    pw.Expanded(flex: 2, child: pw.Text('Rate', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
+                    pw.Expanded(flex: 3, child: pw.Text('Total', textAlign: pw.TextAlign.right, style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold))),
                   ],
                 ),
                 pw.Divider(thickness: 0.5),
@@ -166,8 +166,8 @@ class EscPosService {
                 pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
-                    pw.Text('NET TOTAL:', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
-                    pw.Text(CurrencyFormatter.format(order.total), style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                    pw.Text('NET TOTAL:', style: const pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                    pw.Text(CurrencyFormatter.format(order.total), style: const pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold)),
                   ],
                 ),
                 pw.SizedBox(height: 3),
@@ -317,11 +317,19 @@ class EscPosService {
       final totStr = CurrencyFormatter.format(item.totalPrice);
 
       if (is80mm) {
-        final name = item.productName.length > 21 ? item.productName.substring(0, 21) : item.productName;
-        bytes.addAll(utf8.encode('${_padRight(name, 22)}${_padCenter(qtyStr, 6)}${_padLeft(rateStr, 9)}${_padLeft(totStr, 11)}\n'));
+        if (rateStr.length > 9 || totStr.length > 11 || qtyStr.length > 6 || item.productName.length > 21) {
+          bytes.addAll(utf8.encode('${item.productName}\n'));
+          bytes.addAll(utf8.encode('${_padRight('', 18)}${_padCenter(qtyStr, 8)}${_padLeft(rateStr, 11)}${_padLeft(totStr, 11)}\n'));
+        } else {
+          bytes.addAll(utf8.encode('${_padRight(item.productName, 22)}${_padCenter(qtyStr, 6)}${_padLeft(rateStr, 9)}${_padLeft(totStr, 11)}\n'));
+        }
       } else {
-        final name = item.productName.length > 13 ? item.productName.substring(0, 13) : item.productName;
-        bytes.addAll(utf8.encode('${_padRight(name, 14)}${_padCenter(qtyStr, 4)}${_padLeft(rateStr, 6)}${_padLeft(totStr, 8)}\n'));
+        if (rateStr.length > 6 || totStr.length > 8 || qtyStr.length > 4 || item.productName.length > 13) {
+          bytes.addAll(utf8.encode('${item.productName}\n'));
+          bytes.addAll(utf8.encode('${_padRight('', 8)}${_padCenter(qtyStr, 6)}${_padLeft(rateStr, 8)}${_padLeft(totStr, 10)}\n'));
+        } else {
+          bytes.addAll(utf8.encode('${_padRight(item.productName, 14)}${_padCenter(qtyStr, 4)}${_padLeft(rateStr, 6)}${_padLeft(totStr, 8)}\n'));
+        }
       }
     }
 
@@ -357,9 +365,9 @@ class EscPosService {
 
   // String column layout helpers
   String _padRight(String s, int width) => s.length >= width ? s.substring(0, width) : s.padRight(width);
-  String _padLeft(String s, int width) => s.length >= width ? s.substring(0, width) : s.padLeft(width);
+  String _padLeft(String s, int width) => s.length >= width ? s : s.padLeft(width);
   String _padCenter(String s, int width) {
-    if (s.length >= width) return s.substring(0, width);
+    if (s.length >= width) return s;
     final leftPadding = (width - s.length) ~/ 2;
     return s.padLeft(s.length + leftPadding).padRight(width);
   }

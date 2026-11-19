@@ -52,10 +52,9 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
     }
 
     ProductModel? selectedProduct = products.first;
-    double qty = 10.0;
     double cost = selectedProduct.costPrice > 0 ? selectedProduct.costPrice : selectedProduct.salePrice * 0.7;
     final qtyController = TextEditingController(text: '10');
-    final costController = TextEditingController(text: cost.toStringAsFixed(0));
+    final costController = TextEditingController(text: cost % 1 == 0 ? cost.toInt().toString() : cost.toString());
 
     showModalBottomSheet(
       context: context,
@@ -119,7 +118,7 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
                             setSheetState(() {
                               selectedProduct = val;
                               cost = val.costPrice;
-                              costController.text = cost.toStringAsFixed(0);
+                              costController.text = cost % 1 == 0 ? cost.toInt().toString() : cost.toString();
                             });
                           }
                         },
@@ -145,7 +144,6 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
                                 fillColor: const Color(0xFFF8FAFC),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                               ),
-                              onChanged: (v) => qty = double.tryParse(v) ?? 1.0,
                             ),
                           ],
                         ),
@@ -184,13 +182,29 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
                       onPressed: () {
-                        if (selectedProduct == null || qty <= 0 || cost < 0) return;
+                        final parsedQty = double.tryParse(qtyController.text.trim());
+                        final parsedCost = double.tryParse(costController.text.trim());
+
+                        if (selectedProduct == null) return;
+                        if (parsedQty == null || !parsedQty.isFinite || parsedQty <= 0 || parsedQty % 1 != 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter a valid whole-number quantity (e.g. 1, 5, 10)')),
+                          );
+                          return;
+                        }
+                        if (parsedCost == null || !parsedCost.isFinite || parsedCost < 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter a valid positive cost price')),
+                          );
+                          return;
+                        }
+
                         setState(() {
                           _items.add(PurchaseItemModel(
                             productId: selectedProduct!.id,
                             productName: selectedProduct!.name,
-                            quantity: qty,
-                            costPrice: cost,
+                            quantity: parsedQty,
+                            costPrice: parsedCost,
                             unit: selectedProduct!.unit,
                           ));
                         });
@@ -216,6 +230,24 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
       return;
     }
 
+    final paidText = _paidAmountController.text.trim();
+    final double? parsedPaid = paidText.isEmpty ? 0.0 : double.tryParse(paidText);
+    if (parsedPaid == null || !parsedPaid.isFinite || parsedPaid < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid paid amount (0 or positive number)')),
+      );
+      return;
+    }
+
+    final remainingPayable = (_totalBill - parsedPaid).clamp(0.0, double.infinity);
+
+    if (remainingPayable > 0 && (_selectedSupplier == null || _selectedSupplier!.id.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a supplier for purchases with an unpaid credit balance')),
+      );
+      return;
+    }
+
     final invoice = PurchaseInvoiceModel(
       id: 'purch_${DateTime.now().millisecondsSinceEpoch}',
       invoiceNo: _invoiceNoController.text.trim().isNotEmpty
@@ -226,8 +258,8 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
       date: _invoiceDate,
       items: _items,
       totalAmount: _totalBill,
-      paidAmount: _paidAmount,
-      creditBalanceAdded: _remainingPayable,
+      paidAmount: parsedPaid,
+      creditBalanceAdded: remainingPayable,
       note: _notesController.text.trim(),
       shopId: ShopState.instance.activeShopId,
     );
@@ -246,7 +278,7 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Stock Inward Complete! Added ${_items.length} items to stock.${_remainingPayable > 0 ? " (Rs. ${_remainingPayable.toStringAsFixed(0)} posted to ${_selectedSupplier?.name ?? 'Supplier'})" : ""}',
+                'Stock Inward Complete! Added ${_items.length} items to stock.${remainingPayable > 0 ? " (Rs. ${remainingPayable.toStringAsFixed(0)} posted to ${_selectedSupplier?.name ?? 'Supplier'})" : ""}',
                 style: const TextStyle(fontSize: 12.5, color: Colors.white),
               ),
             ),

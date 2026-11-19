@@ -448,115 +448,138 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showPrinterPickerModal() async {
+    bool dialogOpen = true;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 12),
-                Text('Scanning for printers...', style: TextStyle(fontSize: 13)),
-              ],
+      builder: (dialogCtx) => const PopScope(
+        canPop: false,
+        child: Center(
+          child: Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 12),
+                  Text('Scanning for printers...', style: TextStyle(fontSize: 13)),
+                ],
+              ),
             ),
           ),
         ),
       ),
-    );
+    ).then((_) {
+      dialogOpen = false;
+    });
 
     final printers = await EscPosService.instance.getAvailablePrinters();
-    if (mounted) Navigator.pop(context); // close loader
+    if (mounted && dialogOpen) {
+      Navigator.of(context, rootNavigator: true).pop();
+      dialogOpen = false;
+    }
 
     if (!mounted) return;
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Select Bluetooth / ESC-POS Printer',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                ),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
-              ],
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Paired Bluetooth and USB receipt printers detected on your device:',
-              style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 16),
-            if (printers.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF1F5F9),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.bluetooth_searching, color: Color(0xFF64748B)),
-                    SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'No printers detected. Pair your Bluetooth thermal printer in device Android Settings > Bluetooth, then reopen this list.',
-                        style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
-                      ),
-                    ),
-                  ],
-                ),
-              )
-            else
-              ...printers.map((p) {
-                final isSelected = ShopState.instance.activeShop.preferredPrinterUrl == p.url;
-                return ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
-                    child: Icon(
-                      Icons.print,
-                      color: isSelected ? Colors.white : const Color(0xFF64748B),
-                      size: 20,
-                    ),
+      builder: (ctx) => ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(ctx).size.height * 0.75,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Select Bluetooth / ESC-POS Printer',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                   ),
-                  title: Text(
-                    p.name,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                      color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFF1E293B),
-                    ),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Paired Bluetooth and USB receipt printers detected on your device:',
+                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 16),
+              if (printers.isEmpty)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F5F9),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  subtitle: Text(p.url, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
-                  trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF2563EB)) : null,
-                  onTap: () {
-                    ShopState.instance.updateActiveShop(
-                      preferredPrinterName: p.name,
-                      preferredPrinterUrl: p.url,
-                    );
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Selected printer: ${p.name}'),
-                        backgroundColor: const Color(0xFF16A34A),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.bluetooth_searching, color: Color(0xFF64748B)),
+                      SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'No printers detected. Pair your Bluetooth thermal printer in device Android Settings > Bluetooth, then reopen this list.',
+                          style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+                        ),
                       ),
-                    );
-                  },
-                );
-              }),
-            const SizedBox(height: 12),
-          ],
+                    ],
+                  ),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: printers.length,
+                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final p = printers[index];
+                      final isSelected = ShopState.instance.activeShop.preferredPrinterUrl == p.url;
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(
+                          backgroundColor: isSelected ? const Color(0xFF2563EB) : const Color(0xFFF1F5F9),
+                          child: Icon(
+                            Icons.print,
+                            color: isSelected ? Colors.white : const Color(0xFF64748B),
+                            size: 20,
+                          ),
+                        ),
+                        title: Text(
+                          p.name,
+                          style: TextStyle(
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFF1E293B),
+                          ),
+                        ),
+                        subtitle: Text(p.url, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        trailing: isSelected ? const Icon(Icons.check_circle, color: Color(0xFF2563EB)) : null,
+                        onTap: () {
+                          ShopState.instance.updateActiveShop(
+                            preferredPrinterName: p.name,
+                            preferredPrinterUrl: p.url,
+                          );
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Selected printer: ${p.name}'),
+                              backgroundColor: const Color(0xFF16A34A),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              const SizedBox(height: 12),
+            ],
+          ),
         ),
       ),
     );

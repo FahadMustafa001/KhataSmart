@@ -288,7 +288,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                         ? 'This Week'
                         : (_selectedPeriod == ReportPeriod.month ? 'This Month' : 'This Year'));
                 final file = await CsvExportService.instance.generateSalesOrdersCsv(
-                  orders: filteredOrders,
+                  orders: _getFilteredOrders(),
                   shop: activeShop,
                   reportPeriod: periodName,
                 );

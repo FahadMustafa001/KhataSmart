@@ -13,10 +13,17 @@ class CsvExportService {
   static final CsvExportService instance = CsvExportService._();
 
   String _sanitize(String text) {
-    if (text.contains(',') || text.contains('"') || text.contains('\n') || text.contains('\r')) {
-      return '"${text.replaceAll('"', '""')}"';
+    String val = text;
+    // Mitigate CSV / Excel formula injection for non-numeric fields starting with =, +, -, @
+    if (val.isNotEmpty && (val.startsWith('=') || val.startsWith('+') || val.startsWith('-') || val.startsWith('@'))) {
+      if (double.tryParse(val) == null) {
+        val = "'$val";
+      }
     }
-    return text;
+    if (val.contains(',') || val.contains('"') || val.contains('\n') || val.contains('\r')) {
+      return '"${val.replaceAll('"', '""')}"';
+    }
+    return val;
   }
 
   // 1. Export Inventory Products to CSV
@@ -30,7 +37,7 @@ class CsvExportService {
     buffer.write('\uFEFF');
 
     // Header info
-    buffer.writeln('${_sanitize(shop.name)} - Inventory Stock Report');
+    buffer.writeln(_sanitize('${shop.name} - Inventory Stock Report'));
     buffer.writeln('Export Date,${DateFormatter.formatDateTime(DateTime.now())}');
     buffer.writeln('Total Items,${products.length}');
     buffer.writeln('');
@@ -92,7 +99,7 @@ class CsvExportService {
     final list = filterType != null ? parties.where((p) => p.type == filterType).toList() : parties;
     final typeLabel = filterType == null ? 'All Parties' : (filterType == PartyType.customer ? 'Customers' : 'Suppliers');
 
-    buffer.writeln('${_sanitize(shop.name)} - Khata Accounts Report ($typeLabel)');
+    buffer.writeln(_sanitize('${shop.name} - Khata Accounts Report ($typeLabel)'));
     buffer.writeln('Export Date,${DateFormatter.formatDateTime(DateTime.now())}');
     buffer.writeln('Total Accounts,${list.length}');
     buffer.writeln('');
@@ -144,7 +151,7 @@ class CsvExportService {
 
     final totalRevenue = orders.fold(0.0, (sum, o) => sum + o.total);
 
-    buffer.writeln('${_sanitize(shop.name)} - Sales & Billing Report ($reportPeriod)');
+    buffer.writeln(_sanitize('${shop.name} - Sales & Billing Report ($reportPeriod)'));
     buffer.writeln('Export Date,${DateFormatter.formatDateTime(DateTime.now())}');
     buffer.writeln('Total Orders,${orders.length}');
     buffer.writeln('Total Sales Revenue,PKR ${totalRevenue.toStringAsFixed(0)}');
