@@ -28,11 +28,12 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCfyfa5beZ-VmcjNx3IxGB2hTya6u0sqBI',
-    appId: '1:711388054106:ios:6f620663503adea0230e63',
+    apiKey: 'AIzaSyAQGgmLtkoABiH4lG6mZt5BO27OTCXL3rI',
+    appId: '1:711388054106:ios:5994e12e3ee250d6230e63',
     messagingSenderId: '711388054106',
     projectId: 'smartkhata-19806',
     storageBucket: 'smartkhata-19806.firebasestorage.app',
+    iosClientId: '711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn.apps.googleusercontent.com',
     iosBundleId: 'com.example.khatasmart',
   );
 

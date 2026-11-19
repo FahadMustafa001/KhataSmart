@@ -78,5 +78,16 @@
 	<string>KhataSmart allows saving customer invoices and receipt slips to your photos.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>KhataSmart saves customer invoices and receipt slips to your photos.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
