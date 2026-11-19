@@ -723,7 +723,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       value: sec.isBiometricEnabled,
                       activeTrackColor: const Color(0xFF2563EB),
-                      onChanged: (v) => sec.setBiometricEnabled(v),
+                      onChanged: (v) async {
+                        final ok = await sec.setBiometricEnabled(v);
+                        if (v && !ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('No biometric hardware or enrolled fingerprints found on this device.'),
+                              backgroundColor: Color(0xFFE11D48),
+                            ),
+                          );
+                        }
+                      },
                     ),
                     const Divider(height: 1),
                     ListTile(
