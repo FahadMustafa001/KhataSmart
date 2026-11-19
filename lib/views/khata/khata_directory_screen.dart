@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
@@ -242,7 +243,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         drawer: const SmartKhataDrawer(currentRoute: AppRoutes.khataDirectory),
       appBar: CustomAppBar(
         title: 'Khata Ledger',
@@ -953,10 +954,9 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                 if (item.isReceivable && item.balance > 0)
                   GestureDetector(
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text(
-                                'WhatsApp Payment Reminder sent to ${item.name}!')),
+                      AppToast.showSuccess(
+                        context,
+                        'WhatsApp Payment Reminder sent to ${item.name}!',
                       );
                     },
                     child: Row(

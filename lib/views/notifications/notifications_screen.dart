@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/app_toast.dart';
 import '../../models/notification_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/google_drive_service.dart';
@@ -86,14 +87,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final unread = _notifService.unreadCount;
     final activeShop = ShopState.instance.activeShop;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
         elevation: 0.5,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF1E293B)),
+          icon: Icon(Icons.arrow_back_ios_new, size: 18, color: isDark ? Colors.white : const Color(0xFF1E293B)),
           onPressed: () => Navigator.pop(context),
         ),
         title: Column(
@@ -101,12 +103,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           children: [
             Row(
               children: [
-                const Text(
+                Text(
                   'Notifications & Alerts',
                   style: TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: isDark ? Colors.white : const Color(0xFF0F172A),
                   ),
                 ),
                 if (unread > 0) ...[
@@ -146,9 +148,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               tooltip: 'Clear All',
               onPressed: () {
                 _notifService.clearAll();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('All notifications cleared')),
-                );
+                AppToast.showInfo(context, 'All notifications cleared');
               },
             ),
           ],
@@ -210,12 +210,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             TextButton(
               onPressed: () {
                 _notifService.toggleSystemPermission(true);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Device notifications permission granted!'),
-                    backgroundColor: Color(0xFF16A34A),
-                  ),
-                );
+                AppToast.showSuccess(context, 'Device notifications permission granted!');
               },
               child: const Text('Allow', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
             ),
@@ -447,9 +442,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   if (party.phone.isNotEmpty) {
                     PrintingAndSharingService.instance.makePhoneCall(party.phone);
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No phone number saved for this party')),
-                    );
+                    AppToast.showWarning(context, 'No phone number saved for this party');
                   }
                 },
                 icon: const Icon(Icons.phone_outlined, size: 13, color: Color(0xFFDC2626)),
@@ -523,9 +516,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   if (party.phone.isNotEmpty) {
                     PrintingAndSharingService.instance.makePhoneCall(party.phone);
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('No phone number saved for this party')),
-                    );
+                    AppToast.showWarning(context, 'No phone number saved for this party');
                   }
                 },
                 icon: const Icon(Icons.phone_outlined, size: 13, color: Color(0xFF2563EB)),
@@ -559,12 +550,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     InventoryState.instance.addStock(productId, 10);
                     _notifService.markAsRead(notif.id);
                     final updated = InventoryState.instance.products.where((p) => p.id == productId).firstOrNull;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: const Color(0xFF16A34A),
-                        content: Text('+10 Stock added for "${product?.name ?? "Product"}"! New Total: ${updated?.stockQty ?? ""}'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
+                    AppToast.showSuccess(
+                      context,
+                      '+10 Stock added for "${product?.name ?? "Product"}"! New Total: ${updated?.stockQty ?? ""}',
                     );
                   }
                 },
@@ -610,29 +598,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 onPressed: () async {
                   if (!GoogleDriveService.instance.isConnected) {
                     Navigator.pushNamed(context, AppRoutes.settings);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Please link Google Drive in Settings first')),
-                    );
+                    AppToast.showWarning(context, 'Please link Google Drive in Settings first');
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Starting Google Drive Backup...')),
-                    );
+                    AppToast.showInfo(context, 'Starting Google Drive Backup...');
                     final res = await GoogleDriveService.instance.backupToDrive();
                     if (res['success'] == true) {
                       _notifService.markAsRead(notif.id);
                       if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            backgroundColor: const Color(0xFF16A34A),
-                            content: Text('Backup completed! Size: ${res['size']}'),
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
+                        AppToast.showSuccess(context, 'Backup completed! Size: ${res['size']}');
                       }
                     } else if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Backup error: ${res['error']}')),
-                      );
+                      AppToast.showError(context, 'Backup error: ${res['error']}');
                     }
                   }
                 },

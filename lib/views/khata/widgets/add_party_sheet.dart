@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../../models/ledger_entry_model.dart';
 import '../../../models/party_model.dart';
 import '../../../state/khata_state.dart';
@@ -112,9 +113,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
       final parsed = double.tryParse(rawCredit);
       if (parsed == null || !parsed.isFinite || parsed < 0) {
         _isSavingParty = false;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid positive credit limit')),
-        );
+        AppToast.showWarning(context, 'Please enter a valid positive credit limit');
         return;
       }
       creditLimit = parsed;
@@ -126,9 +125,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
       final parsed = double.tryParse(rawBalText);
       if (parsed == null || !parsed.isFinite || parsed < 0) {
         _isSavingParty = false;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please enter a valid positive opening balance')),
-        );
+        AppToast.showWarning(context, 'Please enter a valid positive opening balance');
         return;
       }
       rawBalance = parsed;
@@ -181,32 +178,15 @@ class _AddPartySheetState extends State<AddPartySheet> {
     } catch (e) {
       _isSavingParty = false;
       KhataState.instance.deleteParty(newPartyId);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to save party: $e')),
-      );
+      AppToast.showError(context, 'Failed to save party: $e');
       return;
     }
 
     Navigator.pop(context, true);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF0F172A),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Color(0xFF22C55E), size: 20),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                '${_partyType == PartyType.customer ? "Customer" : "Supplier"} "$name" added to Ledger!',
-                style: const TextStyle(fontSize: 12.5, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
+    AppToast.showSuccess(
+      context,
+      '${_partyType == PartyType.customer ? "Customer" : "Supplier"} "$name" added to Ledger!',
     );
   }
 

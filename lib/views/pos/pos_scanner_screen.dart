@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../core/utils/app_toast.dart';
 import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
 import '../../state/cart_state.dart';
@@ -162,45 +163,11 @@ class _PosScannerScreenState extends State<PosScannerScreen>
     required String subtitle,
     required bool isSuccess,
   }) {
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isSuccess ? Icons.check_circle : Icons.warning_amber_rounded,
-              color: isSuccess ? const Color(0xFF4ADE80) : const Color(0xFFFBBF24),
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
-                      color: Colors.white,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(fontSize: 11, color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        backgroundColor: const Color(0xFF0F172A),
-        duration: const Duration(milliseconds: 1600),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
+    if (isSuccess) {
+      AppToast.showSuccess(context, subtitle, title: title);
+    } else {
+      AppToast.showWarning(context, subtitle, title: title);
+    }
   }
 
   void _showUnrecognizedBarcodeSheet(String code) {

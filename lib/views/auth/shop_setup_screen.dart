@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../services/local_database_service.dart';
 import '../../state/shop_state.dart';
 
@@ -61,10 +63,18 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
         address: city,
       );
     }
+    final previousOnboarding = ShopState.instance.hasCompletedOnboarding;
     ShopState.instance.setCompletedOnboarding(true);
-    await LocalDatabaseService.instance.persistToDisk();
-    if (mounted) {
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+    try {
+      await LocalDatabaseService.instance.persistToDisk();
+      if (mounted) {
+        Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      }
+    } catch (e) {
+      ShopState.instance.setCompletedOnboarding(previousOnboarding);
+      if (mounted) {
+        AppToast.showError(context, 'Failed to save store profile. Please try again.');
+      }
     }
   }
 
@@ -81,12 +91,17 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
           elevation: 0.5,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
+            icon: Icon(
+              Icons.arrow_back,
+              color: Theme.of(context).brightness == Brightness.dark
+                  ? Colors.white
+                  : const Color(0xFF1E293B),
+            ),
             onPressed: () {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
@@ -441,71 +456,84 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
               ),
 
               const SizedBox(height: 18),
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AuthService.instance.isSignedIn
-                      ? const Color(0xFFF0FDF4)
-                      : const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AuthService.instance.isSignedIn
-                        ? const Color(0xFFBBF7D0)
-                        : const Color(0xFFBFDBFE),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        AuthService.instance.isSignedIn
-                            ? Icons.cloud_done_rounded
-                            : Icons.cloud_sync_rounded,
-                        color: AuthService.instance.isSignedIn
-                            ? const Color(0xFF16A34A)
-                            : const Color(0xFF2563EB),
-                        size: 20,
+              Builder(
+                builder: (context) {
+                  final isSignedIn = AuthService.instance.isSignedIn;
+                  final isSyncConfirmedActive = isSignedIn &&
+                      CloudSyncService.instance.autoSyncEnabled &&
+                      CloudSyncService.instance.lastSyncTime != null;
+
+                  return Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isSignedIn
+                          ? const Color(0xFFF0FDF4)
+                          : const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: isSignedIn
+                            ? const Color(0xFFBBF7D0)
+                            : const Color(0xFFBFDBFE),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            AuthService.instance.isSignedIn
-                                ? 'Real-Time Cloud Connected'
-                                : 'Dual Real Engine: Cloud & Offline',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.bold,
-                              color: AuthService.instance.isSignedIn
-                                  ? const Color(0xFF14532D)
-                                  : const Color(0xFF1E3A8A),
-                            ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            AuthService.instance.isSignedIn
-                                ? 'Signed in as ${AuthService.instance.userEmail}. Live sync to Firebase active.'
-                                : 'Live sync to Firebase & Google Drive, with instant local offline speed.',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: AuthService.instance.isSignedIn
-                                  ? const Color(0xFF15803D)
-                                  : const Color(0xFF3B82F6),
-                            ),
+                          child: Icon(
+                            isSignedIn
+                                ? Icons.cloud_done_rounded
+                                : Icons.cloud_queue_rounded,
+                            color: isSignedIn
+                                ? const Color(0xFF16A34A)
+                                : const Color(0xFF2563EB),
+                            size: 20,
                           ),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isSignedIn
+                                    ? (isSyncConfirmedActive
+                                        ? 'Cloud Synchronization Active'
+                                        : 'Cloud Account Connected')
+                                    : 'Offline-First Store Storage',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: isSignedIn
+                                      ? const Color(0xFF14532D)
+                                      : const Color(0xFF1E3A8A),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isSignedIn
+                                    ? (isSyncConfirmedActive
+                                        ? 'Signed in as ${AuthService.instance.userEmail}. Real-time cloud sync is confirmed active.'
+                                        : 'Signed in as ${AuthService.instance.userEmail}. Ready to sync store data in Settings.')
+                                    : 'Your store records are saved safely on this device. Sign in anytime to enable cloud backup.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: isSignedIn
+                                      ? const Color(0xFF15803D)
+                                      : const Color(0xFF3B82F6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  );
+                },
               ),
 
               const SizedBox(height: 20),

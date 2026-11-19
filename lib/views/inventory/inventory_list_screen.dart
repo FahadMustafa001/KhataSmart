@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
@@ -429,12 +430,9 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                     onPressed: () {
                       _inventoryState.addStock(item.id, qtyToAdd);
                       Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              'Added $qtyToAdd units to ${item.title} (New Total: ${item.stock + qtyToAdd})'),
-                          backgroundColor: const Color(0xFF16A34A),
-                        ),
+                      AppToast.showSuccess(
+                        context,
+                        'Added $qtyToAdd units to ${item.title} (New Total: ${item.stock + qtyToAdd})',
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -478,7 +476,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         drawer: const SmartKhataDrawer(currentRoute: AppRoutes.inventoryList),
       appBar: CustomAppBar(
         title: 'SmartKhata Store',
@@ -1266,10 +1264,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
           ),
           OutlinedButton(
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Reconciliation Audit Complete. In Sync!')),
-              );
+              AppToast.showSuccess(context, 'Reconciliation Audit Complete. In Sync!');
             },
             style: OutlinedButton.styleFrom(
               backgroundColor: Colors.white,

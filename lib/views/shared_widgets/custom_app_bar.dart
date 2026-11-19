@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
-import '../../core/constants/app_colors.dart';
 import '../../routes/app_routes.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -13,7 +12,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showLogo;
   final Widget? leading;
   final VoidCallback? onBack;
-  final Color backgroundColor;
+  final Color? backgroundColor;
   final double elevation;
 
   const CustomAppBar({
@@ -27,26 +26,32 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showLogo = false,
     this.leading,
     this.onBack,
-    this.backgroundColor = Colors.white,
+    this.backgroundColor,
     this.elevation = 0.5,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final iconColor = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B);
+    final titleColor = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final subtitleColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    final barBg = backgroundColor ?? (isDark ? const Color(0xFF1E293B) : Colors.white);
+
     Widget? leadingWidget = leading;
 
     if (leadingWidget == null) {
       if (showMenu) {
         leadingWidget = Builder(
           builder: (ctx) => IconButton(
-            icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E293B)),
+            icon: Icon(Icons.menu_rounded, color: iconColor),
             tooltip: 'Menu',
             onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
         );
       } else if (showBack) {
         leadingWidget = IconButton(
-          icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
+          icon: Icon(Icons.arrow_back, color: iconColor),
           tooltip: 'Back',
           onPressed: onBack ??
               () {
@@ -65,7 +70,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
     }
 
     return AppBar(
-      backgroundColor: backgroundColor,
+      backgroundColor: barBg,
       elevation: elevation,
       surfaceTintColor: Colors.transparent,
       leading: leadingWidget,
@@ -93,8 +98,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
-                        color: AppColors.textDark,
+                      style: TextStyle(
+                        color: titleColor,
                         fontSize: 15.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -104,8 +109,8 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     if (subtitle != null && subtitle!.isNotEmpty)
                       Text(
                         subtitle!,
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
+                        style: TextStyle(
+                          color: subtitleColor,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w500,
                         ),

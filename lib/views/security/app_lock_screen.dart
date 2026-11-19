@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../routes/app_routes.dart';
 import '../../services/security_service.dart';
 import '../../state/inventory_state.dart';
@@ -237,12 +238,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                   );
                   if (ok) {
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('PIN reset successfully! Unlocked.'),
-                        backgroundColor: Color(0xFF16A34A),
-                      ),
-                    );
+                    AppToast.showSuccess(context, 'PIN reset successfully! Unlocked.');
                     _completeUnlock();
                   } else {
                     setDialogState(() => dialogError = 'Incorrect answer. Try again.');

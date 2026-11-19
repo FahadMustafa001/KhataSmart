@@ -15,6 +15,7 @@ class RecentSalesTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isUdhaar = order.paymentMode == PaymentMode.udhaar;
     final isCash = order.paymentMode == PaymentMode.cash;
 
@@ -28,20 +29,24 @@ class RecentSalesTile extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isUdhaar
-                        ? const Color(0xFFFFE4E6)
-                        : (isCash
-                            ? const Color(0xFFDCFCE7)
-                            : const Color(0xFFDBEAFE)),
+                    color: isDark
+                        ? const Color(0xFF0F172A)
+                        : (isUdhaar
+                            ? const Color(0xFFFFE4E6)
+                            : (isCash
+                                ? const Color(0xFFDCFCE7)
+                                : const Color(0xFFDBEAFE))),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -65,10 +70,10 @@ class RecentSalesTile extends StatelessWidget {
                         children: [
                           Text(
                             '#${order.invoiceNo}',
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF0F172A),
+                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -76,11 +81,13 @@ class RecentSalesTile extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: isUdhaar
-                                  ? const Color(0xFFFFE4E6)
-                                  : (isCash
-                                      ? const Color(0xFFDCFCE7)
-                                      : const Color(0xFFDBEAFE)),
+                              color: isDark
+                                  ? const Color(0xFF0F172A)
+                                  : (isUdhaar
+                                      ? const Color(0xFFFFE4E6)
+                                      : (isCash
+                                          ? const Color(0xFFDCFCE7)
+                                          : const Color(0xFFDBEAFE))),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -103,9 +110,9 @@ class RecentSalesTile extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '${order.customer?.name ?? 'Walk-in Counter'} • ${DateFormatter.formatShort(order.date)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
-                          color: Color(0xFF64748B),
+                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
                         ),
                       ),
                     ],
@@ -116,10 +123,10 @@ class RecentSalesTile extends StatelessWidget {
                   children: [
                     Text(
                       CurrencyFormatter.format(order.total),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
+                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                       ),
                     ),
                     Text(

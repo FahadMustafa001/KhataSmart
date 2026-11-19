@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
 import '../../state/inventory_state.dart';
@@ -86,9 +87,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   void _onSaveProduct() {
     final title = _nameController.text.trim();
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter product name')),
-      );
+      AppToast.showWarning(context, 'Please enter product name');
       return;
     }
 
@@ -96,12 +95,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     if (barcodeVal.isNotEmpty) {
       final existingWithBarcode = InventoryState.instance.findByBarcode(barcodeVal);
       if (existingWithBarcode != null && existingWithBarcode.id != (widget.existingProduct?.id ?? '')) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Barcode already in use by "${existingWithBarcode.name}"'),
-            backgroundColor: const Color(0xFFDC2626),
-          ),
-        );
+        AppToast.showError(context, 'Barcode already in use by "${existingWithBarcode.name}"');
         return;
       }
     }
@@ -124,13 +118,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       InventoryState.instance.addProduct(newProd);
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$title saved to inventory!'),
-        backgroundColor: const Color(0xFF16A34A),
-      ),
-    );
-
+    AppToast.showSuccess(context, '$title saved to inventory!');
     Navigator.pop(context);
   }
 
@@ -160,6 +148,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         InventoryState.instance.deleteProduct(widget.existingProduct!.id);
       }
       if (context.mounted) {
+        AppToast.showSuccess(context, '"$title" deleted from inventory');
         Navigator.pop(context);
       }
     }
@@ -178,7 +167,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: CustomAppBar(
           title: _isEditing ? 'Edit Product' : 'Add New Product',
           showLogo: true,

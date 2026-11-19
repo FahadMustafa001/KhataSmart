@@ -120,7 +120,7 @@ class _PosCartScreenState extends State<PosCartScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         drawer: const SmartKhataDrawer(currentRoute: AppRoutes.posCart),
       appBar: CustomAppBar(
         title: 'Counter Billing',

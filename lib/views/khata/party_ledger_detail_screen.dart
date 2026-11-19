@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../models/ledger_entry_model.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
@@ -176,7 +177,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F172A),
           elevation: 0,
@@ -741,9 +742,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               if (_partyPhone.isNotEmpty) {
                 PrintingAndSharingService.instance.makePhoneCall(_partyPhone);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('No phone number provided for this party')),
-                );
+                AppToast.showWarning(context, 'No phone number provided for this party');
               }
             },
             child: Container(

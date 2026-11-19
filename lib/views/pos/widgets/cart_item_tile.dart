@@ -32,18 +32,18 @@ class CartItemTile extends StatelessWidget {
                 children: [
                   Text(
                     item.product.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
-                      color: AppColors.textDark,
+                      color: AppColors.text(context),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     '${CurrencyFormatter.format(item.product.salePrice)} each',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
-                      color: AppColors.textMuted,
+                      color: AppColors.subtext(context),
                     ),
                   ),
                 ],

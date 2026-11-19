@@ -23,9 +23,9 @@ class ProductCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface(context),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.cardBorder(context)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.02),
@@ -67,10 +67,10 @@ class ProductCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 product.title,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 13,
-                                  color: AppColors.textDark,
+                                  color: AppColors.text(context),
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -82,7 +82,7 @@ class ProductCard extends StatelessWidget {
                         const SizedBox(height: 4),
                         Text(
                           '${product.barcode.isNotEmpty ? product.barcode : '—'} • ${product.category}',
-                          style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                          style: TextStyle(fontSize: 10.5, color: AppColors.subtext(context)),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -110,29 +110,29 @@ class ProductCard extends StatelessWidget {
             // Bottom: pricing row
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: AppColors.secondaryBg(context),
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(14),
                   bottomRight: Radius.circular(14),
                 ),
-                border: Border(top: BorderSide(color: AppColors.divider)),
+                border: Border(top: BorderSide(color: AppColors.cardBorder(context))),
               ),
               child: Row(
                 children: [
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Sale Price',
-                        style: TextStyle(fontSize: 9.5, color: AppColors.textMuted),
+                        style: TextStyle(fontSize: 9.5, color: AppColors.subtext(context)),
                       ),
                       Text(
                         CurrencyFormatter.format(product.salePrice),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
-                          color: AppColors.primaryNavy,
+                          color: Color(0xFF16A34A),
                         ),
                       ),
                     ],
@@ -141,15 +141,15 @@ class ProductCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Cost Price',
-                        style: TextStyle(fontSize: 9.5, color: AppColors.textMuted),
+                        style: TextStyle(fontSize: 9.5, color: AppColors.subtext(context)),
                       ),
                       Text(
                         CurrencyFormatter.format(product.costPrice),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppColors.textDark,
+                          color: AppColors.subtext(context),
                           fontWeight: FontWeight.w500,
                         ),
                       ),

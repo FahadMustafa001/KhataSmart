@@ -249,31 +249,36 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                 e.note.toLowerCase().contains('utility')))
         .fold(0.0, (sum, e) => sum + e.amount);
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
           elevation: 0.5,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF1E293B)),
+            icon: Icon(Icons.arrow_back_ios_new, size: 18, color: isDark ? Colors.white : const Color(0xFF1E293B)),
             onPressed: () => Navigator.pop(context),
           ),
           title: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Reports & Financial Analytics',
                 style: TextStyle(
                   fontSize: 15.5,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
+                  color: isDark ? Colors.white : const Color(0xFF1E293B),
                 ),
               ),
               Text(
                 activeShop.name,
-                style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
               ),
             ],
           ),

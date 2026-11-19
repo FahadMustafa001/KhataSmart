@@ -32,6 +32,7 @@ class DashboardMetricCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isGradient = gradientColors != null && gradientColors!.isNotEmpty;
     final primaryColor =
         iconColor ?? (isGradient ? Colors.white : const Color(0xFF16A34A));
@@ -44,13 +45,18 @@ class DashboardMetricCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color:
-                isGradient ? null : (backgroundColor ?? const Color(0xFFF0FDF4)),
+            color: isGradient
+                ? null
+                : (isDark
+                    ? const Color(0xFF1E293B)
+                    : (backgroundColor ?? const Color(0xFFF0FDF4))),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isGradient
                   ? Colors.transparent
-                  : (borderColor ?? const Color(0xFFBBF7D0)),
+                  : (isDark
+                      ? const Color(0xFF334155)
+                      : (borderColor ?? const Color(0xFFBBF7D0))),
             ),
             gradient: isGradient
                 ? LinearGradient(
@@ -88,7 +94,9 @@ class DashboardMetricCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isGradient
                           ? Colors.white.withValues(alpha: 0.2)
-                          : (badgeBg ?? const Color(0xFFDCFCE7)),
+                          : (isDark
+                              ? const Color(0xFF0F172A)
+                              : (badgeBg ?? const Color(0xFFDCFCE7))),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon,
@@ -103,7 +111,9 @@ class DashboardMetricCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
-                  color: isGradient ? Colors.white : const Color(0xFF0F172A),
+                  color: isGradient
+                      ? Colors.white
+                      : (isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
                 ),
               ),
               const SizedBox(height: 8),
@@ -114,7 +124,9 @@ class DashboardMetricCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isGradient
                         ? Colors.white.withValues(alpha: 0.2)
-                        : (badgeBg ?? const Color(0xFFDCFCE7)),
+                        : (isDark
+                            ? const Color(0xFF0F172A)
+                            : (badgeBg ?? const Color(0xFFDCFCE7))),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -134,7 +146,7 @@ class DashboardMetricCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 11,
                     color:
-                        isGradient ? Colors.white70 : const Color(0xFF64748B),
+                        isGradient ? Colors.white70 : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
                   ),
                 ),
             ],

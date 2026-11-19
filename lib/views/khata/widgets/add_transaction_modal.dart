@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/utils/app_toast.dart';
 import '../../../models/ledger_entry_model.dart';
 import '../../../state/khata_state.dart';
 import '../../shared_widgets/custom_button.dart';
@@ -42,9 +43,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
   void _save() {
     final amount = double.tryParse(_amountController.text) ?? 0.0;
     if (amount <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount')),
-      );
+      AppToast.showWarning(context, 'Please enter a valid amount');
       return;
     }
 

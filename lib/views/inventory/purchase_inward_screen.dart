@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/app_toast.dart';
 import '../../models/party_model.dart';
 import '../../models/product_model.dart';
 import '../../models/purchase_invoice_model.dart';
@@ -45,9 +46,7 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
   void _showAddProductSheet() {
     final products = InventoryState.instance.products;
     if (products.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No products available in inventory. Please add products first.')),
-      );
+      AppToast.showWarning(context, 'No products available in inventory. Please add products first.');
       return;
     }
 
@@ -187,15 +186,11 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
 
                         if (selectedProduct == null) return;
                         if (parsedQty == null || !parsedQty.isFinite || parsedQty <= 0 || parsedQty % 1 != 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please enter a valid whole-number quantity (e.g. 1, 5, 10)')),
-                          );
+                          AppToast.showWarning(context, 'Please enter a valid whole-number quantity (e.g. 1, 5, 10)');
                           return;
                         }
                         if (parsedCost == null || !parsedCost.isFinite || parsedCost < 0) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Please enter a valid positive cost price')),
-                          );
+                          AppToast.showWarning(context, 'Please enter a valid positive cost price');
                           return;
                         }
 
@@ -224,27 +219,21 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
 
   void _onConfirmSave() {
     if (_items.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please add at least one product to the purchase bill')),
-      );
+      AppToast.showWarning(context, 'Please add at least one product to the purchase bill');
       return;
     }
 
     final paidText = _paidAmountController.text.trim();
     final double? parsedPaid = paidText.isEmpty ? 0.0 : double.tryParse(paidText);
     if (parsedPaid == null || !parsedPaid.isFinite || parsedPaid < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid paid amount (0 or positive number)')),
-      );
+      AppToast.showWarning(context, 'Please enter a valid paid amount (0 or positive number)');
       return;
     }
 
     final remainingPayable = (_totalBill - parsedPaid).clamp(0.0, double.infinity);
 
     if (remainingPayable > 0 && (_selectedSupplier == null || _selectedSupplier!.id.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a supplier for purchases with an unpaid credit balance')),
-      );
+      AppToast.showWarning(context, 'Please select a supplier for purchases with an unpaid credit balance');
       return;
     }
 
@@ -268,23 +257,9 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
 
     Navigator.pop(context);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        backgroundColor: const Color(0xFF16A34A),
-        behavior: SnackBarBehavior.floating,
-        content: Row(
-          children: [
-            const Icon(Icons.check_circle, color: Colors.white, size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Stock Inward Complete! Added ${_items.length} items to stock.${remainingPayable > 0 ? " (Rs. ${remainingPayable.toStringAsFixed(0)} posted to ${_selectedSupplier?.name ?? 'Supplier'})" : ""}',
-                style: const TextStyle(fontSize: 12.5, color: Colors.white),
-              ),
-            ),
-          ],
-        ),
-      ),
+    AppToast.showSuccess(
+      context,
+      'Stock Inward Complete! Added ${_items.length} items to stock.${remainingPayable > 0 ? " (Rs. ${remainingPayable.toStringAsFixed(0)} posted to ${_selectedSupplier?.name ?? 'Supplier'})" : ""}',
     );
   }
 
@@ -293,11 +268,11 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
     final suppliers = KhataState.instance.suppliers;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Stock Inward / Purchase Bill', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF0F172A),
+        backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+        foregroundColor: Theme.of(context).appBarTheme.foregroundColor,
         elevation: 0.5,
       ),
       body: SingleChildScrollView(

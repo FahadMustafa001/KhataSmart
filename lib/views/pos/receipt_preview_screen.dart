@@ -63,7 +63,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: CustomAppBar(
           title: 'Receipt Preview',
           subtitle: invoiceNumber,

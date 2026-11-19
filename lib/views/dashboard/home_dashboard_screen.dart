@@ -52,7 +52,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     final orders = _khataState.orders;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: _buildAppBar(context),
       drawer: const SmartKhataDrawer(currentRoute: AppRoutes.dashboard),
       body: SafeArea(
@@ -353,12 +353,16 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
         ? (udhaarSales / totalOrders * 100).toInt()
         : 0;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -366,12 +370,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
+              Text(
                 "Today's Settlement Split",
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF0F172A),
+                  color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                 ),
               ),
               Text(
@@ -447,6 +451,8 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   // Recent Invoices Section
   Widget _buildRecentInvoicesSection(
       BuildContext context, List<OrderModel> orders) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -455,12 +461,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           children: [
             Row(
               children: [
-                const Text(
+                Text(
                   'Recent Invoices',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -468,15 +474,15 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEFF6FF),
+                    color: isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '${orders.length}',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1D4ED8),
+                      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
                     ),
                   ),
                 ),
@@ -504,14 +510,19 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: isDark ? const Color(0xFF1E293B) : Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
+              border: Border.all(
+                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              ),
             ),
-            child: const Center(
+            child: Center(
               child: Text(
                 'No recent invoices yet. Tap "New Sale" to create your first bill.',
-                style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
               ),
             ),
           ),

@@ -31,11 +31,15 @@ class SmartBottomNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final navBg = isDark ? const Color(0xFF1E293B) : Colors.white;
+    final navBorder = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: navBg,
         border: Border(
-          top: BorderSide(color: Color(0xFFE2E8F0), width: 1),
+          top: BorderSide(color: navBorder, width: 1),
         ),
       ),
       child: SafeArea(
@@ -95,6 +99,11 @@ class SmartBottomNavigationBar extends StatelessWidget {
     required String route,
   }) {
     final isActive = currentRoute == route;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeBg = isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A);
+    final activeIconColor = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final activeTextColor = isDark ? const Color(0xFF38BDF8) : const Color(0xFF0F172A);
+    final inactiveColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
 
     return InkWell(
       onTap: () => _onTabTapped(context, route),
@@ -107,13 +116,13 @@ class SmartBottomNavigationBar extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3.5),
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFF0F172A) : Colors.transparent,
+                color: isActive ? activeBg : Colors.transparent,
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Icon(
                 isActive ? icon : inactiveIcon,
                 size: 19,
-                color: isActive ? Colors.white : const Color(0xFF64748B),
+                color: isActive ? activeIconColor : inactiveColor,
               ),
             ),
             const SizedBox(height: 3),
@@ -122,9 +131,7 @@ class SmartBottomNavigationBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 10,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                color: isActive
-                    ? const Color(0xFF0F172A)
-                    : const Color(0xFF64748B),
+                color: isActive ? activeTextColor : inactiveColor,
               ),
             ),
           ],

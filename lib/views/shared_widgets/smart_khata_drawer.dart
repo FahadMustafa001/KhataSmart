@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/auth_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../services/google_drive_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/security_service.dart';
@@ -10,6 +13,7 @@ import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
+import '../../state/theme_state.dart';
 import '../khata/widgets/add_party_sheet.dart';
 
 class SmartKhataDrawer extends StatefulWidget {
@@ -31,6 +35,8 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
   final _securityService = SecurityService.instance;
   final _driveService = GoogleDriveService.instance;
   final _notificationService = NotificationService.instance;
+  final _authService = AuthService.instance;
+  final _cloudSyncService = CloudSyncService.instance;
 
   @override
   void initState() {
@@ -41,6 +47,9 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     _securityService.addListener(_rebuild);
     _driveService.addListener(_rebuild);
     _notificationService.addListener(_rebuild);
+    _authService.addListener(_rebuild);
+    _cloudSyncService.addListener(_rebuild);
+    ThemeState.instance.addListener(_rebuild);
   }
 
   @override
@@ -51,6 +60,9 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     _securityService.removeListener(_rebuild);
     _driveService.removeListener(_rebuild);
     _notificationService.removeListener(_rebuild);
+    _authService.removeListener(_rebuild);
+    _cloudSyncService.removeListener(_rebuild);
+    ThemeState.instance.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -156,13 +168,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                         onTap: () {
                           _shopState.switchShop(shop.id);
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: const Color(0xFF0F172A),
-                              content: Text('Switched to "${shop.name}"'),
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
+                          AppToast.showSuccess(context, 'Switched to active shop: "${shop.name}"');
                         },
                       ),
                     );
@@ -198,9 +204,10 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
   @override
   Widget build(BuildContext context) {
     final activeShop = _shopState.activeShop;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
-      backgroundColor: Colors.white,
+      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(24),
@@ -619,26 +626,42 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                   context,
                   icon: Icons.settings_outlined,
                   title: 'Settings & Multi-Store',
-                  subtitle: 'Switch shops, printer & Google Drive',
+                  subtitle: 'Switch shops, printer & cloud accounts',
                   route: AppRoutes.settings,
                   isSelected: widget.currentRoute == AppRoutes.settings,
                   showArrow: true,
                 ),
                 _buildMenuItem(
                   context,
-                  icon: Icons.cloud_sync_outlined,
+                  icon: Icons.cloud_sync_rounded,
+                  title: 'Firebase Cloud Sync',
+                  subtitle: _authService.isSignedIn
+                      ? 'Live sync: ${_authService.userEmail ?? "Cloud User"}'
+                      : 'Sign in to sync database across devices',
+                  route: AppRoutes.settings,
+                  badgeText: _authService.isSignedIn ? 'Live Sync' : 'Offline/Guest',
+                  badgeColor: _authService.isSignedIn
+                      ? const Color(0xFFDCFCE7)
+                      : const Color(0xFFF1F5F9),
+                  badgeTextColor: _authService.isSignedIn
+                      ? const Color(0xFF15803D)
+                      : const Color(0xFF64748B),
+                ),
+                _buildMenuItem(
+                  context,
+                  icon: Icons.add_to_drive_rounded,
                   title: 'Google Drive Backup',
                   subtitle: _driveService.lastBackupTime != null
                       ? 'Backup: ${_driveService.lastBackupTime!.hour}:${_driveService.lastBackupTime!.minute.toString().padLeft(2, '0')}'
-                      : 'Automatic cloud sync',
+                      : 'Personal Google Drive storage',
                   route: AppRoutes.settings,
-                  badgeText: _driveService.isConnected ? 'Connected' : 'Offline Ready',
+                  badgeText: _driveService.isConnected ? 'Connected' : '15 GB Free',
                   badgeColor: _driveService.isConnected
                       ? const Color(0xFFDCFCE7)
-                      : const Color(0xFFF1F5F9),
+                      : const Color(0xFFEFF6FF),
                   badgeTextColor: _driveService.isConnected
                       ? const Color(0xFF15803D)
-                      : const Color(0xFF64748B),
+                      : const Color(0xFF2563EB),
                 ),
                 _buildMenuItem(
                   context,
@@ -656,6 +679,60 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                       ? const Color(0xFF15803D)
                       : const Color(0xFFDC2626),
                 ),
+
+                // Theme Mode Quick Toggle
+                Container(
+                  margin: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? const Color(0xFF0F172A).withValues(alpha: 0.6)
+                        : const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                        size: 20,
+                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFFF59E0B),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              isDark ? 'Dark Theme' : 'Light Theme',
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                              ),
+                            ),
+                            Text(
+                              isDark ? 'Tap switch for Day Mode' : 'Tap switch for Night Mode',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch.adaptive(
+                        value: isDark,
+                        activeTrackColor: const Color(0xFF38BDF8),
+                        onChanged: (val) {
+                          ThemeState.instance.setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -663,8 +740,12 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
           // ── Bottom Section: Lock & Local Storage Status ────────────────────
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                ),
+              ),
             ),
             child: Column(
               children: [
@@ -675,25 +756,16 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                       child: ElevatedButton.icon(
                         onPressed: () {
                           final nav = Navigator.of(context);
-                          final messenger = ScaffoldMessenger.of(context);
                           nav.pop();
                           if (_securityService.isLockEnabled) {
                             _securityService.lockApp();
                             nav.pushNamed(AppRoutes.appLock);
                           } else {
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: const Text(
-                                  'App Lock is disabled. You can set a 4-digit PIN in Settings.',
-                                ),
-                                action: SnackBarAction(
-                                  label: 'Settings',
-                                  textColor: Colors.yellow,
-                                  onPressed: () =>
-                                      nav.pushNamed(AppRoutes.settings),
-                                ),
-                              ),
+                            AppToast.showWarning(
+                              context,
+                              'App Lock is disabled. You can set a 4-digit PIN in Settings.',
                             );
+                            nav.pushNamed(AppRoutes.settings);
                           }
                         },
                         icon: const Icon(Icons.lock_outline, size: 16, color: Colors.white),
@@ -730,12 +802,48 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                       child: IconButton(
                         icon: const Icon(Icons.logout_rounded,
                             color: Color(0xFFE11D48), size: 18),
-                        onPressed: () {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            AppRoutes.auth,
-                            (route) => false,
+                        onPressed: () async {
+                          final confirm = await showDialog<bool>(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              title: const Row(
+                                children: [
+                                  Icon(Icons.logout_rounded, color: Color(0xFFE11D48)),
+                                  SizedBox(width: 8),
+                                  Text('Log Out?', style: TextStyle(fontSize: 16)),
+                                ],
+                              ),
+                              content: const Text(
+                                'Are you sure you want to log out? Local data will remain safely saved on your device.',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Cancel'),
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFE11D48),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  ),
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('Log Out', style: TextStyle(color: Colors.white)),
+                                ),
+                              ],
+                            ),
                           );
+                          if (confirm == true) {
+                            await AuthService.instance.signOut();
+                            if (context.mounted) {
+                              AppToast.showInfo(context, 'Logged out successfully');
+                              Navigator.pushNamedAndRemoveUntil(
+                                context,
+                                AppRoutes.auth,
+                                (route) => false,
+                              );
+                            }
+                          }
                         },
                       ),
                     ),
@@ -794,6 +902,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     Color? badgeTextColor,
     bool showArrow = false,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         Navigator.pop(context); // Close drawer
@@ -815,7 +924,9 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8.5),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFEEF2FF) : Colors.transparent,
+          color: isSelected
+              ? (isDark ? const Color(0xFF312E81) : const Color(0xFFEEF2FF))
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
@@ -824,8 +935,8 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
               icon,
               size: 19,
               color: isSelected
-                  ? const Color(0xFF3730A3)
-                  : const Color(0xFF475569),
+                  ? (isDark ? const Color(0xFF818CF8) : const Color(0xFF3730A3))
+                  : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -838,17 +949,17 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                       fontSize: 12.5,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                       color: isSelected
-                          ? const Color(0xFF1E1B4B)
-                          : const Color(0xFF1E293B),
+                          ? (isDark ? Colors.white : const Color(0xFF1E1B4B))
+                          : (isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B)),
                     ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 1),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 9.5,
-                        color: Color(0xFF94A3B8),
+                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                       ),
                     ),
                   ],
@@ -859,8 +970,8 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
               Container(
                 width: 6,
                 height: 6,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF3730A3),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF818CF8) : const Color(0xFF3730A3),
                   shape: BoxShape.circle,
                 ),
               )
@@ -868,7 +979,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: badgeColor ?? const Color(0xFFF1F5F9),
+                  color: badgeColor ?? (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -876,15 +987,15 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                   style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.bold,
-                    color: badgeTextColor ?? const Color(0xFF475569),
+                    color: badgeTextColor ?? (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
                   ),
                 ),
               )
             else if (showArrow)
-              const Icon(
+              Icon(
                 Icons.chevron_right,
                 size: 16,
-                color: Color(0xFF94A3B8),
+                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
               ),
           ],
         ),

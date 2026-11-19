@@ -143,9 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: () {
                     final name = nameCtrl.text.trim();
                     if (name.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter shop name')),
-                      );
+                      AppToast.showWarning(context, 'Please enter shop name');
                       return;
                     }
                     ShopState.instance.addShop(
@@ -155,12 +153,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       address: addressCtrl.text.trim(),
                     );
                     Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Switched to new shop: $name'),
-                        backgroundColor: const Color(0xFF16A34A),
-                      ),
-                    );
+                    AppToast.showSuccess(context, 'Switched to new shop: $name');
                   },
                   label: const Text(
                     'Create & Switch to Shop',
@@ -439,12 +432,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return;
                   }
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('App Lock PIN configured successfully!'),
-                      backgroundColor: Color(0xFF16A34A),
-                    ),
-                  );
+                  AppToast.showSuccess(context, 'App Lock PIN configured successfully!');
                 },
                 child: const Text('Save & Enable', style: TextStyle(color: Colors.white)),
               ),
@@ -492,17 +480,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         dialogOpen = false;
       }
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Failed to scan for printers. Please verify Bluetooth is enabled and try again.'),
-            backgroundColor: const Color(0xFFE11D48),
-            action: SnackBarAction(
-              label: 'Retry',
-              textColor: Colors.white,
-              onPressed: _showPrinterPickerModal,
-            ),
-          ),
-        );
+        AppToast.showError(context, 'Failed to scan for printers. Please verify Bluetooth is enabled.');
       }
       return;
     }
@@ -598,12 +576,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             preferredPrinterUrl: p.url,
                           );
                           Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Selected printer: ${p.name}'),
-                              backgroundColor: const Color(0xFF16A34A),
-                            ),
-                          );
+                          AppToast.showSuccess(context, 'Selected printer: ${p.name}');
                         },
                       );
                     },
@@ -634,23 +607,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final allShops = ShopState.instance.shops;
     final sec = SecurityService.instance;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return PopScope(
       canPop: true,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
           elevation: 0.5,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF1E293B)),
+            icon: Icon(Icons.arrow_back_ios_new, size: 18, color: isDark ? Colors.white : const Color(0xFF1E293B)),
             onPressed: () => Navigator.pop(context),
           ),
-          title: const Text(
+          title: Text(
             'Settings & Multi-Store',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              color: isDark ? Colors.white : const Color(0xFF1E293B),
             ),
           ),
         ),
@@ -847,12 +822,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       onChanged: (v) async {
                         final ok = await sec.setBiometricEnabled(v);
                         if (v && !ok && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('No biometric hardware or enrolled fingerprints found on this device.'),
-                              backgroundColor: Color(0xFFE11D48),
-                            ),
-                          );
+                          AppToast.showWarning(context, 'No biometric hardware or enrolled fingerprints found on this device.');
                         }
                       },
                     ),
@@ -1546,17 +1516,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Widget? trailing,
     required Widget child,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E293B) : Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: const [
+        border: Border.all(
+          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+        ),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x06000000),
+            color: isDark ? Colors.black26 : const Color(0x06000000),
             blurRadius: 6,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -1568,14 +1541,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 20, color: const Color(0xFF1E293B)),
+                  Icon(icon, size: 20, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF1E293B)),
                   const SizedBox(width: 8),
                   Text(
                     title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
+                      color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
                     ),
                   ),
                 ],
@@ -1596,16 +1569,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required bool isSelected,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+          color: isSelected
+              ? (isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF))
+              : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isSelected ? const Color(0xFF2563EB) : const Color(0xFFE2E8F0),
+            color: isSelected
+                ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF2563EB))
+                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
             width: isSelected ? 1.5 : 1,
           ),
         ),
@@ -1614,7 +1592,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
             Icon(
               icon,
               size: 22,
-              color: isSelected ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+              color: isSelected
+                  ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF2563EB))
+                  : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
             ),
             const SizedBox(height: 6),
             Text(
@@ -1622,7 +1602,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFF475569),
+                color: isSelected
+                    ? (isDark ? Colors.white : const Color(0xFF1E3A8A))
+                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
               ),
             ),
           ],
