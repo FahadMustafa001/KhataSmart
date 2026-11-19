@@ -48,6 +48,58 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
       return;
     }
 
+    if (_type == LedgerType.gave) {
+      final party = KhataState.instance.allPartiesForDatabase
+          .where((p) => p.id == widget.partyId)
+          .firstOrNull;
+      if (party != null &&
+          party.creditLimit != null &&
+          party.creditLimit! > 0 &&
+          (party.balance + amount) > party.creditLimit!) {
+        final newBal = party.balance + amount;
+        final excess = newBal - party.creditLimit!;
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626)),
+                SizedBox(width: 8),
+                Text('Credit Limit Warning', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
+            content: Text(
+              '${party.name} ki approved credit limit PKR ${party.creditLimit!.toStringAsFixed(0)} hai.\nYeh entry shamil karne se inka kul udhaar PKR ${newBal.toStringAsFixed(0)} ho jayega (limit se PKR ${excess.toStringAsFixed(0)} zaid).\n\nKya aap yeh entry record karna chahte hain?',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cancel', style: TextStyle(color: Color(0xFF64748B))),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _doSave(amount);
+                },
+                child: const Text('Approve & Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+    }
+
+    _doSave(amount);
+  }
+
+  void _doSave(double amount) {
     KhataState.instance.addTransaction(
       partyId: widget.partyId,
       type: _type,

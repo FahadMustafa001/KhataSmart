@@ -408,8 +408,82 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Widget _buildActionButtons(NotificationModel notif, BuildContext context) {
     switch (notif.type) {
-      case NotificationType.paymentDue:
       case NotificationType.creditLimitBreach:
+        final partyId = notif.referenceId;
+        final party = partyId != null
+            ? KhataState.instance.allPartiesForDatabase.where((p) => p.id == partyId).firstOrNull
+            : null;
+        if (party == null) return const SizedBox.shrink();
+
+        return Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              ElevatedButton.icon(
+                onPressed: () {
+                  _notifService.markAsRead(notif.id);
+                  PrintingAndSharingService.instance.sendCreditLimitBreachViaWhatsApp(
+                    party: party,
+                    shop: ShopState.instance.activeShop,
+                  );
+                },
+                icon: const Icon(Icons.chat_bubble_outline_rounded, size: 13, color: Colors.white),
+                label: const Text(
+                  'WhatsApp Warning',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  _notifService.markAsRead(notif.id);
+                  if (party.phone.isNotEmpty) {
+                    PrintingAndSharingService.instance.makePhoneCall(party.phone);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('No phone number saved for this party')),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.phone_outlined, size: 13, color: Color(0xFFDC2626)),
+                label: const Text(
+                  'Call',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  side: const BorderSide(color: Color(0xFFDC2626)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: () {
+                  _notifService.markAsRead(notif.id);
+                  Navigator.pushNamed(context, AppRoutes.partyLedgerDetail, arguments: party.id);
+                },
+                icon: const Icon(Icons.menu_book_outlined, size: 13, color: Color(0xFF475569)),
+                label: const Text(
+                  'View Khata',
+                  style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                ),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+        );
+
+      case NotificationType.paymentDue:
         final partyId = notif.referenceId;
         final party = partyId != null
             ? KhataState.instance.allPartiesForDatabase.where((p) => p.id == partyId).firstOrNull

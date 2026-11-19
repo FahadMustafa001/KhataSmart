@@ -8,6 +8,7 @@ import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
+import '../khata/widgets/add_party_sheet.dart';
 import '../shared_widgets/custom_app_bar.dart';
 
 class CheckoutSettlementScreen extends StatefulWidget {
@@ -30,7 +31,12 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
   double get _grossAmount => _cartState.subtotal;
   double get _discountAmount => _cartState.discount;
 
+  PartyModel? _selectedCustomer;
   PartyModel? get _customer {
+    if (_selectedCustomer != null) {
+      return _khataState.customers.where((c) => c.id == _selectedCustomer!.id).firstOrNull ??
+          _selectedCustomer;
+    }
     if (_khataState.customers.isNotEmpty) {
       return _khataState.customers.first;
     }
@@ -64,6 +70,114 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
   }
 
   void _onCompleteSale() {
+    // Check Customer Credit Limit Breach Warning
+    if (_selectedPaymentMethod == 'Store Credit' &&
+        _customer != null &&
+        _customer!.creditLimit != null &&
+        _customer!.creditLimit! > 0 &&
+        _newTotalBalance > _customer!.creditLimit!) {
+      final excess = _newTotalBalance - _customer!.creditLimit!;
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Color(0xFFDC2626), size: 24),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Credit Limit Breach Warning',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Customer "${_customer!.name}" ki approved credit limit PKR ${_customer!.creditLimit!.toStringAsFixed(0)} hai.',
+                style: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
+              ),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF2F2),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: const Color(0xFFFECACA)),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Pehle ka Udhaar:', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                        Text('PKR ${_prevBalance.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Is Bill ka Udhaar:', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                        Text('PKR ${_newUdhaar.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
+                      ],
+                    ),
+                    const Divider(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Naya Kul Udhaar:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                        Text('PKR ${_newTotalBalance.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Limit se Zaid (Excess):', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))),
+                        Text('PKR ${excess.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Kya aap yeh sale udhaar par approve karna chahte hain?',
+                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel Sale', style: TextStyle(color: Color(0xFF64748B))),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFDC2626),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                _executeCompleteSale();
+              },
+              child: const Text('Approve & Complete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    _executeCompleteSale();
+  }
+
+  void _executeCompleteSale() {
     // 1. Deduct stock in inventory
     for (final item in _cartState.items) {
       _inventoryState.deductStock(item.product.id, item.quantity);
@@ -387,78 +501,121 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                   const SizedBox(height: 12),
 
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
-                    ),
-                    child: Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 20,
-                          backgroundColor: Color(0xFFCBD5E1),
-                          child: Icon(Icons.person,
-                              color: Color(0xFF334155), size: 24),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: _showCustomerPicker,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: (_customer?.creditLimit != null &&
+                                  _customer!.creditLimit! > 0 &&
+                                  _newTotalBalance > _customer!.creditLimit!)
+                              ? const Color(0xFFFECACA)
+                              : const Color(0xFFE2E8F0),
+                          width: (_customer?.creditLimit != null &&
+                                  _customer!.creditLimit! > 0 &&
+                                  _newTotalBalance > _customer!.creditLimit!)
+                              ? 1.5
+                              : 1,
                         ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _customer?.name ?? 'Counter Sale / Walk-in',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF0F172A),
-                                ),
-                              ),
-                              const SizedBox(height: 1),
-                              Text(
-                                _customer != null
-                                    ? '${_customer!.phone} • ID #${_customer!.id}'
-                                    : 'No ledger account selected',
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              RichText(
-                                text: TextSpan(
+                      ),
+                      child: Row(
+                        children: [
+                          const CircleAvatar(
+                            radius: 20,
+                            backgroundColor: Color(0xFFCBD5E1),
+                            child: Icon(Icons.person,
+                                color: Color(0xFF334155), size: 24),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _customer?.name ?? 'Counter Sale / Walk-in',
                                   style: const TextStyle(
-                                      fontSize: 11, color: Color(0xFF475569)),
-                                  children: [
-                                    const TextSpan(text: 'Prev. Balance: '),
-                                    TextSpan(
-                                      text: _customer != null
-                                          ? 'PKR ${_customer!.balance.toStringAsFixed(0)} ${_customer!.balance > 0 ? "(Due)" : ""}'
-                                          : 'PKR 0',
-                                      style: TextStyle(
-                                        color: _prevBalance > 0
-                                            ? const Color(0xFFDC2626)
-                                            : const Color(0xFF16A34A),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0F172A),
+                                  ),
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 1),
+                                Text(
+                                  _customer != null
+                                      ? '${_customer!.phone} • ID #${_customer!.id}'
+                                      : 'No ledger account selected',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                RichText(
+                                  text: TextSpan(
+                                    style: const TextStyle(
+                                        fontSize: 11, color: Color(0xFF475569)),
+                                    children: [
+                                      const TextSpan(text: 'Prev. Balance: '),
+                                      TextSpan(
+                                        text: _customer != null
+                                            ? 'PKR ${_customer!.balance.toStringAsFixed(0)} ${_customer!.balance > 0 ? "(Due)" : ""}'
+                                            : 'PKR 0',
+                                        style: TextStyle(
+                                          color: _prevBalance > 0
+                                              ? const Color(0xFFDC2626)
+                                              : const Color(0xFF16A34A),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (_customer?.creditLimit != null && _customer!.creditLimit! > 0) ...[
+                                  const SizedBox(height: 2),
+                                  RichText(
+                                    text: TextSpan(
+                                      style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                                      children: [
+                                        const TextSpan(text: 'Credit Limit: '),
+                                        TextSpan(
+                                          text: 'PKR ${_customer!.creditLimit!.toStringAsFixed(0)}',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: _newTotalBalance > _customer!.creditLimit!
+                                                ? const Color(0xFFDC2626)
+                                                : const Color(0xFF0F172A),
+                                          ),
+                                        ),
+                                        if (_newTotalBalance > _customer!.creditLimit!)
+                                          TextSpan(
+                                            text: ' ⚠️ (Exceeds by PKR ${(_newTotalBalance - _customer!.creditLimit!).toStringAsFixed(0)})',
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFFDC2626),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFF6FF),
-                            borderRadius: BorderRadius.circular(8),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.swap_horiz,
+                                size: 18, color: Color(0xFF1D4ED8)),
                           ),
-                          child: const Icon(Icons.swap_horiz,
-                              size: 18, color: Color(0xFF1D4ED8)),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
 
@@ -469,6 +626,8 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     children: [
                       Expanded(
                         child: TextField(
+                          readOnly: true,
+                          onTap: _showCustomerPicker,
                           style: const TextStyle(
                               fontSize: 12, color: Color(0xFF0F172A)),
                           decoration: InputDecoration(
@@ -501,29 +660,42 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: const Color(0xFFBFDBFE)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.person_add_alt,
-                                size: 14, color: Color(0xFF1D4ED8)),
-                            SizedBox(width: 4),
-                            Text(
-                              '+ New',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1D4ED8),
-                              ),
+                      InkWell(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.white,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                             ),
-                          ],
+                            builder: (_) => const AddPartySheet(initialType: PartyType.customer),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFFBFDBFE)),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.person_add_alt,
+                                  size: 14, color: Color(0xFF1D4ED8)),
+                              SizedBox(width: 4),
+                              Text(
+                                '+ New',
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1D4ED8),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -1056,6 +1228,150 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showCustomerPicker() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        String query = '';
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            final customers = _khataState.customers.where((c) {
+              if (query.isEmpty) return true;
+              return c.name.toLowerCase().contains(query.toLowerCase()) ||
+                  c.phone.contains(query);
+            }).toList();
+
+            return Container(
+              height: MediaQuery.of(context).size.height * 0.75,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Select Customer for Credit Bill',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      TextButton.icon(
+                        icon: const Icon(Icons.person_add, size: 16, color: Color(0xFF1D4ED8)),
+                        label: const Text('New', style: TextStyle(color: Color(0xFF1D4ED8), fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.white,
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                            ),
+                            builder: (_) => const AddPartySheet(initialType: PartyType.customer),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    decoration: InputDecoration(
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      hintText: 'Search customer by name or phone...',
+                      hintStyle: const TextStyle(fontSize: 12),
+                      isDense: true,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                    ),
+                    onChanged: (val) {
+                      setModalState(() {
+                        query = val.trim();
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: customers.isEmpty
+                        ? const Center(
+                            child: Text('No customers found', style: TextStyle(color: Color(0xFF94A3B8))),
+                          )
+                        : ListView.separated(
+                            itemCount: customers.length,
+                            separatorBuilder: (_, __) => const Divider(height: 1),
+                            itemBuilder: (_, idx) {
+                              final c = customers[idx];
+                              final isSelected = _customer?.id == c.id;
+                              return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
+                                leading: CircleAvatar(
+                                  backgroundColor: const Color(0xFFEFF6FF),
+                                  child: Text(
+                                    c.initials,
+                                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8)),
+                                  ),
+                                ),
+                                title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                subtitle: Text(
+                                  '${c.phone.isNotEmpty ? c.phone : "No Phone"}${c.creditLimit != null && c.creditLimit! > 0 ? " • Limit: PKR ${c.creditLimit!.toStringAsFixed(0)}" : ""}',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                ),
+                                trailing: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      'PKR ${c.balance.toStringAsFixed(0)}',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                        color: c.balance > 0 ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
+                                      ),
+                                    ),
+                                    Text(
+                                      c.balance > 0 ? 'Due' : 'Clear',
+                                      style: TextStyle(
+                                        fontSize: 9.5,
+                                        color: c.balance > 0 ? const Color(0xFFDC2626) : const Color(0xFF16A34A),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                selected: isSelected,
+                                selectedTileColor: const Color(0xFFF1F5F9),
+                                onTap: () {
+                                  setState(() {
+                                    _selectedCustomer = c;
+                                  });
+                                  Navigator.pop(ctx);
+                                },
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

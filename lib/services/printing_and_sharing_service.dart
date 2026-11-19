@@ -388,6 +388,48 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
     }
   }
 
+  // WhatsApp Credit Limit Breach Alert Message
+  Future<void> sendCreditLimitBreachViaWhatsApp({
+    required PartyModel party,
+    required ShopModel shop,
+  }) async {
+    final phone = formatPhoneForWhatsApp(party.phone);
+    final limit = party.creditLimit?.toStringAsFixed(0) ?? '0';
+    final excessVal = (party.balance - (party.creditLimit ?? 0));
+    final excess = excessVal > 0 ? excessVal.toStringAsFixed(0) : '0';
+
+    final message = '''
+السلام علیکم ${party.name} صاحب،
+
+*${shop.name}* ki taraf se zaroori ittal'a:
+Aap ke khata account ka udhaar approved limit se barh gaya hai:
+
+• Approved Credit Limit: *PKR $limit*
+• Current Udhaar Balance: *PKR ${party.balance.toStringAsFixed(0)}*
+• Excess (Zaid) Amount: *PKR $excess*
+
+Baraye meharbani baqaya raqam ki adaigi foran karwa dein taake aap ki credit shopping ba-asani jari reh sakay.
+
+Shukriya!
+*${shop.name}*
+${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
+''';
+
+    if (phone.isNotEmpty) {
+      final url = Uri.parse('https://wa.me/$phone?text=${Uri.encodeComponent(message)}');
+      try {
+        final ok = await launchUrl(url, mode: LaunchMode.externalApplication);
+        if (!ok) {
+          await Share.share(message, subject: 'Credit Limit Alert - ${party.name}');
+        }
+      } catch (_) {
+        await Share.share(message, subject: 'Credit Limit Alert - ${party.name}');
+      }
+    } else {
+      await Share.share(message, subject: 'Credit Limit Alert - ${party.name}');
+    }
+  }
+
   // ── 6. Full Party Ledger Statement PDF (A4 Format) ────────────────────────
   Future<void> printOrSharePartyLedgerStatement({
     required PartyModel party,
