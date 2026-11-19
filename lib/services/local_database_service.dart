@@ -365,5 +365,6 @@ class LocalDatabaseService {
     NotificationService.instance.clearAll();
     _debounceTimer?.cancel();
     _attachListeners();
+    _debounceTimer?.cancel();
   }
 }

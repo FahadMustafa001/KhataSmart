@@ -244,7 +244,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
             (partyTypeMap[e.partyId] == PartyType.supplier ||
                 e.note.toLowerCase().contains('expense') ||
                 e.note.toLowerCase().contains('bill # electricity') ||
-                RegExp(r'(?<![a-zA-Z])rent(?![a-zA-Z])', caseSensitive: false).hasMatch(e.note) ||
+                RegExp(r'(?<![a-zA-Z])rent(?:al)?(?![a-zA-Z])', caseSensitive: false).hasMatch(e.note) ||
                 e.note.toLowerCase().contains('utility')))
         .fold(0.0, (sum, e) => sum + e.amount);
 
