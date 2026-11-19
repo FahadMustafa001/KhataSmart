@@ -86,7 +86,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: DashboardMetricCard(
-                      title: 'To Collect (Udhaar)',
+                      title: 'To Collect (Receivable)',
                       amount: CurrencyFormatter.format(totalReceivable),
                       subtitle:
                           '${_khataState.customers.where((c) => c.balance > 0).length} Overdue',
@@ -422,7 +422,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               _buildLegendItem(const Color(0xFF1D4ED8),
                   'Digital (${CurrencyFormatter.format(digitalSales)})'),
               _buildLegendItem(const Color(0xFF991B1B),
-                  'Udhaar (${CurrencyFormatter.format(udhaarSales)})'),
+                  'Credit (${CurrencyFormatter.format(udhaarSales)})'),
             ],
           ),
         ],

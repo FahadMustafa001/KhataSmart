@@ -11,7 +11,7 @@ class LedgerEntryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isGave = entry.type == LedgerType.gave; // Maine Diye (Udhaar / Outflow)
+    final isGave = entry.type == LedgerType.gave; // You Gave (Debit / Outflow)
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -43,12 +43,12 @@ class LedgerEntryRow extends StatelessWidget {
           // Note / Detail
           Expanded(
             child: Text(
-              entry.note.isNotEmpty ? entry.note : (isGave ? 'Maine Diye' : 'Maine Wasool Kiye'),
+              entry.note.isNotEmpty ? entry.note : (isGave ? 'Gave' : 'Received'),
               style: const TextStyle(fontSize: 13, color: AppColors.textDark),
             ),
           ),
 
-          // Two-column balance entry: Diye (Red) vs Liye (Green)
+          // Two-column balance entry: Gave (Red) vs Received (Green)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -67,7 +67,7 @@ class LedgerEntryRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  isGave ? 'Maine Diye' : 'Maine Liye',
+                  isGave ? 'Gave' : 'Received',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w600,

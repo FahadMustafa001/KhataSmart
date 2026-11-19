@@ -47,7 +47,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
     final changeAmount = isUdhaar ? 0.0 : (tenderedAmount - netPayable);
     final paymentTag = actualOrder != null
         ? (isUdhaar
-            ? 'UDHAAR • CREDIT'
+            ? 'STORE CREDIT'
             : 'PAID • ${actualOrder.paymentMode.name.toUpperCase()}')
         : 'PAID • CASH';
 
@@ -438,7 +438,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     isUdhaar
-                                        ? 'Payment: Credit / Udhaar'
+                                        ? 'Payment: Store Credit'
                                         : 'Tendered: ${CurrencyFormatter.format(tenderedAmount)}',
                                     style: const TextStyle(
                                         fontFamily: 'monospace',

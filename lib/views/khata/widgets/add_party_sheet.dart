@@ -30,8 +30,8 @@ class AddPartySheet extends StatefulWidget {
 }
 
 enum _BalanceType {
-  receivable, // Maine Lene Hain (+)
-  payable, // Maine Dene Hain (-)
+  receivable, // Receivable (+)
+  payable, // Payable (-)
   zero, // Zero (0)
 }
 
@@ -174,7 +174,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
           partyId: storedParty.id,
           type: finalBalance > 0 ? LedgerType.gave : LedgerType.got,
           amount: finalBalance.abs(),
-          note: 'Opening Balance (Shuruaati Baqaya)',
+          note: 'Opening Balance',
           shopId: storedParty.shopId,
         );
       }
@@ -200,7 +200,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                '${_partyType == PartyType.customer ? "Customer" : "Supplier"} "$name" Khata Book mein shamil ho gaya!',
+                '${_partyType == PartyType.customer ? "Customer" : "Supplier"} "$name" added to Ledger!',
                 style: const TextStyle(fontSize: 12.5, color: Colors.white),
               ),
             ),
@@ -253,15 +253,15 @@ class _AddPartySheetState extends State<AddPartySheet> {
 
                     const SizedBox(height: 18),
 
-                    // Section: Location / Kahan Se Hai (City, Area, Address)
-                    _buildSectionTitle('Kahan Se Hai (Address & City)', Icons.location_on_outlined),
+                    // Section: Location (City, Area, Address)
+                    _buildSectionTitle('Location & Address', Icons.location_on_outlined),
                     const SizedBox(height: 8),
                     _buildLocationSection(),
 
                     const SizedBox(height: 18),
 
                     // Section: Opening Balance
-                    _buildSectionTitle('Shuruaati Baqaya (Opening Balance)', Icons.account_balance_wallet_outlined),
+                    _buildSectionTitle('Opening Balance', Icons.account_balance_wallet_outlined),
                     const SizedBox(height: 8),
                     _buildBalanceSection(isCustomer),
 
@@ -318,7 +318,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isCustomer ? 'Naya Customer Add Karein' : 'Naya Supplier Add Karein',
+                  isCustomer ? 'Add New Customer' : 'Add New Supplier',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -327,8 +327,8 @@ class _AddPartySheetState extends State<AddPartySheet> {
                 ),
                 Text(
                   isCustomer
-                      ? 'Grahak ka record aur udhaar khata banayein'
-                      : 'Vendor/Dealer ka supply khata banayein',
+                      ? 'Create customer profile & credit ledger'
+                      : 'Create vendor/dealer supply ledger',
                   style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
                 ),
               ],
@@ -485,8 +485,8 @@ class _AddPartySheetState extends State<AddPartySheet> {
       controller: _nameController,
       style: const TextStyle(fontSize: 13, color: Color(0xFF0F172A)),
       decoration: InputDecoration(
-        labelText: isCustomer ? 'Customer Ka Naam *' : 'Supplier / Company Ka Naam *',
-        hintText: isCustomer ? 'Maslan: Muhammad Usman' : 'Maslan: Metro Traders / Al-Karam Fabrics',
+        labelText: isCustomer ? 'Customer Name *' : 'Supplier / Company Name *',
+        hintText: isCustomer ? 'e.g. John Doe / Muhammad Usman' : 'e.g. Metro Traders / Al-Karam Fabrics',
         prefixIcon: const Icon(Icons.badge_outlined, size: 18, color: Color(0xFF64748B)),
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
@@ -505,7 +505,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
       ),
       validator: (val) {
         if (val == null || val.trim().isEmpty) {
-          return 'Naam likhna lazmi hai';
+          return 'Name is required';
         }
         return null;
       },
@@ -657,7 +657,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
           controller: _addressController,
           style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
           decoration: InputDecoration(
-            labelText: 'Mukammal Pata (Street Address / Shop No)',
+            labelText: 'Street Address (Shop No / Street / Area)',
             hintText: 'e.g. Shop #14, Ground Floor, Madina Market',
             prefixIcon: const Icon(Icons.home_outlined, size: 17, color: Color(0xFF64748B)),
             filled: true,
@@ -684,7 +684,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Balance Type Switcher (Maine Lene Hain vs Maine Dene Hain vs Zero)
+        // Balance Type Switcher (Receivable vs Payable vs Zero)
         Row(
           children: [
             Expanded(
@@ -709,14 +709,14 @@ class _AddPartySheetState extends State<AddPartySheet> {
                       Icon(Icons.arrow_downward, size: 15, color: Color(0xFF15803D)),
                       SizedBox(height: 2),
                       Text(
-                        'Maine Lene Hain',
+                        'Receivable',
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF15803D),
                         ),
                       ),
-                      Text('(Receivable)', style: TextStyle(fontSize: 8.5, color: Color(0xFF15803D))),
+                      Text('(To Collect)', style: TextStyle(fontSize: 8.5, color: Color(0xFF15803D))),
                     ],
                   ),
                 ),
@@ -745,14 +745,14 @@ class _AddPartySheetState extends State<AddPartySheet> {
                       Icon(Icons.arrow_upward, size: 15, color: Color(0xFFB91C1C)),
                       SizedBox(height: 2),
                       Text(
-                        'Maine Dene Hain',
+                        'Payable',
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFFB91C1C),
                         ),
                       ),
-                      Text('(Payable)', style: TextStyle(fontSize: 8.5, color: Color(0xFFB91C1C))),
+                      Text('(To Pay)', style: TextStyle(fontSize: 8.5, color: Color(0xFFB91C1C))),
                     ],
                   ),
                 ),
@@ -786,7 +786,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
                       Icon(Icons.remove, size: 15, color: Color(0xFF475569)),
                       SizedBox(height: 2),
                       Text(
-                        'Koi Baqaya Nahi',
+                        'No Balance',
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
@@ -816,8 +816,8 @@ class _AddPartySheetState extends State<AddPartySheet> {
             ),
             decoration: InputDecoration(
               labelText: _balanceType == _BalanceType.receivable
-                  ? 'Lene Wali Raqam (PKR)'
-                  : 'Dene Wali Raqam (PKR)',
+                  ? 'Receivable Amount (PKR)'
+                  : 'Payable Amount (PKR)',
               hintText: '0',
               prefixText: 'PKR  ',
               prefixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
@@ -896,7 +896,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
           keyboardType: TextInputType.number,
           style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
           decoration: InputDecoration(
-            labelText: 'Udhaar Ki Hadd (Credit Limit - PKR)',
+            labelText: 'Credit Limit (PKR)',
             hintText: 'e.g. 50000',
             prefixIcon: const Icon(Icons.speed_outlined, size: 17, color: Color(0xFF64748B)),
             filled: true,
@@ -924,7 +924,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
           keyboardType: TextInputType.number,
           style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
           decoration: InputDecoration(
-            labelText: 'Shanakhti Card (CNIC - Optional)',
+            labelText: 'National ID / CNIC (Optional)',
             hintText: '35201-XXXXXXX-X',
             prefixIcon: const Icon(Icons.credit_card, size: 17, color: Color(0xFF64748B)),
             filled: true,
@@ -952,8 +952,8 @@ class _AddPartySheetState extends State<AddPartySheet> {
           maxLines: 2,
           style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
           decoration: InputDecoration(
-            labelText: 'Khas Note / Hidayat (Optional)',
-            hintText: 'e.g. Har peer ko hisab karta hai, bhai ka number: 0321...',
+            labelText: 'Special Notes / Instructions (Optional)',
+            hintText: 'e.g. Settles account every Monday, alternate contact: 0321...',
             prefixIcon: const Icon(Icons.note_alt_outlined, size: 17, color: Color(0xFF64748B)),
             filled: true,
             fillColor: const Color(0xFFF8FAFC),
@@ -1011,8 +1011,8 @@ class _AddPartySheetState extends State<AddPartySheet> {
               icon: const Icon(Icons.check_circle_outline, size: 18, color: Colors.white),
               label: Text(
                 _partyType == PartyType.customer
-                    ? 'Customer Mehfooz Karein'
-                    : 'Supplier Mehfooz Karein',
+                    ? 'Save Customer'
+                    : 'Save Supplier',
                 style: const TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,

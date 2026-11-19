@@ -841,7 +841,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                     ],
                   ),
 
-                  // Kahan Se Hai (Location Badge)
+                  // Location Badge
                   if (item.displayLocation.isNotEmpty) ...[
                     const SizedBox(height: 3),
                     Row(
@@ -876,7 +876,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: Text(
-                        'Udhaar Limit: PKR ${item.creditLimit!.toStringAsFixed(0)}',
+                        'Credit Limit: PKR ${item.creditLimit!.toStringAsFixed(0)}',
                         style: const TextStyle(
                           fontSize: 8.5,
                           fontWeight: FontWeight.bold,

@@ -197,7 +197,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
     }
     final netProfit = totalSales - totalCost;
 
-    // Real Wasooli: Cash Sales + Ledger received entries
+    // Total Recovered: Cash Sales + Ledger received entries
     final ledgerWasooli = filteredEntries
         .where((e) => e.type == LedgerType.got)
         .fold(0.0, (sum, e) => sum + e.amount);
@@ -206,7 +206,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
         .fold(0.0, (sum, o) => sum + o.total);
     final totalWasooli = ledgerWasooli + cashSales;
 
-    // Real Udhaar Given: Credit Sales + Manual Ledger given entries to customers (excluding auto-generated order bills)
+    // Total Credit Extended: Credit Sales + Manual Ledger given entries to customers (excluding auto-generated order bills)
     final allParties = KhataState.instance.allPartiesForDatabase;
     final Map<String, PartyType> partyTypeMap = {for (var p in allParties) p.id: p.type};
 
@@ -326,7 +326,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                 Expanded(
                   child: _buildMetricCard(
                     title: 'Gross Revenue',
-                    subtitle: 'Kul Bikri',
+                    subtitle: 'Gross Sales',
                     amount: totalSales,
                     color: const Color(0xFF2563EB),
                     icon: Icons.payments_rounded,
@@ -337,7 +337,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                 Expanded(
                   child: _buildMetricCard(
                     title: 'Net Profit',
-                    subtitle: 'Saafi Munafa',
+                    subtitle: 'Net Margin',
                     amount: netProfit,
                     color: const Color(0xFF16A34A),
                     icon: Icons.trending_up_rounded,
@@ -351,7 +351,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    title: 'Total Wasooli',
+                    title: 'Total Recovered',
                     subtitle: 'Cash In',
                     amount: totalWasooli,
                     color: const Color(0xFF0D9488),
@@ -362,7 +362,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                 const SizedBox(width: 10),
                 Expanded(
                   child: _buildMetricCard(
-                    title: 'Udhaar Given',
+                    title: 'Credit Extended',
                     subtitle: 'Market Credit',
                     amount: totalUdhaar,
                     color: const Color(0xFFE11D48),
@@ -626,7 +626,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
           const SizedBox(height: 14),
           _buildPaymentRow('Cash Counter', cash, total, const Color(0xFF16A34A)),
           const SizedBox(height: 10),
-          _buildPaymentRow('Udhaar / Credit', udhaar, total, const Color(0xFFE11D48)),
+          _buildPaymentRow('Store Credit', udhaar, total, const Color(0xFFE11D48)),
           const SizedBox(height: 10),
           _buildPaymentRow('Online / Raast', online, total, const Color(0xFF2563EB)),
         ],

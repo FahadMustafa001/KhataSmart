@@ -356,19 +356,19 @@ _Powered by KhataSmart Retail POS_
   }) async {
     final phone = formatPhoneForWhatsApp(party.phone);
     final isReceivable = party.balance >= 0;
-    final statusWord = isReceivable ? 'Lene Hain (Receivable)' : 'Dene Hain (Payable)';
+    final statusWord = isReceivable ? 'Receivable (To Collect)' : 'Payable (To Pay)';
 
     final message = '''
-السلام علیکم ${party.name} صاحب،
+Dear ${party.name},
 
-*${shop.name}* ki taraf se aap ke khata account ka baqaya hisab:
+Account statement from *${shop.name}*:
 
 • Party Name: ${party.name}
 • Current Balance: *PKR ${party.balance.abs().toStringAsFixed(0)}* ($statusWord)
 ${party.creditLimit != null ? '• Approved Credit Limit: PKR ${party.creditLimit!.toStringAsFixed(0)}\n' : ''}
-Baraye meharbani hisab check kar ke wasooli karwa dein.
+Kindly review your balance and arrange payment.
 
-Shukriya!
+Thank you!
 *${shop.name}*
 ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
 ''';
@@ -399,20 +399,20 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
     final excess = excessVal > 0 ? excessVal.toStringAsFixed(0) : '0';
 
     final message = '''
-السلام علیکم ${party.name} صاحب،
+Dear ${party.name},
 
-*${shop.name}* ki taraf se zaroori ittal'a:
-Aap ke khata account ka udhaar approved limit se barh gaya hai:
+Important notice from *${shop.name}*:
+Your credit balance has exceeded the approved limit:
 
 • Approved Credit Limit: *PKR $limit*
-• Current Udhaar Balance: *PKR ${party.balance.toStringAsFixed(0)}*
-• Excess (Zaid) Amount: *PKR $excess*
+• Current Credit Balance: *PKR ${party.balance.toStringAsFixed(0)}*
+• Excess Amount: *PKR $excess*
 
-Baraye meharbani baqaya raqam ki adaigi foran karwa dein taake aap ki credit shopping ba-asani jari reh sakay.
+Please clear your outstanding balance promptly to continue credit purchases.
 
-Shukriya!
+Thank you!
 *${shop.name}*
-${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
+${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
 ''';
 
     if (phone.isNotEmpty) {
@@ -527,7 +527,7 @@ ${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
                         ),
                       ),
                       pw.Text(
-                        party.balance >= 0 ? 'Lene Hain (Receivable)' : 'Dene Hain (Payable)',
+                        party.balance >= 0 ? 'Receivable' : 'Payable',
                         style: const pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
                       ),
                     ],
@@ -553,8 +553,8 @@ ${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
                   children: [
                     _tableHeaderCell('Date'),
                     _tableHeaderCell('Description / Note'),
-                    _tableHeaderCell('Gave (Udhaar)', align: pw.TextAlign.right),
-                    _tableHeaderCell('Got (Vasooli)', align: pw.TextAlign.right),
+                    _tableHeaderCell('Gave (Debit)', align: pw.TextAlign.right),
+                    _tableHeaderCell('Got (Credit)', align: pw.TextAlign.right),
                     _tableHeaderCell('Balance (PKR)', align: pw.TextAlign.right),
                   ],
                 ),
@@ -567,7 +567,7 @@ ${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
                   return pw.TableRow(
                     children: [
                       _tableBodyCell('${e.date.day}/${e.date.month}/${e.date.year}'),
-                      _tableBodyCell(e.note.isNotEmpty ? e.note : (e.type == LedgerType.gave ? 'Udhaar' : 'Payment Received')),
+                      _tableBodyCell(e.note.isNotEmpty ? e.note : (e.type == LedgerType.gave ? 'Debit' : 'Payment Received')),
                       _tableBodyCell(e.type == LedgerType.gave ? e.amount.toStringAsFixed(0) : '-', align: pw.TextAlign.right),
                       _tableBodyCell(e.type == LedgerType.got ? e.amount.toStringAsFixed(0) : '-', align: pw.TextAlign.right),
                       _tableBodyCell(runningBalance.toStringAsFixed(0),
@@ -681,7 +681,7 @@ ${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('TOTAL RECEIVABLE (LENE HAIN)',
+                        pw.Text('TOTAL RECEIVABLE',
                             style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.red800)),
                         pw.SizedBox(height: 2),
                         pw.Text('PKR ${totalReceivables.toStringAsFixed(0)}',
@@ -702,7 +702,7 @@ ${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
-                        pw.Text('TOTAL PAYABLE (DENE HAIN)',
+                        pw.Text('TOTAL PAYABLE',
                             style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
                         pw.SizedBox(height: 2),
                         pw.Text('PKR ${totalPayables.toStringAsFixed(0)}',
@@ -744,7 +744,7 @@ ${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
                       _tableBodyCell(p.phone.isNotEmpty ? p.phone : '-'),
                       _tableBodyCell([p.area, p.city].where((s) => s.isNotEmpty).join(', ')),
                       _tableBodyCell(
-                        '${p.balance.abs().toStringAsFixed(0)} ${p.balance > 0 ? "(Lene)" : p.balance < 0 ? "(Dene)" : "(Nill)"}',
+                        '${p.balance.abs().toStringAsFixed(0)} ${p.balance > 0 ? "(Receivable)" : p.balance < 0 ? "(Payable)" : "(Nil)"}',
                         align: pw.TextAlign.right,
                         isBold: true,
                       ),
@@ -979,7 +979,7 @@ ${shop.phone.isNotEmpty ? 'Rabta: ${shop.phone}' : ''}
                   _pnlRow('Total Orders / Invoices Billed', orderCount.toString(), isHeader: true),
                   _pnlRow('Total Gross Sales Turnover', 'PKR ${totalSales.toStringAsFixed(0)}'),
                   _pnlRow('Cash Sales Received', 'PKR ${cashSales.toStringAsFixed(0)}'),
-                  _pnlRow('Credit / Udhaar Sales', 'PKR ${creditSales.toStringAsFixed(0)}'),
+                  _pnlRow('Credit Sales', 'PKR ${creditSales.toStringAsFixed(0)}'),
                   _pnlRow('Gross Trading Profit', 'PKR ${grossProfit.toStringAsFixed(0)}'),
                   _pnlRow('Operational & Ledger Expenses', 'PKR ${totalExpenses.toStringAsFixed(0)}'),
                   _pnlRow(

@@ -11,7 +11,7 @@ class PartyModel {
   final String cnic;
   final double? creditLimit;
   final String notes;
-  double balance; // Positive: They owe us (Lene Hain), Negative: We owe them (Dene Hain)
+  double balance; // Positive: They owe us (Receivable), Negative: We owe them (Payable)
   final String shopId;
   final DateTime? createdAt;
 

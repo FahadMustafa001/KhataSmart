@@ -70,7 +70,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
               ],
             ),
             content: Text(
-              '${party.name} ki approved credit limit PKR ${party.creditLimit!.toStringAsFixed(0)} hai.\nYeh entry shamil karne se inka kul udhaar PKR ${newBal.toStringAsFixed(0)} ho jayega (limit se PKR ${excess.toStringAsFixed(0)} zaid).\n\nKya aap yeh entry record karna chahte hain?',
+              'Customer ${party.name} has an approved credit limit of PKR ${party.creditLimit!.toStringAsFixed(0)}.\nRecording this transaction will bring their total credit to PKR ${newBal.toStringAsFixed(0)} (PKR ${excess.toStringAsFixed(0)} over limit).\n\nDo you want to approve and record this entry?',
               style: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
             ),
             actions: [
@@ -105,7 +105,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
       type: _type,
       amount: amount,
       note: _noteController.text.trim().isEmpty
-          ? (_type == LedgerType.gave ? 'Maine Diye' : 'Maine Wasool Kiye')
+          ? (_type == LedgerType.gave ? 'Gave' : 'Received')
           : _noteController.text.trim(),
     );
 
@@ -143,7 +143,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
           const SizedBox(height: 12),
 
-          // Segmented Switch: Maine Diye (Red) vs Maine Wasool Kiye (Green)
+          // Segmented Switch: Gave (Red) vs Received (Green)
           Row(
             children: [
               Expanded(
@@ -157,7 +157,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      'Maine Diye (-)',
+                      'You Gave (-)',
                       style: TextStyle(
                         color: isGave ? Colors.white : AppColors.textDark,
                         fontWeight: FontWeight.bold,
@@ -178,7 +178,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
                     ),
                     alignment: Alignment.center,
                     child: Text(
-                      'Maine Wasool Kiye (+)',
+                      'You Received (+)',
                       style: TextStyle(
                         color: !isGave ? Colors.white : AppColors.textDark,
                         fontWeight: FontWeight.bold,
@@ -205,8 +205,8 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
           // Note / Detail
           CustomTextField(
-            label: 'Detail / Description (Tafseel)',
-            hint: 'e.g. Samaan udhaar diya, or Cash payment',
+            label: 'Detail / Description',
+            hint: 'e.g. Goods sold on credit, or cash payment',
             controller: _noteController,
           ),
 
@@ -214,7 +214,7 @@ class _AddTransactionModalState extends State<AddTransactionModal> {
 
           // Save button
           CustomButton(
-            text: isGave ? 'Save (Maine Diye)' : 'Save (Maine Wasool Kiye)',
+            text: isGave ? 'Save (You Gave)' : 'Save (You Received)',
             icon: Icons.check,
             color: isGave ? AppColors.red : AppColors.green,
             onPressed: _save,

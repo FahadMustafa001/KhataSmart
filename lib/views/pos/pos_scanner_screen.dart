@@ -257,7 +257,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
               ),
               const SizedBox(height: 14),
               const Text(
-                'Ye barcode aap ki inventory mein shamil nahi hai. Kya aap is barcode ke sath naya product add karna chahte hain?',
+                'This barcode was not found in your inventory. Would you like to add a new product with this barcode?',
                 style: TextStyle(fontSize: 12.5, color: Color(0xFF475569), height: 1.4),
               ),
               const SizedBox(height: 18),
@@ -498,7 +498,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                 Icon(Icons.qr_code_scanner, size: 14, color: Color(0xFF4ADE80)),
                 SizedBox(width: 6),
                 Text(
-                  'Barcode ya QR Code ko box ke andar layein',
+                  'Point camera at barcode or QR code inside the box',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 11.5,
@@ -816,7 +816,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                         ),
                       ),
                       Text(
-                        'Kisi bhi product ka barcode camera ke samne layein',
+                        'Hold product barcode steadily in front of the camera',
                         style: TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
                       ),
                     ],

@@ -51,7 +51,7 @@ class NotificationService extends ChangeNotifier {
         addNotification(
           title: 'Cloud Backup Complete',
           message:
-              'Aap ki dukan ka mukammal data Google Drive par mehfooz ho gaya hai (${drive.formattedBackupSize}).',
+              'Your shop data has been safely backed up to Google Drive (${drive.formattedBackupSize}).',
           type: NotificationType.cloudBackup,
           route: AppRoutes.settings,
         );
@@ -78,8 +78,8 @@ class NotificationService extends ChangeNotifier {
             title: 'Low Stock Alert: ${p.name}',
             message:
                 p.stockQty == 0
-                    ? 'Ye item mukammal khatam (Out of Stock) ho chuka hai! Naya stock shamil karein.'
-                    : 'Faqat ${p.stockQty} ${p.unit} baqi reh gaye hain. Naya stock order karein.',
+                    ? 'This item is completely out of stock! Please restock immediately.'
+                    : 'Only ${p.stockQty} ${p.unit} remaining in stock. Please place a reorder.',
             type: NotificationType.stockAlert,
             timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
             route: AppRoutes.inventoryList,
@@ -101,9 +101,9 @@ class NotificationService extends ChangeNotifier {
             0,
             NotificationModel(
               id: 'notif_limit_${c.id}_${DateTime.now().millisecondsSinceEpoch}',
-              title: '⚠️ Udhaar Limit Breach: ${c.name}',
+              title: '⚠️ Credit Limit Exceeded: ${c.name}',
               message:
-                  'Warning: ${c.name} ka udhaar approved limit (PKR ${c.creditLimit!.toStringAsFixed(0)}) se barh kar PKR ${c.balance.toStringAsFixed(0)} ho gaya hai!',
+                  'Warning: ${c.name}\'s credit balance (PKR ${c.balance.toStringAsFixed(0)}) has exceeded their approved limit (PKR ${c.creditLimit!.toStringAsFixed(0)})!',
               type: NotificationType.creditLimitBreach,
               timestamp: DateTime.now().subtract(const Duration(minutes: 10)),
               route: AppRoutes.partyLedgerDetail,
@@ -122,9 +122,9 @@ class NotificationService extends ChangeNotifier {
           0,
           NotificationModel(
             id: 'notif_khata_${c.id}_${DateTime.now().millisecondsSinceEpoch}',
-            title: 'Udhaar Wasooli: ${c.name}',
+            title: 'Payment Due: ${c.name}',
             message:
-                'PKR ${c.balance.toStringAsFixed(0)} baqaya hain (${c.displayLocation.isNotEmpty ? c.displayLocation : "Khata Book"}). Payment reminder bheinjein.',
+                'PKR ${c.balance.toStringAsFixed(0)} pending receivable (${c.displayLocation.isNotEmpty ? c.displayLocation : "Customer Ledger"}). Send a payment reminder.',
             type: NotificationType.paymentDue,
             timestamp: DateTime.now().subtract(const Duration(minutes: 20)),
             route: AppRoutes.partyLedgerDetail,
@@ -156,7 +156,7 @@ class NotificationService extends ChangeNotifier {
       );
 
       final message =
-          'Aaj ki Sale Summary: Kul bikri PKR ${totalSales.toStringAsFixed(0)} hui, aur andazan munafa PKR ${netProfit.toStringAsFixed(0)} bana. (${todayOrders.length} bills mukammal).';
+          'Today\'s Sales Summary: Gross sales PKR ${totalSales.toStringAsFixed(0)}, estimated profit PKR ${netProfit.toStringAsFixed(0)} (${todayOrders.length} completed orders).';
 
       if (existingIndex == -1) {
         _notifications.insert(
@@ -196,14 +196,14 @@ class NotificationService extends ChangeNotifier {
       );
       if (!exists) {
         final daysMsg = lastBackup == null
-            ? 'Abhi tak Google Drive par backup nahi liya gaya.'
-            : 'Pichle ${DateTime.now().difference(lastBackup).inDays} din se backup nahi hua.';
+            ? 'No cloud backup has been created on Google Drive yet.'
+            : 'No cloud backup created in the last ${DateTime.now().difference(lastBackup).inDays} days.';
         _notifications.insert(
           0,
           NotificationModel(
             id: 'notif_backup_due_${DateTime.now().millisecondsSinceEpoch}',
             title: '☁️ Cloud Backup Due Alert',
-            message: '$daysMsg Abhi sync karein taake dukan ka hisab mehfooz rahe.',
+            message: '$daysMsg Sync now to keep your shop ledger safe and secure.',
             type: NotificationType.cloudBackup,
             timestamp: DateTime.now().subtract(const Duration(hours: 2)),
             route: AppRoutes.settings,
@@ -223,7 +223,7 @@ class NotificationService extends ChangeNotifier {
             id: 'notif_sec_${DateTime.now().millisecondsSinceEpoch}',
             title: 'Terminal Security Alert',
             message:
-                'Aap ki dukan "${activeShop.name}" ka App Lock filhal OFF hai. Cash aur Khata ko 4-Digit PIN se secure karein.',
+                'App Lock is currently OFF for "${activeShop.name}". Secure cash registers and customer ledgers with a 4-Digit PIN.',
             type: NotificationType.security,
             timestamp: DateTime.now().subtract(const Duration(hours: 1)),
             route: AppRoutes.settings,
@@ -244,9 +244,9 @@ class NotificationService extends ChangeNotifier {
         0,
         NotificationModel(
           id: 'notif_limit_${party.id}_${DateTime.now().millisecondsSinceEpoch}',
-          title: '⚠️ Udhaar Limit Breach: ${party.name}',
+          title: '⚠️ Credit Limit Exceeded: ${party.name}',
           message:
-              'Warning: ${party.name} ka udhaar approved limit (PKR ${party.creditLimit?.toStringAsFixed(0) ?? "0"}) se barh kar PKR ${party.balance.toStringAsFixed(0)} ho gaya hai!',
+              'Warning: ${party.name}\'s credit balance (PKR ${party.balance.toStringAsFixed(0)}) has exceeded their approved limit (PKR ${party.creditLimit?.toStringAsFixed(0) ?? "0"})!',
           type: NotificationType.creditLimitBreach,
           timestamp: DateTime.now(),
           route: AppRoutes.partyLedgerDetail,

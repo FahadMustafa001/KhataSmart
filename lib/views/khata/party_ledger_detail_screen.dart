@@ -105,9 +105,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         time: timeStr,
         balanceAfter: 'PKR ${_currentBalance.toStringAsFixed(0)}',
         debit: isDebit ? e.amount : null,
-        debitLabel: isDebit ? 'Udhaar' : null,
+        debitLabel: isDebit ? 'Debit (Gave)' : null,
         credit: !isDebit ? e.amount : null,
-        creditLabel: !isDebit ? 'Cash Wasool' : null,
+        creditLabel: !isDebit ? 'Cash Received' : null,
       );
     }).toList();
   }
@@ -401,7 +401,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                       padding: EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
                       child: Center(
                         child: Text(
-                          'No transactions recorded yet for this account.\nUse the buttons below to record "Maine Diye" or "Maine Liye".',
+                          'No transactions recorded yet for this account.\nUse the buttons below to record "You Gave" or "You Received".',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 12.5,
@@ -541,7 +541,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   ],
                 ),
 
-                // Location / Kahan Se Hai
+                // Location Badge
                 if (locationText.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Row(
@@ -592,7 +592,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'Udhaar Limit: PKR ${party.creditLimit!.toStringAsFixed(0)}',
+                      'Credit Limit: PKR ${party.creditLimit!.toStringAsFixed(0)}',
                       style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
@@ -1227,7 +1227,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    '(You Gave / Udhaar)',
+                    '(You Gave / Debit)',
                     style: TextStyle(
                       fontSize: 9,
                       color: Color(0xFFFECACA),
@@ -1271,7 +1271,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    '(You Received / Wasool)',
+                    '(You Received / Credit)',
                     style: TextStyle(
                       fontSize: 9,
                       color: Color(0xFFBBF7D0),

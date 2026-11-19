@@ -99,7 +99,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                 ],
               ),
               const Text(
-                'Har dukan ka stock, khata, aur sales 100% alag alag save hota hai.',
+                'Each shop maintains its own independent stock, credit ledger, and sales records.',
                 style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
               ),
               const SizedBox(height: 12),
@@ -179,7 +179,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                     Navigator.pushNamed(context, AppRoutes.settings);
                   },
                   icon: const Icon(Icons.add_business_rounded, size: 18),
-                  label: const Text('+ Nayi Dukan Banayein (Settings)'),
+                  label: const Text('+ Add New Shop (Settings)'),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     side: const BorderSide(color: Color(0xFF2563EB)),
@@ -343,7 +343,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
 
                 const SizedBox(height: 10),
 
-                // Stat Cards: Today's Sale & Total Udhaar
+                // Stat Cards: Today's Sale & Total Receivable
                 Row(
                   children: [
                     // Today's Sale
@@ -381,7 +381,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Udhaar
+                    // Receivable
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
@@ -394,7 +394,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'UDHAAR (LENE HAIN)',
+                              'RECEIVABLE (TO GET)',
                               style: TextStyle(
                                 color: Color(0xFF94A3B8),
                                 fontSize: 8.5,
@@ -594,7 +594,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                   title: 'Notifications & Alerts',
                   subtitle: _notificationService.unreadCount > 0
                       ? '${_notificationService.unreadCount} unread store alerts'
-                      : 'Stock, udhaar & system alerts',
+                      : 'Stock, credit & system alerts',
                   route: AppRoutes.notifications,
                   isSelected: widget.currentRoute == AppRoutes.notifications,
                   badgeText: _notificationService.unreadCount > 0
@@ -673,7 +673,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                             messenger.showSnackBar(
                               SnackBar(
                                 content: const Text(
-                                  'App Lock off hai. Aap Settings se PIN set karke on kar sakte hain.',
+                                  'App Lock is disabled. You can set a 4-digit PIN in Settings.',
                                 ),
                                 action: SnackBarAction(
                                   label: 'Settings',

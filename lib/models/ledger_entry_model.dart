@@ -1,4 +1,4 @@
-enum LedgerType { gave, got } // gave = Maine Diye, got = Maine Wasool Kiye
+enum LedgerType { gave, got } // gave = You Gave (Debit), got = You Received (Credit)
 
 class LedgerEntryModel {
   final String id;

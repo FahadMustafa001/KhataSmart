@@ -60,7 +60,7 @@ class PartyCard extends StatelessWidget {
               ),
             ),
             Text(
-              willGet ? 'Lene Hain' : (willGive ? 'Dene Hain' : 'Settled'),
+              willGet ? 'Receivable' : (willGive ? 'Payable' : 'Settled'),
               style: TextStyle(
                 fontSize: 11,
                 color: willGet

@@ -98,7 +98,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Customer "${_customer!.name}" ki approved credit limit PKR ${_customer!.creditLimit!.toStringAsFixed(0)} hai.',
+                'Customer "${_customer!.name}" has an approved credit limit of PKR ${_customer!.creditLimit!.toStringAsFixed(0)}.',
                 style: const TextStyle(fontSize: 13, color: Color(0xFF334155)),
               ),
               const SizedBox(height: 10),
@@ -114,7 +114,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Pehle ka Udhaar:', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                        const Text('Previous Balance:', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
                         Text('PKR ${_prevBalance.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold)),
                       ],
                     ),
@@ -122,7 +122,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Is Bill ka Udhaar:', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
+                        const Text('This Bill Credit:', style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B))),
                         Text('PKR ${_newUdhaar.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
                       ],
                     ),
@@ -130,7 +130,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Naya Kul Udhaar:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                        const Text('New Total Balance:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
                         Text('PKR ${_newTotalBalance.toStringAsFixed(0)}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
                       ],
                     ),
@@ -138,7 +138,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Limit se Zaid (Excess):', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))),
+                        const Text('Excess Over Limit:', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFFDC2626))),
                         Text('PKR ${excess.toStringAsFixed(0)}', style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626))),
                       ],
                     ),
@@ -147,7 +147,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
               ),
               const SizedBox(height: 12),
               const Text(
-                'Kya aap yeh sale udhaar par approve karna chahte hain?',
+                'Do you want to approve this sale on credit?',
                 style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
               ),
             ],
@@ -423,7 +423,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                 _buildMethodCard(
                   title: 'Store Credit',
-                  subtitle: 'Udhaar Book',
+                  subtitle: 'Credit Ledger',
                   icon: Icons.menu_book,
                   isSelected: _selectedPaymentMethod == 'Store Credit',
                   isFeaturedDark: true,
@@ -816,7 +816,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     const Text(
-                                      'New Udhaar (Credit to Post)',
+                                      'New Credit (To Post in Ledger)',
                                       style: TextStyle(
                                         fontSize: 11.5,
                                         fontWeight: FontWeight.bold,
@@ -1021,7 +1021,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF16A34A)),
                       ),
-                      const TextSpan(text: ' • Udhaar: '),
+                      const TextSpan(text: ' • Credit: '),
                       TextSpan(
                         text: 'PKR ${_newUdhaar.toStringAsFixed(0)}',
                         style: const TextStyle(

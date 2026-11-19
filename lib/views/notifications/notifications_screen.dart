@@ -41,7 +41,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final list = _notifService.notifications;
     if (_selectedFilter == 'Stock') {
       return list.where((n) => n.type == NotificationType.stockAlert).toList();
-    } else if (_selectedFilter == 'Khata') {
+    } else if (_selectedFilter == 'Ledger') {
       return list
           .where((n) =>
               n.type == NotificationType.paymentDue ||
@@ -225,7 +225,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Widget _buildFilterTabs() {
-    final filters = ['All', 'Stock', 'Khata', 'Sales', 'System'];
+    final filters = ['All', 'Stock', 'Ledger', 'Sales', 'System'];
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -470,7 +470,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 },
                 icon: const Icon(Icons.menu_book_outlined, size: 13, color: Color(0xFF475569)),
                 label: const Text(
-                  'View Khata',
+                  'View Ledger',
                   style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
                 ),
                 style: OutlinedButton.styleFrom(
@@ -611,11 +611,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   if (!GoogleDriveService.instance.isConnected) {
                     Navigator.pushNamed(context, AppRoutes.settings);
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Pehle Settings mein ja kar Google Drive link karein')),
+                      const SnackBar(content: Text('Please link Google Drive in Settings first')),
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Google Drive Backup shuru ho raha hai...')),
+                      const SnackBar(content: Text('Starting Google Drive Backup...')),
                     );
                     final res = await GoogleDriveService.instance.backupToDrive();
                     if (res['success'] == true) {
@@ -624,7 +624,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             backgroundColor: const Color(0xFF16A34A),
-                            content: Text('Backup mukammal! Size: ${res['size']}'),
+                            content: Text('Backup completed! Size: ${res['size']}'),
                             behavior: SnackBarBehavior.floating,
                           ),
                         );
@@ -734,12 +734,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Koi Naya Alert Nahi Hai',
+            'No New Alerts',
             style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
           ),
           const SizedBox(height: 4),
           const Text(
-            'Aap ki dukan ka stock, khata, aur sales sab theek hain.',
+            'Your shop stock, customer ledgers, and sales are all up to date.',
             style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
           ),
         ],

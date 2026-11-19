@@ -59,11 +59,11 @@ class KhataState extends ChangeNotifier {
   List<PartyModel> get suppliers =>
       parties.where((p) => p.type == PartyType.supplier).toList();
 
-  // Total Lene Hain (Positive customer balances)
+  // Total Receivable (Positive customer balances)
   double get totalReceivable => customers.fold(
       0.0, (sum, p) => p.balance > 0 ? sum + p.balance : sum);
 
-  // Total Dene Hain (Negative supplier balances)
+  // Total Payable (Negative supplier balances)
   double get totalPayable => suppliers.fold(
       0.0, (sum, p) => p.balance < 0 ? sum + p.balance.abs() : sum);
 
