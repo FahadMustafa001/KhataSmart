@@ -153,7 +153,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
     } else if (_sortBy == 'Name (A to Z)') {
       filtered.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
     } else if (_sortBy == 'Price: High to Low') {
-      filtered.sort((a, b) => b.price.compareTo(a.price));
+      filtered.sort((a, b) => b.sale.compareTo(a.sale));
     } else if (_sortBy == 'Stock: High to Low') {
       filtered.sort((a, b) => b.stock.compareTo(a.stock));
     }

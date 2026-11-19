@@ -694,7 +694,6 @@ class ReceiptPreviewScreen extends StatelessWidget {
                       isDirectPrint: false,
                     );
                   },
-                  },
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
