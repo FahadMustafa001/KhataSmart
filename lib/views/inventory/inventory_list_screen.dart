@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_toast.dart';
 import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
@@ -545,10 +546,10 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                             children: [
                               TextSpan(
                                 text: _sortBy,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1E293B),
+                                  color: AppColors.text(context),
                                 ),
                               ),
                             ],
@@ -603,12 +604,12 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
       children: [
         Row(
           children: [
-            const Text(
+            Text(
               'Stock & Products',
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: AppColors.text(context),
               ),
             ),
             const SizedBox(width: 8),

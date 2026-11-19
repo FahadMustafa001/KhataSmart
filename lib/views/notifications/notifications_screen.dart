@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_toast.dart';
 import '../../models/notification_model.dart';
 import '../../routes/app_routes.dart';
@@ -709,9 +710,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             child: const Icon(Icons.notifications_none_rounded, size: 36, color: Color(0xFF94A3B8)),
           ),
           const SizedBox(height: 12),
-          const Text(
+          Text(
             'No New Alerts',
-            style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            style: TextStyle(
+              fontSize: 14.5,
+              fontWeight: FontWeight.bold,
+              color: AppColors.text(context),
+            ),
           ),
           const SizedBox(height: 4),
           const Text(

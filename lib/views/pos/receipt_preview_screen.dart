@@ -51,6 +51,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
             ? 'STORE CREDIT'
             : 'PAID • ${actualOrder.paymentMode.name.toUpperCase()}')
         : 'PAID • CASH';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return PopScope(
       canPop: false,
@@ -130,13 +131,16 @@ class ReceiptPreviewScreen extends StatelessWidget {
             // REF: #SK-8942
             RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                ),
                 children: [
                   const TextSpan(text: 'REF : '),
                   TextSpan(
                     text: '#$invoiceNumber',
-                    style: const TextStyle(
-                      color: Color(0xFF1E3A8A),
+                    style: TextStyle(
+                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -749,7 +753,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
                   (route) => route.settings.name == AppRoutes.dashboard,
                 );
               },
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
@@ -757,11 +761,15 @@ class ReceiptPreviewScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E3A8A),
+                      color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
                     ),
                   ),
-                  SizedBox(width: 6),
-                  Icon(Icons.arrow_forward, size: 16, color: Color(0xFF1E3A8A)),
+                  const SizedBox(width: 6),
+                  Icon(
+                    Icons.arrow_forward,
+                    size: 16,
+                    color: isDark ? const Color(0xFF60A5FA) : const Color(0xFF1E3A8A),
+                  ),
                 ],
               ),
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_toast.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
@@ -157,12 +158,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
                   const SizedBox(height: 16),
 
-                  const Text(
+                  Text(
                     'Create Account',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.text(context),
                       letterSpacing: -0.3,
                     ),
                   ),
@@ -265,10 +266,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: Text(
                           'I agree to the Terms of Service & Privacy Policy',
-                          style: TextStyle(fontSize: 11.5, color: Color(0xFF475569)),
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: AppColors.subtext(context),
+                          ),
                         ),
                       ),
                     ],
@@ -374,10 +378,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
       children: [
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12.5,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+            color: AppColors.text(context),
           ),
         ),
         const SizedBox(height: 6),

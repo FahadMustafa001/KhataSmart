@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../routes/app_routes.dart';
@@ -107,7 +108,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
               const SizedBox(height: 18),
 
-              const Row(
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
@@ -115,10 +116,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF0F172A),
+                      color: AppColors.text(context),
                     ),
                   ),
-                  Text(
+                  const Text(
                     'Tap to launch',
                     style: TextStyle(
                       fontSize: 11,
@@ -421,11 +422,11 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             spacing: 12,
             runSpacing: 6,
             children: [
-              _buildLegendItem(const Color(0xFF15803D),
+              _buildLegendItem(context, const Color(0xFF15803D),
                   'Cash (${CurrencyFormatter.format(cashSales)})'),
-              _buildLegendItem(const Color(0xFF1D4ED8),
+              _buildLegendItem(context, const Color(0xFF1D4ED8),
                   'Digital (${CurrencyFormatter.format(digitalSales)})'),
-              _buildLegendItem(const Color(0xFF991B1B),
+              _buildLegendItem(context, const Color(0xFF991B1B),
                   'Credit (${CurrencyFormatter.format(udhaarSales)})'),
             ],
           ),
@@ -434,7 +435,8 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     );
   }
 
-  Widget _buildLegendItem(Color color, String label) {
+  Widget _buildLegendItem(BuildContext context, Color color, String label) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -442,7 +444,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+          style: TextStyle(
+            fontSize: 10.5,
+            color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+          ),
         ),
       ],
     );

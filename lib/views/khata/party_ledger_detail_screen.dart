@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_toast.dart';
 import '../../models/ledger_entry_model.dart';
 import '../../models/party_model.dart';
@@ -934,12 +935,12 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               ),
             ),
             const SizedBox(width: 6),
-            const Text(
+            Text(
               'TRANSACTION STATEMENT',
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
+                color: AppColors.text(context),
                 letterSpacing: 0.5,
               ),
             ),
@@ -1031,10 +1032,10 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   children: [
                     Text(
                       tx.date,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0F172A),
+                        color: AppColors.text(context),
                       ),
                     ),
                     const SizedBox(width: 6),
@@ -1058,7 +1059,12 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                 const SizedBox(height: 2),
                 Text(
                   tx.title,
-                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF475569)),
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? const Color(0xFFCBD5E1)
+                        : const Color(0xFF475569),
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

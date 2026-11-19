@@ -82,7 +82,11 @@ class RecentSalesTile extends StatelessWidget {
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: isDark
-                                  ? const Color(0xFF0F172A)
+                                  ? (isUdhaar
+                                      ? const Color(0xFF3F1219)
+                                      : (isCash
+                                          ? const Color(0xFF0B2B1B)
+                                          : const Color(0xFF13233F)))
                                   : (isUdhaar
                                       ? const Color(0xFFFFE4E6)
                                       : (isCash
@@ -97,11 +101,17 @@ class RecentSalesTile extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: isUdhaar
-                                    ? const Color(0xFFBE123C)
-                                    : (isCash
-                                        ? const Color(0xFF15803D)
-                                        : const Color(0xFF1D4ED8)),
+                                color: isDark
+                                    ? (isUdhaar
+                                        ? const Color(0xFFFCA5A5)
+                                        : (isCash
+                                            ? const Color(0xFF86EFAC)
+                                            : const Color(0xFF93C5FD)))
+                                    : (isUdhaar
+                                        ? const Color(0xFFBE123C)
+                                        : (isCash
+                                            ? const Color(0xFF15803D)
+                                            : const Color(0xFF1D4ED8))),
                               ),
                             ),
                           ),

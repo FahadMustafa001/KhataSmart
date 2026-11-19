@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../models/party_model.dart';
@@ -288,10 +289,10 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     const SizedBox(width: 4),
                     Text(
                       _customer?.name ?? 'Counter Sale',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF334155),
+                        color: AppColors.text(context),
                       ),
                     ),
                   ],
@@ -381,12 +382,12 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
+                Text(
                   'Payment Method',
                   style: TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                    color: AppColors.text(context),
                   ),
                 ),
                 Container(

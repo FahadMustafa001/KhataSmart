@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_toast.dart';
 import '../../models/party_model.dart';
 import '../../models/product_model.dart';
@@ -426,7 +427,11 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
               children: [
                 Text(
                   'Received Products (${_items.length})',
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text(context),
+                  ),
                 ),
                 ElevatedButton.icon(
                   onPressed: _showAddProductSheet,

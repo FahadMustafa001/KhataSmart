@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../models/ledger_entry_model.dart';
@@ -693,12 +694,12 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Bills & Invoices in Selected Period',
               style: TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
+                color: AppColors.text(context),
               ),
             ),
             Text(

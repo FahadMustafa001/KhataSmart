@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../core/constants/app_assets.dart';
+import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_toast.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
@@ -122,10 +123,10 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                 ),
               ),
               const SizedBox(width: 10),
-              const Text(
+              Text(
                 'Business Profile',
                 style: TextStyle(
-                  color: Color(0xFF1E293B),
+                  color: AppColors.text(context),
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
                 ),

@@ -834,14 +834,23 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                             ),
                           );
                           if (confirm == true) {
-                            await AuthService.instance.signOut();
-                            if (context.mounted) {
-                              AppToast.showInfo(context, 'Logged out successfully');
-                              Navigator.pushNamedAndRemoveUntil(
-                                context,
-                                AppRoutes.auth,
-                                (route) => false,
-                              );
+                            try {
+                              await AuthService.instance.signOut();
+                              if (context.mounted) {
+                                AppToast.showInfo(context, 'Logged out successfully');
+                                Navigator.pushNamedAndRemoveUntil(
+                                  context,
+                                  AppRoutes.auth,
+                                  (route) => false,
+                                );
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                AppToast.showError(
+                                  context,
+                                  'Logout encountered an error. Please try again.',
+                                );
+                              }
                             }
                           }
                         },
