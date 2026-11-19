@@ -79,6 +79,12 @@ class KhataState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void deleteParty(String partyId) {
+    _parties.removeWhere((p) => p.id == partyId);
+    _entries.removeWhere((e) => e.partyId == partyId);
+    notifyListeners();
+  }
+
   void addTransaction({
     required String partyId,
     required LedgerType type,

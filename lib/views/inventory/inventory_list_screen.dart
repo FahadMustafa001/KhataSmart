@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
 import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/printing_and_sharing_service.dart';
 import '../../state/inventory_state.dart';
+import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
 import '../shared_widgets/empty_state_widget.dart';
 import '../shared_widgets/notification_bell_button.dart';
@@ -106,6 +108,7 @@ class InventoryListScreen extends StatefulWidget {
 class _InventoryListScreenState extends State<InventoryListScreen> {
   final _inventoryState = InventoryState.instance;
   String _selectedCategory = 'All Items';
+  String _sortBy = 'Restock Priority';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -128,7 +131,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
 
   List<InventoryProductItem> get _filteredList {
     final all = _inventoryState.products.map(_toItem).toList();
-    return all.where((item) {
+    var filtered = all.where((item) {
       final matchesSearch =
           item.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
               item.barcode.contains(_searchQuery);
@@ -144,6 +147,90 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
       }
       return true;
     }).toList();
+
+    if (_sortBy == 'Restock Priority') {
+      filtered.sort((a, b) => a.stock.compareTo(b.stock));
+    } else if (_sortBy == 'Name (A to Z)') {
+      filtered.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    } else if (_sortBy == 'Price: High to Low') {
+      filtered.sort((a, b) => b.price.compareTo(a.price));
+    } else if (_sortBy == 'Stock: High to Low') {
+      filtered.sort((a, b) => b.stock.compareTo(a.stock));
+    }
+
+    return filtered;
+  }
+
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Sort Inventory Items',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(),
+              ...[
+                'Restock Priority',
+                'Name (A to Z)',
+                'Price: High to Low',
+                'Stock: High to Low',
+              ].map((s) {
+                final isSelected = _sortBy == s;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    isSelected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: isSelected
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFF94A3B8),
+                    size: 20,
+                  ),
+                  title: Text(
+                    s,
+                    style: TextStyle(
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() => _sortBy = s);
+                    Navigator.pop(ctx);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showRestockDialog(InventoryProductItem item) {
@@ -354,10 +441,10 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                   const SizedBox(height: 12),
 
                   // Section heading
-                  const Row(
+                  Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
+                      const Text(
                         'CATALOG ITEMS',
                         style: TextStyle(
                           fontSize: 10,
@@ -366,21 +453,24 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                           letterSpacing: 0.5,
                         ),
                       ),
-                      Text.rich(
-                        TextSpan(
-                          text: 'Sort by: ',
-                          style:
-                              TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
-                          children: [
-                            TextSpan(
-                              text: 'Restock Priority',
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
+                      GestureDetector(
+                        onTap: _showFilterBottomSheet,
+                        child: Text.rich(
+                          TextSpan(
+                            text: 'Sort by: ',
+                            style:
+                                const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                            children: [
+                              TextSpan(
+                                text: _sortBy,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1E293B),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],
@@ -465,14 +555,19 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
             // Export button
             _actionIconBtn(
               icon: Icons.file_download_outlined,
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Exporting Stock Catalog to Excel...')),
-              ),
+              onTap: () {
+                PrintingAndSharingService.instance.exportInventoryCatalog(
+                  products: _inventoryState.products,
+                  shop: ShopState.instance.activeShop,
+                );
+              },
             ),
             const SizedBox(width: 8),
             // Filter button
-            _actionIconBtn(icon: Icons.tune, onTap: () {}),
+            _actionIconBtn(
+              icon: Icons.tune,
+              onTap: _showFilterBottomSheet,
+            ),
           ],
         ),
       ],

@@ -25,6 +25,69 @@ class _AuthScreenState extends State<AuthScreen> {
     Navigator.pushReplacementNamed(context, AppRoutes.shopSetup);
   }
 
+  void _showForgotPasswordDialog() {
+    final email = _emailController.text.trim();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.lock_reset, color: Color(0xFF2563EB)),
+            SizedBox(width: 8),
+            Text('Reset Password', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              email.isNotEmpty
+                  ? 'A recovery verification email has been dispatched to:\n$email'
+                  : 'Enter your registered email address or store identifier to receive password reset instructions.',
+              style: const TextStyle(fontSize: 13, color: Color(0xFF475569)),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Note: In Offline Mode, store credentials can also be reset directly from Settings > Security & App Lock.',
+                style: TextStyle(fontSize: 11, color: Color(0xFF1D4ED8)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Close'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF2563EB),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Password reset instructions sent!'),
+                  backgroundColor: Color(0xFF16A34A),
+                ),
+              );
+            },
+            child: const Text('Send Reset Link', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -306,7 +369,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: _showForgotPasswordDialog,
                       child: const Text(
                         'Forgot Password?',
                         style: TextStyle(

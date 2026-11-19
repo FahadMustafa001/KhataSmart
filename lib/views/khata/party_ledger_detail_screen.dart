@@ -3,7 +3,9 @@ import '../../core/constants/app_assets.dart';
 import '../../models/ledger_entry_model.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/printing_and_sharing_service.dart';
 import '../../state/khata_state.dart';
+import '../../state/shop_state.dart';
 import 'widgets/add_transaction_modal.dart';
 
 class LedgerDetailItem {
@@ -53,6 +55,10 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   late String _partyId;
   late double _balance;
 
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
   PartyModel? get _currentParty {
     try {
       return _khataState.parties.firstWhere((p) => p.id == _partyId);
@@ -69,7 +75,15 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   }
 
   List<LedgerDetailItem> get _partyTransactions {
-    final entries = _khataState.getEntriesForParty(_partyId);
+    var entries = _khataState.getEntriesForParty(_partyId);
+    if (_searchQuery.trim().isNotEmpty) {
+      final q = _searchQuery.trim().toLowerCase();
+      entries = entries.where((e) {
+        return e.note.toLowerCase().contains(q) ||
+            e.amount.toString().contains(q) ||
+            e.id.toLowerCase().contains(q);
+      }).toList();
+    }
     if (entries.isEmpty) {
       return [];
     }
@@ -125,6 +139,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _khataState.removeListener(_rebuild);
     super.dispose();
   }
@@ -176,33 +191,48 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               }
             },
           ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '${_currentParty?.type == PartyType.supplier ? "Supplier" : "Customer"} Ledger',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 1),
-            Row(
-              children: [
-                const Icon(Icons.circle, color: Color(0xFF22C55E), size: 6),
-                const SizedBox(width: 4),
-                Text(
-                  'ID: ${_partyId.length > 8 ? _partyId.substring(0, 8) : _partyId} • Khata Book',
-                  style: const TextStyle(
-                    color: Color(0xFF94A3B8),
-                    fontSize: 10.5,
-                  ),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 14),
+                cursorColor: Colors.white,
+                decoration: const InputDecoration(
+                  hintText: 'Search transactions by note or amount...',
+                  hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                  border: InputBorder.none,
                 ),
-              ],
-            ),
-          ],
-        ),
+                onChanged: (val) {
+                  setState(() => _searchQuery = val);
+                },
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_currentParty?.name ?? _partyName} Ledger',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 1),
+                  Row(
+                    children: [
+                      const Icon(Icons.circle, color: Color(0xFF22C55E), size: 6),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${_currentParty?.type == PartyType.supplier ? "Supplier" : "Customer"} • Khata Book',
+                        style: const TextStyle(
+                          color: Color(0xFF94A3B8),
+                          fontSize: 10.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
         actions: [
           Container(
             margin: const EdgeInsets.only(right: 6),
@@ -214,8 +244,18 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.search, size: 18, color: Colors.white),
-              onPressed: () {},
+              icon: Icon(_isSearching ? Icons.close : Icons.search, size: 18, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  if (_isSearching) {
+                    _isSearching = false;
+                    _searchController.clear();
+                    _searchQuery = '';
+                  } else {
+                    _isSearching = true;
+                  }
+                });
+              },
             ),
           ),
           Container(
@@ -226,10 +266,97 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               color: Colors.white.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: IconButton(
+            child: PopupMenuButton<String>(
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.more_vert, size: 18, color: Colors.white),
-              onPressed: () {},
+              color: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              onSelected: (val) async {
+                final p = _currentParty;
+                if (p == null) return;
+                final shop = ShopState.instance.activeShop;
+
+                if (val == 'call') {
+                  await PrintingAndSharingService.instance.makePhoneCall(p.phone);
+                } else if (val == 'whatsapp') {
+                  await PrintingAndSharingService.instance.sendPartyLedgerViaWhatsApp(party: p, shop: shop);
+                } else if (val == 'print') {
+                  final entries = _khataState.getEntriesForParty(p.id);
+                  await PrintingAndSharingService.instance.printOrSharePartyLedgerStatement(
+                    party: p,
+                    entries: entries,
+                    shop: shop,
+                    isDirectPrint: true,
+                  );
+                } else if (val == 'delete') {
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: const Text('Delete Khata Account?'),
+                      content: Text('Are you sure you want to delete ${p.name}? All transaction history for this party will be removed.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+                          onPressed: () => Navigator.pop(ctx, true),
+                          child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && mounted) {
+                    _khataState.deleteParty(p.id);
+                    Navigator.pop(context);
+                  }
+                }
+              },
+              itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'call',
+                  child: Row(
+                    children: [
+                      Icon(Icons.phone_outlined, size: 18, color: Color(0xFF2563EB)),
+                      SizedBox(width: 10),
+                      Text('Direct Call'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'whatsapp',
+                  child: Row(
+                    children: [
+                      Icon(Icons.chat_bubble_outline, size: 18, color: Color(0xFF16A34A)),
+                      SizedBox(width: 10),
+                      Text('Send WhatsApp Reminder'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'print',
+                  child: Row(
+                    children: [
+                      Icon(Icons.print_outlined, size: 18, color: Color(0xFF475569)),
+                      SizedBox(width: 10),
+                      Text('Print Statement PDF'),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                const PopupMenuItem(
+                  value: 'delete',
+                  child: Row(
+                    children: [
+                      Icon(Icons.delete_outline, size: 18, color: Color(0xFFDC2626)),
+                      SizedBox(width: 10),
+                      Text('Delete Account', style: TextStyle(color: Color(0xFFDC2626))),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -579,9 +706,13 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         Expanded(
           child: GestureDetector(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Opening WhatsApp Ledger PDF slip...')),
-              );
+              final p = _currentParty;
+              if (p != null) {
+                PrintingAndSharingService.instance.sendPartyLedgerViaWhatsApp(
+                  party: p,
+                  shop: ShopState.instance.activeShop,
+                );
+              }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -613,9 +744,13 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         Expanded(
           child: GestureDetector(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Calling $_partyPhone...')),
-              );
+              if (_partyPhone.isNotEmpty) {
+                PrintingAndSharingService.instance.makePhoneCall(_partyPhone);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('No phone number provided for this party')),
+                );
+              }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10),
@@ -647,9 +782,16 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         Expanded(
           child: GestureDetector(
             onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Exporting PDF Ledger Statement...')),
-              );
+              final p = _currentParty;
+              if (p != null) {
+                final entries = _khataState.getEntriesForParty(p.id);
+                PrintingAndSharingService.instance.printOrSharePartyLedgerStatement(
+                  party: p,
+                  entries: entries,
+                  shop: ShopState.instance.activeShop,
+                  isDirectPrint: false,
+                );
+              }
             },
             child: Container(
               padding: const EdgeInsets.symmetric(vertical: 10),

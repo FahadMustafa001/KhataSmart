@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/printing_and_sharing_service.dart';
 import '../../state/khata_state.dart';
+import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
 import '../shared_widgets/empty_state_widget.dart';
 import '../shared_widgets/notification_bell_button.dart';
@@ -152,6 +154,74 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
     );
   }
 
+  void _showFilterBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Filter & Sort Khata Book',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(),
+              ...['All Pending', 'Highest Balance', '> 30 Days Due', 'Zero Bal']
+                  .map((filterName) {
+                final isSelected = _selectedFilter == filterName;
+                return ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    isSelected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: isSelected
+                        ? const Color(0xFF2563EB)
+                        : const Color(0xFF94A3B8),
+                    size: 20,
+                  ),
+                  title: Text(
+                    filterName,
+                    style: TextStyle(
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? const Color(0xFF2563EB)
+                          : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() => _selectedFilter = filterName);
+                    Navigator.pop(ctx);
+                  },
+                );
+              }),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final list = _currentList;
@@ -183,16 +253,18 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined,
                 size: 20, color: Color(0xFFDC2626)),
+            tooltip: 'Export Complete Khata to PDF',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text('Exporting Complete Khata Ledger to PDF...')),
+              PrintingAndSharingService.instance.exportKhataDirectoryPdf(
+                parties: _khataState.parties,
+                shop: ShopState.instance.activeShop,
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.tune, size: 20, color: Color(0xFF475569)),
-            onPressed: () {},
+            tooltip: 'Filter & Sort',
+            onPressed: _showFilterBottomSheet,
           ),
         ],
       ),

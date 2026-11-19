@@ -3,6 +3,7 @@ import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../models/ledger_entry_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/printing_and_sharing_service.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 import '../shared_widgets/smart_bottom_navigation_bar.dart';
@@ -222,6 +223,30 @@ class _ReportsScreenState extends State<ReportsScreen> {
               ),
             ],
           ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFFDC2626)),
+              tooltip: 'Export Financial Report PDF',
+              onPressed: () {
+                final periodName = _selectedPeriod == ReportPeriod.today
+                    ? 'Today'
+                    : (_selectedPeriod == ReportPeriod.week
+                        ? 'This Week'
+                        : (_selectedPeriod == ReportPeriod.month ? 'This Month' : 'This Year'));
+                PrintingAndSharingService.instance.exportFinancialReportPdf(
+                  shop: activeShop,
+                  periodName: periodName,
+                  totalSales: totalSales,
+                  grossProfit: netProfit,
+                  netProfit: netProfit,
+                  totalExpenses: ledgerGave,
+                  cashSales: cashSales,
+                  creditSales: creditSales,
+                  orderCount: filteredOrders.length,
+                );
+              },
+            ),
+          ],
         ),
         body: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),

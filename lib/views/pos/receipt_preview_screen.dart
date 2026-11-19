@@ -4,7 +4,9 @@ import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../models/order_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/printing_and_sharing_service.dart';
 import '../../state/khata_state.dart';
+import '../../state/shop_state.dart';
 import '../shared_widgets/barcode_visual_widget.dart';
 import '../shared_widgets/custom_app_bar.dart';
 
@@ -26,6 +28,16 @@ class ReceiptPreviewScreen extends StatelessWidget {
     final subtotal = actualOrder?.subtotal ?? 0.0;
     final discount = actualOrder?.discount ?? 0.0;
     final netPayable = actualOrder?.total ?? 0.0;
+    final effectiveOrder = actualOrder ??
+        OrderModel(
+          invoiceNo: invoiceNumber,
+          items: items,
+          total: netPayable,
+          subtotal: subtotal,
+          discount: discount,
+          paymentMode: PaymentMode.cash,
+          date: DateTime.now(),
+        );
     final isUdhaar = actualOrder?.paymentMode == PaymentMode.udhaar;
     final tenderedAmount = isUdhaar
         ? 0.0
@@ -65,12 +77,12 @@ class ReceiptPreviewScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.share_outlined, color: Color(0xFF1E293B)),
+            tooltip: 'Share Digital Receipt PDF',
             onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Sharing digital thermal receipt...'),
-                  backgroundColor: Color(0xFF15803D),
-                ),
+              PrintingAndSharingService.instance.printOrShareReceipt(
+                order: effectiveOrder,
+                shop: ShopState.instance.activeShop,
+                isDirectPrint: false,
               );
             },
           ),
@@ -551,12 +563,9 @@ class ReceiptPreviewScreen extends StatelessWidget {
               height: 48,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'WhatsApp receipt sent to customer successfully!'),
-                      backgroundColor: Color(0xFF15803D),
-                    ),
+                  PrintingAndSharingService.instance.sendReceiptViaWhatsApp(
+                    order: effectiveOrder,
+                    shop: ShopState.instance.activeShop,
                   );
                 },
                 icon:
@@ -595,10 +604,10 @@ class ReceiptPreviewScreen extends StatelessWidget {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'Sending to thermal Bluetooth printer...')),
+                          PrintingAndSharingService.instance.printOrShareReceipt(
+                            order: effectiveOrder,
+                            shop: ShopState.instance.activeShop,
+                            isDirectPrint: true,
                           );
                         },
                         child: Row(
@@ -635,9 +644,9 @@ class ReceiptPreviewScreen extends StatelessWidget {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(12),
                         onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text('SMS receipt dispatched!')),
+                          PrintingAndSharingService.instance.sendReceiptViaSms(
+                            order: effectiveOrder,
+                            shop: ShopState.instance.activeShop,
                           );
                         },
                         child: const Row(
@@ -679,10 +688,12 @@ class ReceiptPreviewScreen extends StatelessWidget {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content: Text('PDF invoice saved to Downloads!')),
+                    PrintingAndSharingService.instance.printOrShareReceipt(
+                      order: effectiveOrder,
+                      shop: ShopState.instance.activeShop,
+                      isDirectPrint: false,
                     );
+                  },
                   },
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
