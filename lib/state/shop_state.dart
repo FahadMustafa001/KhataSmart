@@ -23,13 +23,21 @@ class ShopState extends ChangeNotifier {
 
   final List<ShopModel> _shops = [];
   String _activeShopId = 'shop_1';
+  bool _hasCompletedOnboarding = false;
 
   List<ShopModel> get shops => List.unmodifiable(_shops);
   String get activeShopId => _activeShopId;
+  bool get hasCompletedOnboarding => _hasCompletedOnboarding;
+
+  void setCompletedOnboarding(bool value) {
+    _hasCompletedOnboarding = value;
+    notifyListeners();
+  }
 
   void loadFromDatabase({
     required List<ShopModel> shops,
     required String activeShopId,
+    bool? hasCompletedOnboarding,
   }) {
     _shops.clear();
     if (shops.isEmpty) {
@@ -53,6 +61,13 @@ class ShopState extends ChangeNotifier {
     } else {
       _activeShopId = _shops.first.id;
     }
+
+    if (hasCompletedOnboarding != null) {
+      _hasCompletedOnboarding = hasCompletedOnboarding;
+    } else if (_shops.length > 1 || _shops.any((s) => s.name != 'My Store' || s.phone.isNotEmpty)) {
+      _hasCompletedOnboarding = true;
+    }
+
     notifyListeners();
     InventoryState.instance.onShopChanged();
     KhataState.instance.onShopChanged();

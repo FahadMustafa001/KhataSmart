@@ -112,7 +112,23 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const ReportsScreen());
 
       case AppRoutes.appLock:
-        return MaterialPageRoute(builder: (_) => const AppLockScreen());
+        bool isVerificationOnly = false;
+        VoidCallback? onSuccess;
+        if (settings.arguments is Map) {
+          final args = settings.arguments as Map;
+          if (args['isVerificationOnly'] is bool) {
+            isVerificationOnly = args['isVerificationOnly'] as bool;
+          }
+          if (args['onSuccess'] is VoidCallback) {
+            onSuccess = args['onSuccess'] as VoidCallback;
+          }
+        }
+        return MaterialPageRoute(
+          builder: (_) => AppLockScreen(
+            isVerificationOnly: isVerificationOnly,
+            onSuccess: onSuccess,
+          ),
+        );
 
       case AppRoutes.notifications:
         return MaterialPageRoute(builder: (_) => const NotificationsScreen());

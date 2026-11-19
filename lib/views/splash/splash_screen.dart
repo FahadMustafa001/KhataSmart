@@ -31,8 +31,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
-    final targetRoute = (ShopState.instance.activeShop.phone.isNotEmpty ||
-            ShopState.instance.activeShop.name != 'My Store')
+    final hasCompletedOnboarding = ShopState.instance.hasCompletedOnboarding ||
+        ShopState.instance.shops.length > 1 ||
+        ShopState.instance.activeShop.phone.isNotEmpty ||
+        ShopState.instance.activeShop.name != 'My Store';
+    final targetRoute = hasCompletedOnboarding
         ? AppRoutes.dashboard
         : AppRoutes.auth;
 

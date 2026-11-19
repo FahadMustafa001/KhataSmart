@@ -59,6 +59,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
         address: city,
       );
     }
+    ShopState.instance.setCompletedOnboarding(true);
     Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
   }
 

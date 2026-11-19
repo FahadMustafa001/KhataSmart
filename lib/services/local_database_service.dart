@@ -41,8 +41,10 @@ class LocalDatabaseService {
   }
 
   // 1. Initialize & Load Saved Data on App Startup
-  Future<void> init() async {
-    if (_isInitialized) return;
+  Future<void> init({bool forceRetry = false}) async {
+    if (_isInitialized && !forceRetry) return;
+    _isInitialized = false;
+    _loadFailed = false;
 
     bool loadSucceeded = false;
 
@@ -117,11 +119,15 @@ class LocalDatabaseService {
   void _loadIntoState(Map<String, dynamic> data) {
     List<ShopModel>? parsedShops;
     String? parsedActiveShopId;
+    bool? parsedHasCompletedOnboarding;
     if (data['shops'] is List) {
       parsedShops = (data['shops'] as List)
           .map((m) => ShopModel.fromMap(Map<String, dynamic>.from(m)))
           .toList();
       parsedActiveShopId = data['activeShopId'] as String?;
+    }
+    if (data['hasCompletedOnboarding'] is bool) {
+      parsedHasCompletedOnboarding = data['hasCompletedOnboarding'] as bool;
     }
 
     List<ProductModel>? parsedProducts;
@@ -166,6 +172,7 @@ class LocalDatabaseService {
       ShopState.instance.loadFromDatabase(
         shops: parsedShops,
         activeShopId: parsedActiveShopId ?? parsedShops.first.id,
+        hasCompletedOnboarding: parsedHasCompletedOnboarding,
       );
     }
 
@@ -227,7 +234,9 @@ class LocalDatabaseService {
 
     if (_loadFailed) {
       debugPrint('LocalDatabaseService: Skipping persistToDisk because loading failed.');
-      return Future.value();
+      return Future.error(StateError(
+        'Cannot persist to disk while database load has failed. Please restore from backup or clear data to recover.',
+      ));
     }
 
     if (_activeSaveFuture != null) {
@@ -265,6 +274,7 @@ class LocalDatabaseService {
         'version': 1,
         'lastUpdated': DateTime.now().toIso8601String(),
         'activeShopId': ShopState.instance.activeShopId,
+        'hasCompletedOnboarding': ShopState.instance.hasCompletedOnboarding,
         'shops': ShopState.instance.shops.map((s) => s.toMap()).toList(),
         'products': InventoryState.instance.allProductsForDatabase.map((p) => p.toMap()).toList(),
         'parties': KhataState.instance.allPartiesForDatabase.map((p) => p.toMap()).toList(),
@@ -340,5 +350,6 @@ class LocalDatabaseService {
     if (await tmpFile.exists()) {
       await tmpFile.delete();
     }
+    _attachListeners();
   }
 }

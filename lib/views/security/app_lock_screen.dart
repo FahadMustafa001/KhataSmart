@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
 import '../../routes/app_routes.dart';
+import '../../services/local_database_service.dart';
 import '../../services/security_service.dart';
+import '../../state/inventory_state.dart';
+import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 
 class AppLockScreen extends StatefulWidget {
@@ -25,12 +28,22 @@ class _AppLockScreenState extends State<AppLockScreen> {
   @override
   void initState() {
     super.initState();
+    SecurityService.instance.isLockScreenActive = true;
+    if (SecurityService.instance.hasCredentialError) {
+      _errorMessage = 'PIN data is corrupted. Please reset your PIN below.';
+    }
     // Auto-prompt biometric scan if biometric unlock is enabled
-    if (SecurityService.instance.isBiometricEnabled) {
+    if (SecurityService.instance.isBiometricEnabled && !SecurityService.instance.hasCredentialError) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _handleBiometric();
       });
     }
+  }
+
+  @override
+  void dispose() {
+    SecurityService.instance.isLockScreenActive = false;
+    super.dispose();
   }
 
   void _onKeyPress(String val) {
@@ -60,13 +73,20 @@ class _AppLockScreenState extends State<AppLockScreen> {
   void _completeUnlock() {
     if (_hasCompletedUnlock) return;
     _hasCompletedUnlock = true;
+    SecurityService.instance.isLockScreenActive = false;
     if (widget.onSuccess != null) {
       widget.onSuccess!();
     } else if (Navigator.canPop(context)) {
       Navigator.pop(context, true);
     } else {
-      final destination = (ShopState.instance.activeShop.phone.isNotEmpty ||
-              ShopState.instance.activeShop.name != 'My Store')
+      final hasCompletedOnboarding = ShopState.instance.hasCompletedOnboarding ||
+          ShopState.instance.shops.length > 1 ||
+          ShopState.instance.activeShop.phone.isNotEmpty ||
+          ShopState.instance.activeShop.name != 'My Store' ||
+          InventoryState.instance.allProductsForDatabase.isNotEmpty ||
+          KhataState.instance.allPartiesForDatabase.isNotEmpty ||
+          LocalDatabaseService.instance.isInitialized;
+      final destination = hasCompletedOnboarding
           ? AppRoutes.dashboard
           : AppRoutes.auth;
       Navigator.pushReplacementNamed(context, destination);

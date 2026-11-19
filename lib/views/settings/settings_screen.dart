@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../routes/app_routes.dart';
 import '../../services/security_service.dart';
 import '../../services/google_drive_service.dart';
 import '../../state/shop_state.dart';
-import '../security/app_lock_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -759,11 +759,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       trailing: const Icon(Icons.arrow_forward_ios, size: 14),
                       onTap: () {
                         sec.lockApp();
-                        Navigator.push(
+                        Navigator.pushNamed(
                           context,
-                          MaterialPageRoute(
-                            builder: (_) => const AppLockScreen(isVerificationOnly: true),
-                          ),
+                          AppRoutes.appLock,
+                          arguments: {'isVerificationOnly': true},
                         );
                       },
                     ),

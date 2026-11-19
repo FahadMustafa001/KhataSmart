@@ -19,6 +19,9 @@ class SecurityService extends ChangeNotifier {
   String _answerHash = '';
   String _answerSalt = '';
   bool _isAppUnlocked = false;
+  bool _hasCredentialError = false;
+  bool _isAuthenticating = false;
+  bool isLockScreenActive = false;
 
   bool get isLockEnabled => _isLockEnabled;
   bool get isBiometricEnabled => _isBiometricEnabled;
@@ -26,6 +29,8 @@ class SecurityService extends ChangeNotifier {
   bool get isAppUnlocked => !_isLockEnabled || _isAppUnlocked;
   String get securityQuestion => _securityQuestion;
   bool get hasSecurityAnswer => _answerHash.isNotEmpty;
+  bool get hasCredentialError => _hasCredentialError;
+  bool get isAuthenticating => _isAuthenticating;
 
   // Slow-KDF / Salted Hash Helpers
   static String _generateSalt() {
@@ -96,10 +101,12 @@ class SecurityService extends ChangeNotifier {
     }
 
     if (_isLockEnabled && _pinHash.isEmpty) {
-      _isLockEnabled = false;
+      _hasCredentialError = true;
+    } else {
+      _hasCredentialError = false;
     }
 
-    _isAppUnlocked = !_isLockEnabled;
+    _isAppUnlocked = !_isLockEnabled && !_hasCredentialError;
     notifyListeners();
   }
 
@@ -140,6 +147,7 @@ class SecurityService extends ChangeNotifier {
         return false;
       }
       _isLockEnabled = true;
+      _hasCredentialError = false;
       _pinSalt = _generateSalt();
       _pinHash = _hashWithSalt(pin, _pinSalt);
       if (question != null && question.trim().isNotEmpty) {
@@ -152,6 +160,7 @@ class SecurityService extends ChangeNotifier {
       _isAppUnlocked = true;
     } else {
       _isLockEnabled = false;
+      _hasCredentialError = false;
       _pinHash = '';
       _pinSalt = '';
       _answerHash = '';
@@ -208,6 +217,7 @@ class SecurityService extends ChangeNotifier {
     if (computed == _answerHash) {
       _pinSalt = _generateSalt();
       _pinHash = _hashWithSalt(newPin, _pinSalt);
+      _hasCredentialError = false;
       _isAppUnlocked = true;
       notifyListeners();
       return true;
@@ -242,6 +252,7 @@ class SecurityService extends ChangeNotifier {
 
   // Real Hardware Biometric Authentication (Never simulated)
   Future<bool> authenticateWithBiometrics() async {
+    _isAuthenticating = true;
     try {
       final available = await isBiometricHardwareAvailable();
       if (!available) {
@@ -265,6 +276,8 @@ class SecurityService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Biometric auth error: $e');
       return false;
+    } finally {
+      _isAuthenticating = false;
     }
   }
 }
