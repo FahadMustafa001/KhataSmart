@@ -19,6 +19,24 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
   final _cityController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    final current = ShopState.instance.activeShop;
+    if (current.name.isNotEmpty && current.name != 'My Store') {
+      _storeNameController.text = current.name;
+    }
+    if (current.ownerName.isNotEmpty && current.ownerName != 'Store Owner') {
+      _ownerNameController.text = current.ownerName;
+    }
+    if (current.phone.isNotEmpty) {
+      _phoneController.text = current.phone;
+    }
+    if (current.address.isNotEmpty) {
+      _cityController.text = current.address;
+    }
+  }
+
+  @override
   void dispose() {
     _storeNameController.dispose();
     _ownerNameController.dispose();
@@ -464,8 +482,8 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                             ),
                           ),
                           SizedBox(height: 2),
-                          Text(
-                            'SmartKhata runs offline with secure SQLite device storage.',
+                          const Text(
+                            'SmartKhata runs offline and stores your data safely on your device.',
                             style: TextStyle(
                               fontSize: 11,
                               color: Color(0xFF3B82F6),

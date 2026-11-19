@@ -33,9 +33,7 @@ class InventoryState extends ChangeNotifier {
   }
 
   void addProduct(ProductModel product) {
-    if (product.shopId.isEmpty) {
-      product.shopId = ShopState.instance.activeShopId;
-    }
+    product.shopId = ShopState.instance.activeShopId;
     _products.insert(0, product);
     notifyListeners();
   }

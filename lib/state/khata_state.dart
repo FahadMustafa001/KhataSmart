@@ -72,9 +72,12 @@ class KhataState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addParty(PartyModel party) {
-    if (party.shopId.isEmpty) {
-      // party.shopId default is already 'shop_1' or active
+  void addParty(PartyModel party, {String? targetShopId}) {
+    final activeId = ShopState.instance.activeShopId;
+    if (targetShopId != null && targetShopId.isNotEmpty) {
+      party.shopId = targetShopId;
+    } else if (party.shopId.isEmpty || (party.shopId == 'shop_1' && activeId != 'shop_1')) {
+      party.shopId = activeId;
     }
     _parties.insert(0, party);
     notifyListeners();
@@ -93,7 +96,8 @@ class KhataState extends ChangeNotifier {
     required String note,
     String? shopId,
   }) {
-    final currentShopId = shopId ?? ShopState.instance.activeShopId;
+    final party = _parties.firstWhere((p) => p.id == partyId);
+    final targetShopId = shopId ?? party.shopId;
     final newEntry = LedgerEntryModel(
       id: 'l_${DateTime.now().millisecondsSinceEpoch}',
       partyId: partyId,
@@ -101,12 +105,11 @@ class KhataState extends ChangeNotifier {
       amount: amount,
       note: note,
       date: DateTime.now(),
-      shopId: currentShopId,
+      shopId: targetShopId,
     );
     _entries.insert(0, newEntry);
 
     // Update Party Balance
-    final party = _parties.firstWhere((p) => p.id == partyId);
     if (type == LedgerType.gave) {
       party.balance += amount; // We gave goods/loan -> balance increases (owe us more)
     } else {

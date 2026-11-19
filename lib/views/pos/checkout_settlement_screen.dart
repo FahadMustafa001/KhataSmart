@@ -7,6 +7,7 @@ import '../../routes/app_routes.dart';
 import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
+import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
 
 class CheckoutSettlementScreen extends StatefulWidget {
@@ -85,6 +86,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
       discount: _discountAmount,
       total: _billAmount,
       paymentMode: paymentMode,
+      shopId: ShopState.instance.activeShopId,
     );
 
     // 3. Add order to khata state

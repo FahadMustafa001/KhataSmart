@@ -262,6 +262,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Future<bool> _promptVerifyCurrentPin() async {
+    final sec = SecurityService.instance;
+    if (!sec.isLockEnabled || !sec.hasPinSet) return true;
+
+    final pinCtrl = TextEditingController();
+    String? err;
+    final verified = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Verify Current PIN'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Please enter your current 4-digit PIN to proceed.'),
+              const SizedBox(height: 12),
+              TextField(
+                controller: pinCtrl,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                obscureText: true,
+                decoration: InputDecoration(
+                  labelText: 'Current PIN',
+                  counterText: '',
+                  errorText: err,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final entered = pinCtrl.text.trim();
+                if (sec.verifyPin(entered)) {
+                  Navigator.pop(ctx, true);
+                } else {
+                  setDState(() => err = 'Incorrect PIN. Try again.');
+                }
+              },
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      ),
+    );
+    return verified ?? false;
+  }
+
   // Setup / Change PIN Modal (Real PIN and Security Answer)
   void _showSetPinDialog() {
     final pinCtrl = TextEditingController();
@@ -641,11 +696,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                     value: sec.isLockEnabled,
                     activeTrackColor: const Color(0xFF2563EB),
-                    onChanged: (val) {
+                    onChanged: (val) async {
                       if (val) {
                         _showSetPinDialog();
                       } else {
-                        sec.setLockEnabled(false, pin: '');
+                        final ok = await _promptVerifyCurrentPin();
+                        if (ok) {
+                          sec.setLockEnabled(false, pin: '');
+                        } else {
+                          setState(() {});
+                        }
                       }
                     },
                   ),
@@ -671,7 +731,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       leading: const Icon(Icons.key_rounded, size: 20, color: Color(0xFF2563EB)),
                       title: const Text('Change Security PIN', style: TextStyle(fontSize: 13)),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                      onTap: _showSetPinDialog,
+                      onTap: () async {
+                        final ok = await _promptVerifyCurrentPin();
+                        if (ok) {
+                          _showSetPinDialog();
+                        }
+                      },
                     ),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -726,6 +791,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   const Text('Receipt Footer Note:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 6),
                   TextFormField(
+                    key: ValueKey('receipt_footer_${activeShop.id}'),
                     initialValue: activeShop.receiptFooter,
                     onChanged: (v) => ShopState.instance.updateActiveShop(receiptFooter: v),
                     decoration: InputDecoration(

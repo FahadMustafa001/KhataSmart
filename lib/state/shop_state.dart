@@ -31,9 +31,30 @@ class ShopState extends ChangeNotifier {
     required String activeShopId,
   }) {
     _shops.clear();
-    _shops.addAll(shops);
-    _activeShopId = activeShopId;
+    if (shops.isEmpty) {
+      _shops.add(
+        ShopModel(
+          id: 'shop_1',
+          name: 'My Store',
+          ownerName: 'Store Owner',
+          phone: '',
+          address: '',
+          receiptFooter: 'Thank you for shopping with us!',
+          paperSize: '58mm',
+        ),
+      );
+    } else {
+      _shops.addAll(shops);
+    }
+
+    if (_shops.any((s) => s.id == activeShopId)) {
+      _activeShopId = activeShopId;
+    } else {
+      _activeShopId = _shops.first.id;
+    }
     notifyListeners();
+    InventoryState.instance.onShopChanged();
+    KhataState.instance.onShopChanged();
   }
 
   ShopModel get activeShop {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
@@ -17,25 +18,45 @@ class ReportsScreen extends StatefulWidget {
   State<ReportsScreen> createState() => _ReportsScreenState();
 }
 
-class _ReportsScreenState extends State<ReportsScreen> {
+class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserver {
   ReportPeriod _selectedPeriod = ReportPeriod.today;
+  Timer? _dateRefreshTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     KhataState.instance.addListener(_refresh);
     ShopState.instance.addListener(_refresh);
+    _dateRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   void dispose() {
+    _dateRefreshTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     KhataState.instance.removeListener(_refresh);
     ShopState.instance.removeListener(_refresh);
     super.dispose();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && mounted) {
+      setState(() {});
+    }
+  }
+
   void _refresh() {
     if (mounted) setState(() {});
+  }
+
+  static bool _isInCurrentCalendarWeek(DateTime date, DateTime now) {
+    final monday = DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+    final nextMonday = monday.add(const Duration(days: 7));
+    return !date.isBefore(monday) && date.isBefore(nextMonday);
   }
 
   // Filter orders strictly for the active shop and selected time period
@@ -50,8 +71,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               o.date.month == now.month &&
               o.date.day == now.day;
         case ReportPeriod.week:
-          final diff = now.difference(o.date).inDays;
-          return diff >= 0 && diff < 7;
+          return _isInCurrentCalendarWeek(o.date, now);
         case ReportPeriod.month:
           return o.date.year == now.year && o.date.month == now.month;
         case ReportPeriod.year:
@@ -72,8 +92,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               e.date.month == now.month &&
               e.date.day == now.day;
         case ReportPeriod.week:
-          final diff = now.difference(e.date).inDays;
-          return diff >= 0 && diff < 7;
+          return _isInCurrentCalendarWeek(e.date, now);
         case ReportPeriod.month:
           return e.date.year == now.year && e.date.month == now.month;
         case ReportPeriod.year:
@@ -168,14 +187,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
     // 100% Real Calculations based on actual store data
     final totalSales = filteredOrders.fold(0.0, (sum, o) => sum + o.total);
 
-    // Real Profit: (Item sale price - Item cost price) * quantity
+    // Real Profit: (Item sale price - Item sale-time cost price) * quantity
     double totalCost = 0.0;
     for (var o in filteredOrders) {
       for (var item in o.items) {
-        totalCost += (item.product.costPrice * item.quantity);
+        totalCost += (item.costPriceAtSale * item.quantity);
       }
     }
-    final netProfit = (totalSales - totalCost).clamp(0.0, 99999999.0);
+    final netProfit = totalSales - totalCost;
 
     // Real Wasooli: Cash Sales + Ledger received entries
     final ledgerWasooli = filteredEntries
@@ -186,14 +205,14 @@ class _ReportsScreenState extends State<ReportsScreen> {
         .fold(0.0, (sum, o) => sum + o.total);
     final totalWasooli = ledgerWasooli + cashSales;
 
-    // Real Udhaar Given: Credit Sales + Ledger given entries
+    // Real Udhaar Given: Credit Sales + Manual Ledger given entries (excluding auto-generated order bills)
     final creditSales = filteredOrders
         .where((o) => o.paymentMode == PaymentMode.udhaar)
         .fold(0.0, (sum, o) => sum + o.total);
-    final ledgerGave = filteredEntries
-        .where((e) => e.type == LedgerType.gave)
+    final manualLedgerGave = filteredEntries
+        .where((e) => e.type == LedgerType.gave && !e.note.startsWith('Bill #'))
         .fold(0.0, (sum, e) => sum + e.amount);
-    final totalUdhaar = creditSales + ledgerGave;
+    final totalUdhaar = creditSales + manualLedgerGave;
 
     return PopScope(
       canPop: true,

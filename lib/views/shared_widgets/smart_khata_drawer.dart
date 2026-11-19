@@ -648,12 +648,14 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          Navigator.pop(context);
+                          final nav = Navigator.of(context);
+                          final messenger = ScaffoldMessenger.of(context);
+                          nav.pop();
                           if (_securityService.isLockEnabled) {
                             _securityService.lockApp();
-                            Navigator.pushNamed(context, AppRoutes.appLock);
+                            nav.pushNamed(AppRoutes.appLock);
                           } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
+                            messenger.showSnackBar(
                               SnackBar(
                                 content: const Text(
                                   'App Lock off hai. Aap Settings se PIN set karke on kar sakte hain.',
@@ -662,7 +664,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                                   label: 'Settings',
                                   textColor: Colors.yellow,
                                   onPressed: () =>
-                                      Navigator.pushNamed(context, AppRoutes.settings),
+                                      nav.pushNamed(AppRoutes.settings),
                                 ),
                               ),
                             );

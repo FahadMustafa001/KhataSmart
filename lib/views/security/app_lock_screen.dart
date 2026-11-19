@@ -55,7 +55,11 @@ class _AppLockScreenState extends State<AppLockScreen> {
     }
   }
 
+  bool _hasCompletedUnlock = false;
+
   void _completeUnlock() {
+    if (_hasCompletedUnlock) return;
+    _hasCompletedUnlock = true;
     if (widget.onSuccess != null) {
       widget.onSuccess!();
     } else if (Navigator.canPop(context)) {
@@ -179,8 +183,8 @@ class _AppLockScreenState extends State<AppLockScreen> {
                 onPressed: () {
                   final ans = answerController.text.trim();
                   final pin = newPinController.text.trim();
-                  if (pin.length != 4) {
-                    setDialogState(() => dialogError = 'PIN must be exactly 4 digits');
+                  if (!RegExp(r'^[0-9]{4}$').hasMatch(pin)) {
+                    setDialogState(() => dialogError = 'PIN must be exactly 4 digits (0-9)');
                     return;
                   }
                   final ok = SecurityService.instance.resetPinWithSecurityAnswer(
@@ -219,10 +223,16 @@ class _AppLockScreenState extends State<AppLockScreen> {
       child: Scaffold(
         backgroundColor: const Color(0xFF0F172A),
         body: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 24),
-              // 3D Padlock Security Illustration with Glow
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Column(
+                      children: [
+                        const SizedBox(height: 24),
+                        // 3D Padlock Security Illustration with Glow
               Container(
                 width: 92,
                 height: 92,
@@ -364,6 +374,11 @@ class _AppLockScreenState extends State<AppLockScreen> {
             ],
           ),
         ),
+      ),
+    );
+  },
+),
+),
       ),
     );
   }

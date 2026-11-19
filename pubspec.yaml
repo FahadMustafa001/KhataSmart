@@ -40,6 +40,7 @@ dependencies:
 
   # 9. Real Biometric Hardware Authentication (Fingerprint & Face Lock)
   local_auth: ^2.3.0
+  crypto: ^3.0.3
 
 dev_dependencies:
   flutter_test:
