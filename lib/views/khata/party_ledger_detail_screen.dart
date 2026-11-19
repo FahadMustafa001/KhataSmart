@@ -310,7 +310,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   );
                   if (confirm == true && mounted) {
                     _khataState.deleteParty(p.id);
-                    Navigator.pop(context);
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                    }
                   }
                 }
               },

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -119,7 +118,9 @@ _Powered by KhataSmart Retail POS_
   }) async {
     final pdf = pw.Document();
     final is80mm = shop.paperSize.toLowerCase().contains('80');
-    final rollFormat = is80mm ? PdfPageFormat.roll80 : PdfPageFormat.roll58;
+    final rollFormat = is80mm
+        ? PdfPageFormat.roll80
+        : const PdfPageFormat(58 * PdfPageFormat.mm, double.infinity, marginAll: 5 * PdfPageFormat.mm);
 
     pdf.addPage(
       pw.Page(
@@ -417,7 +418,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                   children: [
                     pw.Text(
                       shop.name,
-                      style: pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
+                      style: const pw.TextStyle(fontSize: 22, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900),
                     ),
                     if (shop.address.isNotEmpty)
                       pw.Text(shop.address, style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey700)),
@@ -430,7 +431,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                   children: [
                     pw.Text(
                       'ACCOUNT STATEMENT',
-                      style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
+                      style: const pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold, color: PdfColors.blue800),
                     ),
                     pw.Text(
                       'Date: ${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}',
@@ -459,7 +460,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                     children: [
                       pw.Text(
                         'Party: ${party.name} (${party.type == PartyType.customer ? "Customer" : "Supplier"})',
-                        style: pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+                        style: const pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
                       ),
                       if (party.phone.isNotEmpty)
                         pw.Text('Phone: ${party.phone}', style: const pw.TextStyle(fontSize: 10)),
@@ -477,15 +478,15 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                       ),
                       pw.Text(
                         'PKR ${party.balance.abs().toStringAsFixed(0)}',
-                        style: pw.TextStyle(
+                        style: const pw.TextStyle(
                           fontSize: 18,
                           fontWeight: pw.FontWeight.bold,
-                          color: party.balance >= 0 ? PdfColors.red800 : PdfColors.green800,
+                          color: PdfColors.blue900,
                         ),
                       ),
                       pw.Text(
                         party.balance >= 0 ? 'Lene Hain (Receivable)' : 'Dene Hain (Payable)',
-                        style: pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
+                        style: const pw.TextStyle(fontSize: 9, fontWeight: pw.FontWeight.bold),
                       ),
                     ],
                   ),
@@ -610,7 +611,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
                   children: [
                     pw.Text(shop.name,
-                        style: pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
+                        style: const pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold, color: PdfColors.blue900)),
                     pw.Text('Complete Khata Directory & Balances Report',
                         style: const pw.TextStyle(fontSize: 11, color: PdfColors.grey700)),
                   ],
@@ -639,10 +640,10 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text('TOTAL RECEIVABLE (LENE HAIN)',
-                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.red800)),
+                            style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.red800)),
                         pw.SizedBox(height: 2),
                         pw.Text('PKR ${totalReceivables.toStringAsFixed(0)}',
-                            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.red900)),
+                            style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.red900)),
                       ],
                     ),
                   ),
@@ -660,10 +661,10 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Text('TOTAL PAYABLE (DENE HAIN)',
-                            style: pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
+                            style: const pw.TextStyle(fontSize: 8, fontWeight: pw.FontWeight.bold, color: PdfColors.green800)),
                         pw.SizedBox(height: 2),
                         pw.Text('PKR ${totalPayables.toStringAsFixed(0)}',
-                            style: pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.green900)),
+                            style: const pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold, color: PdfColors.green900)),
                       ],
                     ),
                   ),
@@ -780,8 +781,8 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                   child: _metricBox(
                     'STOCK ASSET VALUE',
                     'PKR ${totalStockValue.toStringAsFixed(0)}',
-                    PdfColors.emerald50,
-                    PdfColors.emerald800,
+                    PdfColors.green50,
+                    PdfColors.green800,
                   ),
                 ),
                 pw.SizedBox(width: 8),
@@ -907,8 +908,8 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
                     child: _metricBox(
                       'NET PROFIT',
                       'PKR ${netProfit.toStringAsFixed(0)}',
-                      PdfColors.emerald50,
-                      PdfColors.emerald900,
+                      PdfColors.green50,
+                      PdfColors.green900,
                     ),
                   ),
                   pw.SizedBox(width: 8),
@@ -1029,7 +1030,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
       decoration: pw.BoxDecoration(
         color: bg,
         borderRadius: pw.BorderRadius.circular(6),
-        border: pw.Border.all(color: textCol.flatten(background: PdfColors.white, amount: 0.3)),
+        border: pw.Border.all(color: PdfColors.grey300),
       ),
       child: pw.Column(
         crossAxisAlignment: pw.CrossAxisAlignment.start,
