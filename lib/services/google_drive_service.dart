@@ -33,6 +33,7 @@ class GoogleDriveService extends ChangeNotifier {
   static const String _backupFileName = 'KhataSmart_Backup.json';
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: kIsWeb ? '711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn.apps.googleusercontent.com' : null,
     scopes: [
       drive.DriveApi.driveFileScope,
       'email',

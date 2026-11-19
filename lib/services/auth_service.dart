@@ -73,6 +73,15 @@ class AuthService extends ChangeNotifier {
   /// Sign In with Google (1-Tap Account Chooser)
   Future<UserCredential?> signInWithGoogle() async {
     try {
+      if (kIsWeb) {
+        final GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        googleProvider.addScope('email');
+        googleProvider.addScope('profile');
+        final userCredential = await FirebaseAuth.instance.signInWithPopup(googleProvider);
+        notifyListeners();
+        return userCredential;
+      }
+
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: ['email', 'profile'],
       );

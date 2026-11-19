@@ -3,6 +3,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../core/constants/app_assets.dart';
 import '../../routes/app_routes.dart';
+import '../../services/auth_service.dart';
+import '../../services/local_database_service.dart';
 import '../../state/shop_state.dart';
 
 class ShopSetupScreen extends StatefulWidget {
@@ -45,7 +47,7 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
     super.dispose();
   }
 
-  void _onContinue() {
+  Future<void> _onContinue() async {
     final storeName = _storeNameController.text.trim();
     final ownerName = _ownerNameController.text.trim();
     final phone = _phoneController.text.trim();
@@ -60,7 +62,10 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
       );
     }
     ShopState.instance.setCompletedOnboarding(true);
-    Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+    await LocalDatabaseService.instance.persistToDisk();
+    if (mounted) {
+      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+    }
   }
 
   @override
@@ -439,9 +444,15 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
+                  color: AuthService.instance.isSignedIn
+                      ? const Color(0xFFF0FDF4)
+                      : const Color(0xFFEFF6FF),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                  border: Border.all(
+                    color: AuthService.instance.isSignedIn
+                        ? const Color(0xFFBBF7D0)
+                        : const Color(0xFFBFDBFE),
+                  ),
                 ),
                 child: Row(
                   children: [
@@ -451,31 +462,43 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(
-                        Icons.cloud_off_outlined,
-                        color: Color(0xFF2563EB),
+                      child: Icon(
+                        AuthService.instance.isSignedIn
+                            ? Icons.cloud_done_rounded
+                            : Icons.cloud_sync_rounded,
+                        color: AuthService.instance.isSignedIn
+                            ? const Color(0xFF16A34A)
+                            : const Color(0xFF2563EB),
                         size: 20,
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'No Internet? No Problem.',
+                            AuthService.instance.isSignedIn
+                                ? 'Real-Time Cloud Connected'
+                                : 'Dual Real Engine: Cloud & Offline',
                             style: TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E3A8A),
+                              color: AuthService.instance.isSignedIn
+                                  ? const Color(0xFF14532D)
+                                  : const Color(0xFF1E3A8A),
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
-                            'SmartKhata runs offline and stores your data safely on your device.',
+                            AuthService.instance.isSignedIn
+                                ? 'Signed in as ${AuthService.instance.userEmail}. Live sync to Firebase active.'
+                                : 'Live sync to Firebase & Google Drive, with instant local offline speed.',
                             style: TextStyle(
                               fontSize: 11,
-                              color: Color(0xFF3B82F6),
+                              color: AuthService.instance.isSignedIn
+                                  ? const Color(0xFF15803D)
+                                  : const Color(0xFF3B82F6),
                             ),
                           ),
                         ],
