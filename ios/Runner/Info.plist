@@ -68,5 +68,15 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera is used to scan product barcodes and QR codes for quick retail billing.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>KhataSmart uses Bluetooth to search and connect to ESC/POS thermal receipt printers.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>KhataSmart connects to Bluetooth thermal receipt printers to print store bills.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>KhataSmart requires Face ID / Touch ID to securely unlock your store terminal.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>KhataSmart allows saving customer invoices and receipt slips to your photos.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>KhataSmart saves customer invoices and receipt slips to your photos.</string>
 </dict>
 </plist>
