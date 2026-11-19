@@ -18,6 +18,7 @@ import '../views/splash/splash_screen.dart';
 import '../views/settings/settings_screen.dart';
 import '../views/reports/reports_screen.dart';
 import '../views/security/app_lock_screen.dart';
+import '../views/notifications/notifications_screen.dart';
 
 class AppRoutes {
   static const String splash = '/';
@@ -36,6 +37,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String reports = '/reports';
   static const String appLock = '/app-lock';
+  static const String notifications = '/notifications';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -89,6 +91,9 @@ class AppRoutes {
 
       case AppRoutes.appLock:
         return MaterialPageRoute(builder: (_) => const AppLockScreen());
+
+      case AppRoutes.notifications:
+        return MaterialPageRoute(builder: (_) => const NotificationsScreen());
 
       default:
         return MaterialPageRoute(

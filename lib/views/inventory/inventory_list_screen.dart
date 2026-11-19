@@ -6,6 +6,7 @@ import '../../routes/app_routes.dart';
 import '../../state/inventory_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
 import '../shared_widgets/empty_state_widget.dart';
+import '../shared_widgets/notification_bell_button.dart';
 import '../shared_widgets/smart_khata_drawer.dart';
 import '../shared_widgets/smart_bottom_navigation_bar.dart';
 import 'widgets/stock_badge.dart';
@@ -309,27 +310,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
         showLogo: true,
         showMenu: true,
         actions: [
-          Stack(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.notifications_none_rounded,
-                    size: 22, color: Color(0xFF334155)),
-                onPressed: () {},
-              ),
-              Positioned(
-                right: 12,
-                top: 12,
-                child: Container(
-                  width: 6,
-                  height: 6,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFEF4444),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          const NotificationBellButton(),
           Container(
             margin: const EdgeInsets.only(right: 12),
             width: 32,

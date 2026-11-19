@@ -12,6 +12,7 @@ import '../state/inventory_state.dart';
 import '../state/khata_state.dart';
 import '../state/shop_state.dart';
 import 'google_drive_service.dart';
+import 'notification_service.dart';
 import 'security_service.dart';
 
 class LocalDatabaseService {
@@ -63,6 +64,7 @@ class LocalDatabaseService {
     InventoryState.instance.addListener(persistToDisk);
     KhataState.instance.addListener(persistToDisk);
     SecurityService.instance.addListener(persistToDisk);
+    NotificationService.instance.addListener(persistToDisk);
   }
 
   // 2. Populate App Singletons with Loaded Data
@@ -124,6 +126,13 @@ class LocalDatabaseService {
       final gd = Map<String, dynamic>.from(data['googleDrive']);
       GoogleDriveService.instance.loadFromDatabase(gd);
     }
+
+    // 6. Notifications
+    if (data['notifications'] is List) {
+      NotificationService.instance.loadFromDatabase(data['notifications']);
+    } else {
+      NotificationService.instance.init();
+    }
   }
 
   // 3. Atomic Disk Persistence
@@ -151,6 +160,7 @@ class LocalDatabaseService {
           'securityAnswer': SecurityService.instance.rawAnswer,
         },
         'googleDrive': GoogleDriveService.instance.toMap(),
+        'notifications': NotificationService.instance.toDatabaseList(),
       };
 
       final jsonStr = jsonEncode(payload);

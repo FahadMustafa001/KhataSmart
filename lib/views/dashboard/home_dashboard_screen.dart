@@ -6,6 +6,7 @@ import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
+import '../shared_widgets/notification_bell_button.dart';
 import '../shared_widgets/smart_khata_drawer.dart';
 import '../shared_widgets/smart_bottom_navigation_bar.dart';
 import 'widgets/dashboard_metric_card.dart';
@@ -235,6 +236,8 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       title: active.name,
       subtitle: '${active.ownerName} • Branch 01',
       actions: [
+        // Real Notifications Bell Icon with Live Unread Counter
+        const NotificationBellButton(),
         // Quick Reports Analytics Icon
         IconButton(
           icon: const Icon(Icons.bar_chart_rounded, color: Color(0xFF2563EB), size: 22),

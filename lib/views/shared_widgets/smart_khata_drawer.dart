@@ -4,6 +4,7 @@ import '../../core/constants/app_assets.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/google_drive_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/security_service.dart';
 import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
@@ -29,6 +30,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
   final _inventoryState = InventoryState.instance;
   final _securityService = SecurityService.instance;
   final _driveService = GoogleDriveService.instance;
+  final _notificationService = NotificationService.instance;
 
   @override
   void initState() {
@@ -38,6 +40,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     _inventoryState.addListener(_rebuild);
     _securityService.addListener(_rebuild);
     _driveService.addListener(_rebuild);
+    _notificationService.addListener(_rebuild);
   }
 
   @override
@@ -47,6 +50,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     _inventoryState.removeListener(_rebuild);
     _securityService.removeListener(_rebuild);
     _driveService.removeListener(_rebuild);
+    _notificationService.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -569,6 +573,22 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
 
                 // SECTION 3: SYSTEM, MULTI-STORE & SECURITY
                 _buildSectionHeader('MANAGEMENT & SECURITY'),
+                _buildMenuItem(
+                  context,
+                  icon: Icons.notifications_outlined,
+                  title: 'Notifications & Alerts',
+                  subtitle: _notificationService.unreadCount > 0
+                      ? '${_notificationService.unreadCount} unread store alerts'
+                      : 'Stock, udhaar & system alerts',
+                  route: AppRoutes.notifications,
+                  isSelected: widget.currentRoute == AppRoutes.notifications,
+                  badgeText: _notificationService.unreadCount > 0
+                      ? '${_notificationService.unreadCount} New'
+                      : null,
+                  badgeColor: const Color(0xFFFEE2E2),
+                  badgeTextColor: const Color(0xFFDC2626),
+                  showArrow: true,
+                ),
                 _buildMenuItem(
                   context,
                   icon: Icons.settings_outlined,

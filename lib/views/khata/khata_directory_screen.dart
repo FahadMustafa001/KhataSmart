@@ -6,6 +6,7 @@ import '../../routes/app_routes.dart';
 import '../../state/khata_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
 import '../shared_widgets/empty_state_widget.dart';
+import '../shared_widgets/notification_bell_button.dart';
 import '../shared_widgets/smart_khata_drawer.dart';
 import '../shared_widgets/smart_bottom_navigation_bar.dart';
 import 'widgets/add_party_sheet.dart';
@@ -178,6 +179,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
         showLogo: true,
         showMenu: true,
         actions: [
+          const NotificationBellButton(),
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_outlined,
                 size: 20, color: Color(0xFFDC2626)),
