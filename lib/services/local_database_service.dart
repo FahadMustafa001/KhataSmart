@@ -44,6 +44,8 @@ class LocalDatabaseService {
   Future<void> init() async {
     if (_isInitialized) return;
 
+    bool loadSucceeded = false;
+
     try {
       final file = await _getFile();
       final tmpFile = File('${file.path}.tmp');
@@ -66,29 +68,48 @@ class LocalDatabaseService {
           try {
             final Map<String, dynamic> data = jsonDecode(content);
             _loadIntoState(data);
+            loadSucceeded = true;
             debugPrint('LocalDatabaseService: Loaded existing offline database successfully.');
           } catch (decodeError) {
-            debugPrint('Database decode failure: $decodeError. Preserving as .corrupt copy.');
+            _loadFailed = true;
+            debugPrint('Database decode failure: $decodeError. Preserving unique .corrupt copy.');
             try {
-              final corruptFile = File('${file.path}.corrupt');
+              final corruptFile = File('${file.path}.${DateTime.now().millisecondsSinceEpoch}.corrupt');
               await file.copy(corruptFile.path);
             } catch (copyErr) {
               debugPrint('Failed to preserve corrupt file: $copyErr');
             }
           }
+        } else {
+          loadSucceeded = true;
         }
+      } else {
+        loadSucceeded = true;
       }
     } catch (e) {
+      _loadFailed = true;
       debugPrint('LocalDatabaseService init error: $e');
     }
 
     _isInitialized = true;
 
+    if (!loadSucceeded || _loadFailed) {
+      _loadFailed = true;
+      return;
+    }
+
+    _attachListeners();
+  }
+
+  void _attachListeners() {
+    if (_listenersAttached) return;
+    _listenersAttached = true;
     // Attach debounced reactive listeners so all future mutations auto-persist safely
     ShopState.instance.addListener(schedulePersist);
     InventoryState.instance.addListener(schedulePersist);
     KhataState.instance.addListener(schedulePersist);
     SecurityService.instance.addListener(schedulePersist);
+    schedulePersist();
     NotificationService.instance.addListener(schedulePersist);
   }
 
@@ -195,8 +216,12 @@ class LocalDatabaseService {
 
   // 3. Debouncing & Coalescing Persistence
   Timer? _debounceTimer;
-  bool _isSaving = false;
+  Future<void>? _activeSaveFuture;
   bool _hasPendingSave = false;
+  bool _loadFailed = false;
+  bool _listenersAttached = false;
+
+  bool get loadFailed => _loadFailed;
 
   void schedulePersist() {
     _debounceTimer?.cancel();
@@ -205,27 +230,40 @@ class LocalDatabaseService {
     });
   }
 
-  Future<void> persistToDisk() async {
+  Future<void> persistToDisk() {
     _debounceTimer?.cancel();
 
-    if (_isSaving) {
+    if (_loadFailed) {
+      debugPrint('LocalDatabaseService: Skipping persistToDisk because loading failed.');
+      return Future.value();
+    }
+
+    if (_activeSaveFuture != null) {
       _hasPendingSave = true;
-      return;
+      return _activeSaveFuture!;
     }
 
-    _isSaving = true;
+    final completer = Completer<void>();
+    _activeSaveFuture = completer.future;
 
-    try {
-      while (true) {
-        _hasPendingSave = false;
-        await _performWrite();
-        if (!_hasPendingSave) {
-          break;
+    () async {
+      try {
+        while (true) {
+          _hasPendingSave = false;
+          await _performWrite();
+          if (!_hasPendingSave) {
+            break;
+          }
         }
+        completer.complete();
+      } catch (e, st) {
+        completer.completeError(e, st);
+      } finally {
+        _activeSaveFuture = null;
       }
-    } finally {
-      _isSaving = false;
-    }
+    }();
+
+    return _activeSaveFuture!;
   }
 
   Future<void> _performWrite() async {
@@ -289,6 +327,8 @@ class LocalDatabaseService {
     try {
       final Map<String, dynamic> data = jsonDecode(jsonContent);
       _loadIntoState(data);
+      _loadFailed = false;
+      _attachListeners();
       await persistToDisk();
       return true;
     } catch (e) {
@@ -299,6 +339,7 @@ class LocalDatabaseService {
 
   Future<void> clearAllData() async {
     _debounceTimer?.cancel();
+    _loadFailed = false;
     final file = await _getFile();
     if (await file.exists()) {
       await file.delete();

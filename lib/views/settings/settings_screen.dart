@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../services/security_service.dart';
 import '../../services/google_drive_service.dart';
 import '../../state/shop_state.dart';
@@ -283,6 +284,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               TextField(
                 controller: pinCtrl,
                 keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 maxLength: 4,
                 obscureText: true,
                 decoration: InputDecoration(
@@ -339,6 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextField(
                     controller: pinCtrl,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 4,
                     obscureText: true,
                     decoration: InputDecoration(
@@ -351,6 +354,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   TextField(
                     controller: confirmCtrl,
                     keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     maxLength: 4,
                     obscureText: true,
                     decoration: InputDecoration(
@@ -412,12 +416,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     return;
                   }
 
-                  SecurityService.instance.setLockEnabled(
+                  final success = SecurityService.instance.setLockEnabled(
                     true,
                     pin: p1,
                     question: q.isNotEmpty ? q : null,
                     answer: ans,
                   );
+                  if (!success) {
+                    setDState(() => err = 'Invalid PIN format. Must be 4 digits.');
+                    return;
+                  }
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(

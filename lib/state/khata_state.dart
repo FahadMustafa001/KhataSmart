@@ -73,7 +73,7 @@ class KhataState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addParty(PartyModel party, {String? targetShopId}) {
+  PartyModel addParty(PartyModel party, {String? targetShopId}) {
     final activeId = ShopState.instance.activeShopId;
     PartyModel finalParty = party;
     if (targetShopId != null && targetShopId.isNotEmpty) {
@@ -83,6 +83,7 @@ class KhataState extends ChangeNotifier {
     }
     _parties.insert(0, finalParty);
     notifyListeners();
+    return finalParty;
   }
 
   void deleteParty(String partyId) {

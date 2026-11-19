@@ -95,6 +95,10 @@ class SecurityService extends ChangeNotifier {
       _answerSalt = '';
     }
 
+    if (_isLockEnabled && _pinHash.isEmpty) {
+      _isLockEnabled = false;
+    }
+
     _isAppUnlocked = !_isLockEnabled;
     notifyListeners();
   }
@@ -125,13 +129,19 @@ class SecurityService extends ChangeNotifier {
     return false;
   }
 
-  void setLockEnabled(bool enabled, {required String pin, String? question, String? answer}) {
-    _isLockEnabled = enabled;
+  bool setLockEnabled(bool enabled, {required String pin, String? question, String? answer}) {
     if (enabled) {
-      if (pin.length == 4 && RegExp(r'^[0-9]{4}$').hasMatch(pin)) {
-        _pinSalt = _generateSalt();
-        _pinHash = _hashWithSalt(pin, _pinSalt);
+      final isValidPin = pin.length == 4 && RegExp(r'^[0-9]{4}$').hasMatch(pin);
+      if (!isValidPin) {
+        if (_pinHash.isEmpty) {
+          _isLockEnabled = false;
+        }
+        notifyListeners();
+        return false;
       }
+      _isLockEnabled = true;
+      _pinSalt = _generateSalt();
+      _pinHash = _hashWithSalt(pin, _pinSalt);
       if (question != null && question.trim().isNotEmpty) {
         _securityQuestion = question.trim();
       }
@@ -141,6 +151,7 @@ class SecurityService extends ChangeNotifier {
       }
       _isAppUnlocked = true;
     } else {
+      _isLockEnabled = false;
       _pinHash = '';
       _pinSalt = '';
       _answerHash = '';
@@ -149,6 +160,7 @@ class SecurityService extends ChangeNotifier {
       _isAppUnlocked = true;
     }
     notifyListeners();
+    return true;
   }
 
   Future<bool> setBiometricEnabled(bool enabled) async {

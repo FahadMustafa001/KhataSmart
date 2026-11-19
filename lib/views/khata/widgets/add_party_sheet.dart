@@ -166,16 +166,16 @@ class _AddPartySheetState extends State<AddPartySheet> {
     // Atomic write with rollback on error
     try {
       // 1. Add Party to Khata
-      KhataState.instance.addParty(newParty);
+      final storedParty = KhataState.instance.addParty(newParty);
 
       // 2. If initial balance is non-zero, record opening balance entry exactly once
       if (finalBalance != 0.0) {
         KhataState.instance.addTransaction(
-          partyId: newPartyId,
+          partyId: storedParty.id,
           type: finalBalance > 0 ? LedgerType.gave : LedgerType.got,
           amount: finalBalance.abs(),
           note: 'Opening Balance (Shuruaati Baqaya)',
-          shopId: activeShopId,
+          shopId: storedParty.shopId,
         );
       }
     } catch (e) {

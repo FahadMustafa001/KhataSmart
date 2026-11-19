@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../models/ledger_entry_model.dart';
+import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
 import '../../state/khata_state.dart';
@@ -205,14 +206,33 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
         .fold(0.0, (sum, o) => sum + o.total);
     final totalWasooli = ledgerWasooli + cashSales;
 
-    // Real Udhaar Given: Credit Sales + Manual Ledger given entries (excluding auto-generated order bills)
+    // Real Udhaar Given: Credit Sales + Manual Ledger given entries to customers (excluding auto-generated order bills)
+    final allParties = KhataState.instance.allPartiesForDatabase;
+    final Map<String, PartyType> partyTypeMap = {for (var p in allParties) p.id: p.type};
+
     final creditSales = filteredOrders
         .where((o) => o.paymentMode == PaymentMode.udhaar)
         .fold(0.0, (sum, o) => sum + o.total);
-    final manualLedgerGave = filteredEntries
-        .where((e) => e.type == LedgerType.gave && !e.note.startsWith('Bill #'))
+
+    final manualCreditGiven = filteredEntries
+        .where((e) =>
+            e.type == LedgerType.gave &&
+            partyTypeMap[e.partyId] == PartyType.customer &&
+            !RegExp(r'^Bill\s*#\s*INV', caseSensitive: false).hasMatch(e.note))
         .fold(0.0, (sum, e) => sum + e.amount);
-    final totalUdhaar = creditSales + manualLedgerGave;
+
+    final totalUdhaar = creditSales + manualCreditGiven;
+
+    // Operating expenses (supplier payouts and expense entries)
+    final operatingExpenses = filteredEntries
+        .where((e) =>
+            e.type == LedgerType.gave &&
+            (partyTypeMap[e.partyId] == PartyType.supplier ||
+                e.note.toLowerCase().contains('expense') ||
+                e.note.toLowerCase().contains('bill # electricity') ||
+                e.note.toLowerCase().contains('rent') ||
+                e.note.toLowerCase().contains('utility')))
+        .fold(0.0, (sum, e) => sum + e.amount);
 
     return PopScope(
       canPop: true,
@@ -258,7 +278,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                   totalSales: totalSales,
                   grossProfit: netProfit,
                   netProfit: netProfit,
-                  totalExpenses: manualLedgerGave,
+                  totalExpenses: operatingExpenses,
                   cashSales: cashSales,
                   creditSales: creditSales,
                   orderCount: filteredOrders.length,

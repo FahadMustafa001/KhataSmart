@@ -37,16 +37,18 @@ class _SmartKhataAppState extends State<SmartKhataApp> with WidgetsBindingObserv
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused) {
-      _pausedTime = DateTime.now();
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.hidden) {
+      _pausedTime ??= DateTime.now();
     } else if (state == AppLifecycleState.resumed) {
       if (_pausedTime != null) {
         final pausedAt = _pausedTime!;
         _pausedTime = null;
         if (SecurityService.instance.isLockEnabled) {
           final elapsed = DateTime.now().difference(pausedAt).inSeconds;
-          // Auto-lock when coming back from background (3+ seconds)
-          if (elapsed >= 3) {
+          // Auto-lock when returning from background/idle after 5+ seconds
+          if (elapsed >= 5) {
             SecurityService.instance.lockApp();
             if (!_isLockScreenActive) {
               _isLockScreenActive = true;

@@ -65,7 +65,11 @@ class _AppLockScreenState extends State<AppLockScreen> {
     } else if (Navigator.canPop(context)) {
       Navigator.pop(context, true);
     } else {
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+      final destination = (ShopState.instance.activeShop.phone.isNotEmpty ||
+              ShopState.instance.activeShop.name != 'My Store')
+          ? AppRoutes.dashboard
+          : AppRoutes.auth;
+      Navigator.pushReplacementNamed(context, destination);
     }
   }
 
