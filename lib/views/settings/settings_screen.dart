@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:printing/printing.dart';
 import '../../routes/app_routes.dart';
 import '../../services/esc_pos_service.dart';
 import '../../services/security_service.dart';
@@ -474,7 +475,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
       dialogOpen = false;
     });
 
-    final printers = await EscPosService.instance.getAvailablePrinters();
+    List<Printer> printers = [];
+    try {
+      printers = await EscPosService.instance.getAvailablePrinters();
+    } catch (e) {
+      debugPrint('Printer discovery failed: $e');
+      if (mounted && dialogOpen) {
+        Navigator.of(context, rootNavigator: true).pop();
+        dialogOpen = false;
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Failed to scan for printers. Please verify Bluetooth is enabled and try again.'),
+            backgroundColor: const Color(0xFFE11D48),
+            action: SnackBarAction(
+              label: 'Retry',
+              textColor: Colors.white,
+              onPressed: _showPrinterPickerModal,
+            ),
+          ),
+        );
+      }
+      return;
+    }
+
     if (mounted && dialogOpen) {
       Navigator.of(context, rootNavigator: true).pop();
       dialogOpen = false;

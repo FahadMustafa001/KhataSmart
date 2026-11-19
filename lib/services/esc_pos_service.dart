@@ -319,14 +319,26 @@ class EscPosService {
       if (is80mm) {
         if (rateStr.length > 9 || totStr.length > 11 || qtyStr.length > 6 || item.productName.length > 21) {
           bytes.addAll(utf8.encode('${item.productName}\n'));
-          bytes.addAll(utf8.encode('${_padRight('', 18)}${_padCenter(qtyStr, 8)}${_padLeft(rateStr, 11)}${_padLeft(totStr, 11)}\n'));
+          final valuesStr = 'Qty: $qtyStr  Rate: $rateStr  Total: $totStr';
+          if (valuesStr.length <= maxCols) {
+            bytes.addAll(utf8.encode('${valuesStr.padLeft(maxCols)}\n'));
+          } else {
+            bytes.addAll(utf8.encode('${'Qty: $qtyStr  Rate: $rateStr'.padLeft(maxCols)}\n'));
+            bytes.addAll(utf8.encode('${'Total: $totStr'.padLeft(maxCols)}\n'));
+          }
         } else {
           bytes.addAll(utf8.encode('${_padRight(item.productName, 22)}${_padCenter(qtyStr, 6)}${_padLeft(rateStr, 9)}${_padLeft(totStr, 11)}\n'));
         }
       } else {
         if (rateStr.length > 6 || totStr.length > 8 || qtyStr.length > 4 || item.productName.length > 13) {
           bytes.addAll(utf8.encode('${item.productName}\n'));
-          bytes.addAll(utf8.encode('${_padRight('', 8)}${_padCenter(qtyStr, 6)}${_padLeft(rateStr, 8)}${_padLeft(totStr, 10)}\n'));
+          final valuesStr = '$qtyStr x $rateStr = $totStr';
+          if (valuesStr.length <= maxCols) {
+            bytes.addAll(utf8.encode('${valuesStr.padLeft(maxCols)}\n'));
+          } else {
+            bytes.addAll(utf8.encode('${'$qtyStr x $rateStr'.padLeft(maxCols)}\n'));
+            bytes.addAll(utf8.encode('${'Total: $totStr'.padLeft(maxCols)}\n'));
+          }
         } else {
           bytes.addAll(utf8.encode('${_padRight(item.productName, 14)}${_padCenter(qtyStr, 4)}${_padLeft(rateStr, 6)}${_padLeft(totStr, 8)}\n'));
         }

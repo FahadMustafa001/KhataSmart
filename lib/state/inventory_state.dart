@@ -137,9 +137,12 @@ class InventoryState extends ChangeNotifier {
   ProductModel? findByBarcode(String barcode) {
     try {
       final currentShopId = ShopState.instance.activeShopId;
-      return _products.firstWhere(
-        (p) => p.shopId == currentShopId && (p.barcode == barcode || p.id == barcode),
-      );
+      // 1. Prefer exact barcode match
+      final byBarcode = _products.where((p) => p.shopId == currentShopId && p.barcode == barcode).firstOrNull;
+      if (byBarcode != null) return byBarcode;
+
+      // 2. Fall back to product ID match (for generated barcode stickers)
+      return _products.where((p) => p.shopId == currentShopId && p.id == barcode).firstOrNull;
     } catch (_) {
       return null;
     }

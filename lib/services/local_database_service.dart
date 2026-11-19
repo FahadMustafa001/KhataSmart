@@ -150,6 +150,9 @@ class LocalDatabaseService {
       parsedPurchases = (data['purchases'] as List)
           .map((m) => PurchaseInvoiceModel.fromMap(Map<String, dynamic>.from(m)))
           .toList();
+    } else if (!data.containsKey('purchases')) {
+      // Valid legacy backup without purchases section: initialize with empty list
+      parsedPurchases = [];
     }
 
     List<PartyModel>? parsedParties;
@@ -192,7 +195,7 @@ class LocalDatabaseService {
     }
 
     if (parsedProducts != null) {
-      InventoryState.instance.loadFromDatabase(parsedProducts, parsedPurchases ?? []);
+      InventoryState.instance.loadFromDatabase(parsedProducts, parsedPurchases);
     }
 
     if (hasKhataData) {

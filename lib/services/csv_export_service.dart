@@ -14,9 +14,11 @@ class CsvExportService {
 
   String _sanitize(String text) {
     String val = text;
+    final trimmed = val.trimLeft();
     // Mitigate CSV / Excel formula injection for non-numeric fields starting with =, +, -, @
-    if (val.isNotEmpty && (val.startsWith('=') || val.startsWith('+') || val.startsWith('-') || val.startsWith('@'))) {
-      if (double.tryParse(val) == null) {
+    // Handles formulas preceded by spaces, tabs, or control characters
+    if (trimmed.isNotEmpty && (trimmed.startsWith('=') || trimmed.startsWith('+') || trimmed.startsWith('-') || trimmed.startsWith('@'))) {
+      if (double.tryParse(trimmed) == null) {
         val = "'$val";
       }
     }
