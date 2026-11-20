@@ -151,8 +151,6 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
@@ -239,10 +237,10 @@ class _AuthScreenState extends State<AuthScreen> {
                         text: 'Smart',
                         style: TextStyle(color: Color(0xFF1A365D)),
                       ),
-                      TextSpan(
+                      const TextSpan(
                         text: 'Khata',
                         style: TextStyle(
-                          color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
+                          color: Color(0xFF1E293B),
                         ),
                       ),
                       const TextSpan(
@@ -255,12 +253,12 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 6),
 
-                Text(
+                const Text(
                   'Welcome back!',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                    color: Color(0xFF0F172A),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -350,12 +348,12 @@ class _AuthScreenState extends State<AuthScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       'Store ID or Email',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
+                        color: Color(0xFF1E293B),
                       ),
                     ),
                     const Row(
@@ -418,12 +416,12 @@ class _AuthScreenState extends State<AuthScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    const Text(
                       'Password',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
+                        color: Color(0xFF1E293B),
                       ),
                     ),
                     GestureDetector(

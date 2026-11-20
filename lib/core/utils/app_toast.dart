@@ -70,63 +70,68 @@ class AppToast {
         margin: const EdgeInsets.only(left: 16, right: 16, bottom: 20),
         duration: const Duration(milliseconds: 2500),
         padding: EdgeInsets.zero,
-        content: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF0F172A), // Deep Slate
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF334155), width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
+        content: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 460),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0F172A), // Deep Slate
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF334155), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: badgeBgColor.withValues(alpha: 0.65),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: accentColor.withValues(alpha: 0.35), width: 1),
-                ),
-                child: Icon(icon, color: accentColor, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (title != null && title.isNotEmpty) ...[
-                      Text(
-                        title,
-                        style: TextStyle(
-                          color: accentColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                    ],
-                    Text(
-                      message,
-                      style: const TextStyle(
-                        color: Color(0xFFF1F5F9),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        height: 1.3,
-                      ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: badgeBgColor.withValues(alpha: 0.65),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: accentColor.withValues(alpha: 0.35), width: 1),
                     ),
-                  ],
-                ),
+                    child: Icon(icon, color: accentColor, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (title != null && title.isNotEmpty) ...[
+                          Text(
+                            title,
+                            style: TextStyle(
+                              color: accentColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                        ],
+                        Text(
+                          message,
+                          style: const TextStyle(
+                            color: Color(0xFFF1F5F9),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

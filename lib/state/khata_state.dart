@@ -92,6 +92,31 @@ class KhataState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateParty(PartyModel updatedParty) {
+    final idx = _parties.indexWhere((p) => p.id == updatedParty.id);
+    if (idx != -1) {
+      _parties[idx] = updatedParty;
+      notifyListeners();
+    }
+  }
+
+  void deleteEntry(String entryId) {
+    final idx = _entries.indexWhere((e) => e.id == entryId);
+    if (idx != -1) {
+      final entry = _entries[idx];
+      final partyIdx = _parties.indexWhere((p) => p.id == entry.partyId);
+      if (partyIdx != -1) {
+        if (entry.type == LedgerType.gave) {
+          _parties[partyIdx].balance -= entry.amount;
+        } else {
+          _parties[partyIdx].balance += entry.amount;
+        }
+      }
+      _entries.removeAt(idx);
+      notifyListeners();
+    }
+  }
+
   void addTransaction({
     required String partyId,
     required LedgerType type,

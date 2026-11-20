@@ -97,11 +97,9 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
           backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
           elevation: 0.5,
           leading: IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.arrow_back,
-              color: Theme.of(context).brightness == Brightness.dark
-                  ? Colors.white
-                  : const Color(0xFF1E293B),
+              color: Color(0xFF1E293B),
             ),
             onPressed: () {
               if (Navigator.canPop(context)) {

@@ -9,7 +9,6 @@ import '../../services/esc_pos_service.dart';
 import '../../services/security_service.dart';
 import '../../services/google_drive_service.dart';
 import '../../state/shop_state.dart';
-import '../../state/theme_state.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -25,7 +24,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ShopState.instance.addListener(_refresh);
     SecurityService.instance.addListener(_refresh);
     GoogleDriveService.instance.addListener(_refresh);
-    ThemeState.instance.addListener(_refresh);
     AuthService.instance.addListener(_refresh);
     CloudSyncService.instance.addListener(_refresh);
   }
@@ -35,7 +33,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     ShopState.instance.removeListener(_refresh);
     SecurityService.instance.removeListener(_refresh);
     GoogleDriveService.instance.removeListener(_refresh);
-    ThemeState.instance.removeListener(_refresh);
     AuthService.instance.removeListener(_refresh);
     CloudSyncService.instance.removeListener(_refresh);
     super.dispose();
@@ -607,25 +604,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final allShops = ShopState.instance.shops;
     final sec = SecurityService.instance;
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return PopScope(
       canPop: true,
       child: Scaffold(
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         appBar: AppBar(
-          backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+          backgroundColor: Colors.white,
           elevation: 0.5,
           leading: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new, size: 18, color: isDark ? Colors.white : const Color(0xFF1E293B)),
+            icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF1E293B)),
             onPressed: () => Navigator.pop(context),
           ),
-          title: Text(
+          title: const Text(
             'Settings & Multi-Store',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : const Color(0xFF1E293B),
+              color: Color(0xFF1E293B),
             ),
           ),
         ),
@@ -712,12 +707,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                   Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
+                    child: const Text(
                       'Switch Active Store:',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569),
+                        color: Color(0xFF475569),
                       ),
                     ),
                   ),
@@ -987,51 +982,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 16),
 
-            _buildSectionCard(
-              title: 'App Theme & Appearance',
-              icon: Icons.palette_outlined,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Choose display theme for day or night store operations:',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildThemeTile(
-                          title: 'Light Mode',
-                          icon: Icons.light_mode_outlined,
-                          isSelected: ThemeState.instance.themeMode == ThemeMode.light,
-                          onTap: () => ThemeState.instance.setThemeMode(ThemeMode.light),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildThemeTile(
-                          title: 'Dark (Night)',
-                          icon: Icons.dark_mode_outlined,
-                          isSelected: ThemeState.instance.themeMode == ThemeMode.dark,
-                          onTap: () => ThemeState.instance.setThemeMode(ThemeMode.dark),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildThemeTile(
-                          title: 'System Default',
-                          icon: Icons.brightness_auto_outlined,
-                          isSelected: ThemeState.instance.themeMode == ThemeMode.system,
-                          onTap: () => ThemeState.instance.setThemeMode(ThemeMode.system),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
 
             _buildSectionCard(
               title: 'Firebase Cloud Sync & Account',
@@ -1516,20 +1466,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
     Widget? trailing,
     required Widget child,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          color: const Color(0xFFE2E8F0),
         ),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: isDark ? Colors.black26 : const Color(0x06000000),
+            color: Color(0x06000000),
             blurRadius: 6,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -1541,14 +1490,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               Row(
                 children: [
-                  Icon(icon, size: 20, color: isDark ? const Color(0xFF38BDF8) : const Color(0xFF1E293B)),
+                  Icon(icon, size: 20, color: const Color(0xFF1E293B)),
                   const SizedBox(width: 8),
                   Text(
                     title,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF1E293B),
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                 ],
@@ -1563,53 +1512,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildThemeTile({
-    required String title,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF))
-              : (isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC)),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected
-                ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF2563EB))
-                : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-            width: isSelected ? 1.5 : 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 22,
-              color: isSelected
-                  ? (isDark ? const Color(0xFF38BDF8) : const Color(0xFF2563EB))
-                  : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B)),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected
-                    ? (isDark ? Colors.white : const Color(0xFF1E3A8A))
-                    : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

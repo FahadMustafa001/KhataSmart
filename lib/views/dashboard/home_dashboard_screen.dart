@@ -354,15 +354,13 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
         ? (udhaarSales / totalOrders * 100).toInt()
         : 0;
 
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+          color: const Color(0xFFE2E8F0),
         ),
       ),
       child: Column(
@@ -371,12 +369,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              const Text(
                 "Today's Settlement Split",
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  color: Color(0xFF0F172A),
                 ),
               ),
               Text(
@@ -436,7 +434,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   }
 
   Widget _buildLegendItem(BuildContext context, Color color, String label) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -444,9 +441,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 10.5,
-            color: isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569),
+            color: Color(0xFF475569),
           ),
         ),
       ],
@@ -456,8 +453,6 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   // Recent Invoices Section
   Widget _buildRecentInvoicesSection(
       BuildContext context, List<OrderModel> orders) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -466,12 +461,12 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           children: [
             Row(
               children: [
-                Text(
+                const Text(
                   'Recent Invoices',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                    color: Color(0xFF0F172A),
                   ),
                 ),
                 const SizedBox(width: 6),
@@ -479,15 +474,15 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF),
+                    color: const Color(0xFFEFF6FF),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text(
                     '${orders.length}',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+                      color: Color(0xFF1D4ED8),
                     ),
                   ),
                 ),
@@ -515,18 +510,18 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: const Color(0xFFE2E8F0),
               ),
             ),
-            child: Center(
+            child: const Center(
               child: Text(
                 'No recent invoices yet. Tap "New Sale" to create your first bill.',
                 style: TextStyle(
                   fontSize: 12,
-                  color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                  color: Color(0xFF64748B),
                 ),
               ),
             ),

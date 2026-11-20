@@ -24,8 +24,6 @@ class QuickActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     if (isFeatured) {
       return Material(
         color: Colors.transparent,
@@ -35,12 +33,11 @@ class QuickActionButton extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFF1E3A5F), // Deep Navy
+              color: const Color(0xFF1E3A5F), // Deep Navy
               borderRadius: BorderRadius.circular(14),
-              border: isDark ? Border.all(color: const Color(0xFF38BDF8), width: 1.5) : null,
               boxShadow: [
                 BoxShadow(
-                  color: isDark ? Colors.black26 : const Color(0xFF1E3A5F).withValues(alpha: 0.2),
+                  color: const Color(0xFF1E3A5F).withValues(alpha: 0.2),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -114,10 +111,10 @@ class QuickActionButton extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : Colors.white,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              color: const Color(0xFFE2E8F0),
             ),
           ),
           child: Column(
@@ -139,15 +136,15 @@ class QuickActionButton extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E3A8A) : const Color(0xFFEFF6FF),
+                        color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         badge!,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
-                          color: isDark ? const Color(0xFF93C5FD) : const Color(0xFF1D4ED8),
+                          color: Color(0xFF1D4ED8),
                         ),
                       ),
                     ),
@@ -156,19 +153,19 @@ class QuickActionButton extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 label,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                  color: Color(0xFF0F172A),
                 ),
               ),
               if (subtitle != null) ...[
                 const SizedBox(height: 2),
                 Text(
                   subtitle!,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 11,
-                    color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                    color: Color(0xFF64748B),
                   ),
                 ),
               ],

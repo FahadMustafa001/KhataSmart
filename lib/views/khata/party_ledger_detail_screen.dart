@@ -8,9 +8,12 @@ import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
+import 'widgets/add_party_sheet.dart';
 import 'widgets/add_transaction_modal.dart';
 
 class LedgerDetailItem {
+  final String id;
+  final DateTime rawDate;
   final String date;
   final String tag;
   final Color tagColor;
@@ -24,6 +27,8 @@ class LedgerDetailItem {
   final String? creditLabel;
 
   const LedgerDetailItem({
+    required this.id,
+    required this.rawDate,
     required this.date,
     required this.tag,
     required this.tagColor,
@@ -51,15 +56,13 @@ class PartyLedgerDetailScreen extends StatefulWidget {
 class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   final _khataState = KhataState.instance;
 
-  late String _partyName;
-  late String _partyPhone;
-  late String _partyAddress;
   late String _partyId;
-  late double _balance;
-
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String _selectedDateFilter = 'All Dates'; // 'All Dates', 'This Month', 'Last 30 Days'
+  String _selectedTypeFilter = 'All'; // 'All', 'Gave', 'Got'
+  bool _isAutoReminderActive = true;
 
   PartyModel? get _currentParty {
     try {
@@ -69,7 +72,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     }
   }
 
-  double get _currentBalance => _currentParty?.balance ?? _balance;
+  double get _currentBalance => _currentParty?.balance ?? widget.party?.balance ?? 0.0;
 
   static String _monthName(int m) {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -77,7 +80,40 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   }
 
   List<LedgerDetailItem> get _partyTransactions {
-    var entries = _khataState.getEntriesForParty(_partyId);
+    final rawEntries = _khataState.getEntriesForParty(_partyId);
+    if (rawEntries.isEmpty) return [];
+
+    // 1. Sort chronological ascending to calculate running balance accurately
+    final sortedAsc = List<LedgerEntryModel>.from(rawEntries)
+      ..sort((a, b) => a.date.compareTo(b.date));
+
+    // Calculate historical balance progression
+    double totalGave = 0;
+    double totalGot = 0;
+    for (final e in sortedAsc) {
+      if (e.type == LedgerType.gave) {
+        totalGave += e.amount;
+      } else {
+        totalGot += e.amount;
+      }
+    }
+
+    double running = _currentBalance - (totalGave - totalGot);
+    final Map<String, double> runningBalanceMap = {};
+    for (final e in sortedAsc) {
+      if (e.type == LedgerType.gave) {
+        running += e.amount;
+      } else {
+        running -= e.amount;
+      }
+      runningBalanceMap[e.id] = running;
+    }
+
+    // 2. Sort descending (newest first) for UI display
+    var entries = List<LedgerEntryModel>.from(rawEntries)
+      ..sort((a, b) => b.date.compareTo(a.date));
+
+    // 3. Search filter
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
       entries = entries.where((e) {
@@ -86,9 +122,23 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
             e.id.toLowerCase().contains(q);
       }).toList();
     }
-    if (entries.isEmpty) {
-      return [];
+
+    // 4. Date filter
+    if (_selectedDateFilter == 'This Month') {
+      final now = DateTime.now();
+      entries = entries.where((e) => e.date.year == now.year && e.date.month == now.month).toList();
+    } else if (_selectedDateFilter == 'Last 30 Days') {
+      final cutoff = DateTime.now().subtract(const Duration(days: 30));
+      entries = entries.where((e) => e.date.isAfter(cutoff)).toList();
     }
+
+    // 5. Type filter
+    if (_selectedTypeFilter == 'Gave') {
+      entries = entries.where((e) => e.type == LedgerType.gave).toList();
+    } else if (_selectedTypeFilter == 'Got') {
+      entries = entries.where((e) => e.type == LedgerType.got).toList();
+    }
+
     return entries.map((e) {
       final isDebit = e.type == LedgerType.gave;
       final dateStr = '${e.date.day} ${_monthName(e.date.month)} ${e.date.year}';
@@ -98,18 +148,22 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
           ? e.note.replaceAll('Bill ', '')
           : '#TXN-${e.id.length > 4 ? e.id.substring(e.id.length - 4) : e.id}';
 
+      final balAtTime = runningBalanceMap[e.id] ?? _currentBalance;
+
       return LedgerDetailItem(
+        id: e.id,
+        rawDate: e.date,
         date: dateStr,
         tag: tagStr,
-        tagColor: isDebit ? const Color(0xFFDBEAFE) : const Color(0xFFDCFCE7),
-        tagTextColor: isDebit ? const Color(0xFF1D4ED8) : const Color(0xFF15803D),
-        title: e.note,
+        tagColor: isDebit ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7),
+        tagTextColor: isDebit ? const Color(0xFFDC2626) : const Color(0xFF15803D),
+        title: e.note.isNotEmpty ? e.note : (isDebit ? 'Udhaar / Debit' : 'Cash Received / Credit'),
         time: timeStr,
-        balanceAfter: 'PKR ${_currentBalance.toStringAsFixed(0)}',
+        balanceAfter: 'PKR ${balAtTime.abs().toStringAsFixed(0)} ${balAtTime >= 0 ? "(Dr)" : "(Cr)"}',
         debit: isDebit ? e.amount : null,
-        debitLabel: isDebit ? 'Debit (Gave)' : null,
+        debitLabel: isDebit ? 'You Gave' : null,
         credit: !isDebit ? e.amount : null,
-        creditLabel: !isDebit ? 'Cash Received' : null,
+        creditLabel: !isDebit ? 'You Received' : null,
       );
     }).toList();
   }
@@ -124,18 +178,30 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     return entries.where((e) => e.type == LedgerType.got).fold(0.0, (sum, e) => sum + e.amount);
   }
 
+  String get _latestActivityText {
+    final entries = _khataState.getEntriesForParty(_partyId);
+    if (entries.isEmpty) return 'No transactions recorded yet';
+    final sorted = List<LedgerEntryModel>.from(entries)..sort((a, b) => b.date.compareTo(a.date));
+    final latest = sorted.first.date;
+    final now = DateTime.now();
+    final difference = now.difference(latest);
+
+    final hour = latest.hour % 12 == 0 ? 12 : latest.hour % 12;
+    final timeStr = '${hour.toString().padLeft(2, '0')}:${latest.minute.toString().padLeft(2, '0')} ${latest.hour >= 12 ? 'PM' : 'AM'}';
+
+    if (difference.inDays == 0 && now.day == latest.day) {
+      return 'Today $timeStr';
+    } else if (difference.inDays <= 1) {
+      return 'Yesterday $timeStr';
+    } else {
+      return '${latest.day} ${_monthName(latest.month)} $timeStr';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    final p = widget.party;
-    _partyName = p?.name ?? 'Account';
-    _partyPhone = p?.phone ?? '';
-    _partyAddress = p?.displayLocation.isNotEmpty == true
-        ? p!.displayLocation
-        : (p?.address ?? '');
-    _partyId = p?.id ?? '';
-    _balance = p?.balance ?? 0.0;
-
+    _partyId = widget.party?.id ?? '';
     _khataState.addListener(_rebuild);
   }
 
@@ -151,6 +217,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   }
 
   void _openAddModal(LedgerType type) {
+    final p = _currentParty;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -159,14 +226,275 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
       ),
       builder: (_) => AddTransactionModal(
         partyId: _partyId,
-        partyName: _partyName,
+        partyName: p?.name ?? 'Account',
         initialType: type,
+      ),
+    );
+  }
+
+  void _showEditPartyModal() {
+    final party = _currentParty;
+    if (party == null) return;
+
+    final nameCtrl = TextEditingController(text: party.name);
+    final phoneCtrl = TextEditingController(text: party.phone);
+    final cityCtrl = TextEditingController(text: party.city);
+    final areaCtrl = TextEditingController(text: party.area);
+    final addressCtrl = TextEditingController(text: party.address);
+    final creditCtrl = TextEditingController(
+      text: party.creditLimit != null && party.creditLimit! > 0
+          ? party.creditLimit!.toStringAsFixed(0)
+          : '',
+    );
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 20,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Edit ${party.type == PartyType.supplier ? "Supplier" : "Customer"} Details',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: nameCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Account Name',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: phoneCtrl,
+                keyboardType: TextInputType.phone,
+                decoration: InputDecoration(
+                  labelText: 'Phone / WhatsApp Number',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: cityCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'City',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: areaCtrl,
+                      decoration: InputDecoration(
+                        labelText: 'Area / Market',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: addressCtrl,
+                decoration: InputDecoration(
+                  labelText: 'Shop / Street Address',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: creditCtrl,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Credit Limit (PKR)',
+                  hintText: 'e.g. 50000',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E293B),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  onPressed: () {
+                    final newName = nameCtrl.text.trim();
+                    if (newName.isEmpty) {
+                      AppToast.showWarning(context, 'Account name cannot be empty');
+                      return;
+                    }
+                    final double? parsedLimit = double.tryParse(creditCtrl.text.trim());
+                    final updated = party.copyWith(
+                      name: newName,
+                      phone: phoneCtrl.text.trim(),
+                      city: cityCtrl.text.trim(),
+                      area: areaCtrl.text.trim(),
+                      address: addressCtrl.text.trim(),
+                      creditLimit: parsedLimit,
+                    );
+                    _khataState.updateParty(updated);
+                    Navigator.pop(ctx);
+                    AppToast.showSuccess(context, 'Account details updated successfully!');
+                  },
+                  child: const Text('Save Changes', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showTransactionOptionsModal(LedgerDetailItem tx) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        tx.tag,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      Text(
+                        '${tx.date} • ${tx.time}',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: tx.tagColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      tx.debit != null ? 'Gave: PKR ${tx.debit!.toStringAsFixed(0)}' : 'Got: PKR ${tx.credit!.toStringAsFixed(0)}',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: tx.tagTextColor),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Text(
+                  'Note: ${tx.title}',
+                  style: const TextStyle(fontSize: 12.5, color: Color(0xFF334155)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFDCFCE7),
+                  child: Icon(Icons.share, color: Color(0xFF16A34A), size: 20),
+                ),
+                title: const Text('Share Transaction on WhatsApp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                subtitle: const Text('Send this entry directly to customer', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  final p = _currentParty;
+                  if (p != null) {
+                    PrintingAndSharingService.instance.sendPartyLedgerViaWhatsApp(party: p, shop: ShopState.instance.activeShop);
+                  }
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const CircleAvatar(
+                  backgroundColor: Color(0xFFFEE2E2),
+                  child: Icon(Icons.delete_outline, color: Color(0xFFDC2626), size: 20),
+                ),
+                title: const Text('Delete / Revert Transaction', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFDC2626))),
+                subtitle: const Text('Removes this entry and recalculates balance', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final confirm = await showDialog<bool>(
+                    context: context,
+                    builder: (alertCtx) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      title: const Text('Delete Transaction?'),
+                      content: Text('Are you sure you want to delete ${tx.tag} (${tx.title})? Account balance will be restored automatically.'),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.pop(alertCtx, false), child: const Text('Cancel')),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFDC2626)),
+                          onPressed: () => Navigator.pop(alertCtx, true),
+                          child: const Text('Delete Entry', style: TextStyle(color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  );
+                  if (confirm == true && mounted) {
+                    _khataState.deleteEntry(tx.id);
+                    AppToast.showSuccess(context, 'Transaction removed and balance recalculated!');
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final party = _currentParty;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) {
@@ -178,7 +506,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        backgroundColor: const Color(0xFFF8FAFC),
         appBar: AppBar(
           backgroundColor: const Color(0xFF0F172A),
           elevation: 0,
@@ -188,65 +516,62 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               if (Navigator.canPop(context)) {
                 Navigator.pop(context);
               } else {
-                Navigator.pushReplacementNamed(
-                    context, AppRoutes.khataDirectory);
+                Navigator.pushReplacementNamed(context, AppRoutes.khataDirectory);
               }
             },
           ),
-        title: _isSearching
-            ? TextField(
-                controller: _searchController,
-                autofocus: true,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                cursorColor: Colors.white,
-                decoration: const InputDecoration(
-                  hintText: 'Search transactions by note or amount...',
-                  hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                  border: InputBorder.none,
-                ),
-                onChanged: (val) {
-                  setState(() => _searchQuery = val);
-                },
-              )
-            : Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${_currentParty?.name ?? _partyName} Ledger',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.bold,
-                    ),
+          title: _isSearching
+              ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  cursorColor: Colors.white,
+                  decoration: const InputDecoration(
+                    hintText: 'Search ledger by note, amount, bill...',
+                    hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                    border: InputBorder.none,
                   ),
-                  const SizedBox(height: 1),
-                  Row(
-                    children: [
-                      const Icon(Icons.circle, color: Color(0xFF22C55E), size: 6),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${_currentParty?.type == PartyType.supplier ? "Supplier" : "Customer"} • Khata Book',
-                        style: const TextStyle(
-                          color: Color(0xFF94A3B8),
-                          fontSize: 10.5,
-                        ),
+                  onChanged: (val) {
+                    setState(() => _searchQuery = val);
+                  },
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${party?.name ?? "Account"} Ledger',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.bold,
                       ),
-                    ],
-                  ),
-                ],
-              ),
-        actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 6),
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: IconButton(
-              padding: EdgeInsets.zero,
-              icon: Icon(_isSearching ? Icons.close : Icons.search, size: 18, color: Colors.white),
+                    ),
+                    const SizedBox(height: 1),
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF22C55E),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${party?.type == PartyType.supplier ? "Supplier" : "Customer"} • Smart Khata Book',
+                          style: const TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontSize: 10.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+          actions: [
+            IconButton(
+              icon: Icon(_isSearching ? Icons.close : Icons.search, size: 20, color: Colors.white),
               onPressed: () {
                 setState(() {
                   if (_isSearching) {
@@ -259,18 +584,13 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                 });
               },
             ),
-          ),
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+            IconButton(
+              icon: const Icon(Icons.edit_outlined, size: 20, color: Colors.white),
+              tooltip: 'Edit Account',
+              onPressed: _showEditPartyModal,
             ),
-            child: PopupMenuButton<String>(
-              padding: EdgeInsets.zero,
-              icon: const Icon(Icons.more_vert, size: 18, color: Colors.white),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, size: 20, color: Colors.white),
               color: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               onSelected: (val) async {
@@ -290,13 +610,15 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                     shop: shop,
                     isDirectPrint: true,
                   );
+                } else if (val == 'edit') {
+                  _showEditPartyModal();
                 } else if (val == 'delete') {
                   final confirm = await showDialog<bool>(
                     context: context,
                     builder: (ctx) => AlertDialog(
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                       title: const Text('Delete Khata Account?'),
-                      content: Text('Are you sure you want to delete ${p.name}? All transaction history for this party will be removed.'),
+                      content: Text('Are you sure you want to delete ${p.name}? All transaction history for this party will be permanently removed.'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.pop(ctx, false),
@@ -319,6 +641,16 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                 }
               },
               itemBuilder: (ctx) => [
+                const PopupMenuItem(
+                  value: 'edit',
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_note_rounded, size: 18, color: Color(0xFF2563EB)),
+                      SizedBox(width: 10),
+                      Text('Edit Account Details'),
+                    ],
+                  ),
+                ),
                 const PopupMenuItem(
                   value: 'call',
                   child: Row(
@@ -345,7 +677,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                     children: [
                       Icon(Icons.print_outlined, size: 18, color: Color(0xFF475569)),
                       SizedBox(width: 10),
-                      Text('Print Statement PDF'),
+                      Text('Print Full Statement PDF'),
                     ],
                   ),
                 ),
@@ -362,111 +694,144 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                 ),
               ],
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
 
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildCustomerProfileCard(),
+        body: Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 1. Customer Profile Card
+                    _buildCustomerProfileCard(),
 
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
-                  _buildNetBalanceCard(),
+                    // 2. Net Outstanding Balance Card (Properly Formatted & Resolved)
+                    _buildNetBalanceCard(),
 
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
-                  _buildActionButtonsRow(),
+                    // 3. Quick Action Buttons
+                    _buildActionButtonsRow(),
 
-                  const SizedBox(height: 10),
+                    const SizedBox(height: 12),
 
-                  _buildTotalsRow(),
+                    // 4. Totals Row
+                    _buildTotalsRow(),
 
-                  const SizedBox(height: 14),
+                    const SizedBox(height: 14),
 
-                  _buildTransactionStatementHeader(),
+                    // 5. Transaction Statement Header & Filters
+                    _buildTransactionStatementHeader(),
 
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                  _buildTableColumnHeader(),
+                    // Filter chips row
+                    _buildFilterChipsRow(),
 
-                  const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    const SizedBox(height: 8),
 
-                  if (_partyTransactions.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 30.0, horizontal: 16.0),
-                      child: Center(
-                        child: Text(
-                          'No transactions recorded yet for this account.\nUse the buttons below to record "You Gave" or "You Received".',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            color: Color(0xFF64748B),
-                            height: 1.4,
+                    // 6. Subheader Table Column Names
+                    _buildTableColumnHeader(),
+
+                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+                    // 7. Transaction Feed
+                    if (_partyTransactions.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 16.0),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.receipt_long_outlined, size: 42, color: Colors.grey.shade400),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'No transactions match current filters.\nUse buttons below to record "You Gave" or "You Received".',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  color: Color(0xFF64748B),
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    )
-                  else ...[
-                    ..._partyTransactions.map((tx) => _buildTransactionRow(tx)),
-                    const SizedBox(height: 10),
+                      )
+                    else ...[
+                      ..._partyTransactions.map((tx) => _buildTransactionRow(tx)),
+                      const SizedBox(height: 10),
+                    ],
+
+                    const SizedBox(height: 8),
+
+                    // 8. Weekly Payment Reminder Banner
+                    _buildReminderBanner(),
+
+                    const SizedBox(height: 16),
                   ],
-
-                  const SizedBox(height: 8),
-
-                  // 8. Weekly Payment Reminder Banner
-                  _buildReminderBanner(),
-
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
             ),
-          ),
 
-          // Bottom Action Bar: Gave Credit & Got Payment
-          _buildBottomActionButtons(),
-        ],
+            // Bottom Action Bar: Gave Credit & Got Payment
+            _buildBottomActionButtons(),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   // 1. Customer Profile Card
   Widget _buildCustomerProfileCard() {
     final party = _currentParty;
-    final initials = party?.initials ??
-        (_partyName.isNotEmpty ? _partyName[0].toUpperCase() : 'KH');
     final isSupplier = party?.type == PartyType.supplier;
+    final initials = party?.initials ?? 'KH';
     final locationText = party?.displayLocation.isNotEmpty == true
         ? party!.displayLocation
-        : _partyAddress;
+        : (party?.address ?? '');
+    final hasLimit = party?.creditLimit != null && party!.creditLimit! > 0;
+    final limitAmount = party?.creditLimit ?? 0.0;
+    final usedFraction = hasLimit && limitAmount > 0
+        ? (_currentBalance > 0 ? (_currentBalance / limitAmount).clamp(0.0, 1.0) : 0.0)
+        : 0.0;
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x05000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Initials Avatar
-          Stack(
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Initials Avatar
               Container(
-                width: 46,
-                height: 46,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: isSupplier
-                      ? const Color(0xFFEA580C)
-                      : const Color(0xFF0F172A),
+                  gradient: LinearGradient(
+                    colors: isSupplier
+                        ? [const Color(0xFFEA580C), const Color(0xFFF97316)]
+                        : [const Color(0xFF0F172A), const Color(0xFF1E293B)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -474,138 +839,147 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                     initials,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 17,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
-              Positioned(
-                right: 0,
-                bottom: 0,
-                child: Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF16A34A),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: const Center(
-                    child: Icon(Icons.check, size: 8, color: Colors.white),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
+              const SizedBox(width: 12),
 
-          // Name & Details
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+              // Name & Contact Details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Flexible(
-                      child: Text(
-                        _partyName,
-                        style: const TextStyle(
-                          fontSize: 14.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            party?.name ?? 'Store Account',
+                            style: const TextStyle(
+                              fontSize: 15.5,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: isSupplier ? const Color(0xFFFFF7ED) : const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: isSupplier ? const Color(0xFFFFEDD5) : const Color(0xFFDBEAFE),
+                            ),
+                          ),
+                          child: Text(
+                            isSupplier ? 'Supplier' : 'Customer',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: isSupplier ? const Color(0xFFC2410C) : const Color(0xFF1D4ED8),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 6, vertical: 1.5),
-                      decoration: BoxDecoration(
-                        color: isSupplier
-                            ? const Color(0xFFFFF7ED)
-                            : const Color(0xFFDBEAFE),
-                        borderRadius: BorderRadius.circular(6),
+
+                    if (locationText.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF2563EB)),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              locationText,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Color(0xFF2563EB)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        isSupplier ? 'Supplier' : 'Customer',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
-                          color: isSupplier
-                              ? const Color(0xFFC2410C)
-                              : const Color(0xFF1D4ED8),
+                    ],
+
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        const Icon(Icons.phone_outlined, size: 12, color: Color(0xFF64748B)),
+                        const SizedBox(width: 4),
+                        Text(
+                          party?.phone.isNotEmpty == true ? party!.phone : 'No phone number',
+                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w500, color: Color(0xFF334155)),
                         ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
+              ),
 
-                // Location Badge
-                if (locationText.isNotEmpty) ...[
-                  const SizedBox(height: 2),
+              // Edit Icon Button
+              IconButton(
+                icon: const Icon(Icons.mode_edit_outline_outlined, size: 18, color: Color(0xFF2563EB)),
+                tooltip: 'Edit Account',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: _showEditPartyModal,
+              ),
+            ],
+          ),
+
+          // Credit Limit Progress Bar (if configured)
+          if (hasLimit) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Icon(Icons.location_on_outlined,
-                          size: 11, color: Color(0xFF2563EB)),
-                      const SizedBox(width: 3),
-                      Expanded(
-                        child: Text(
-                          locationText,
-                          style: const TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF2563EB),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      const Text(
+                        'CREDIT LIMIT USAGE',
+                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                      ),
+                      Text(
+                        'PKR ${_currentBalance > 0 ? _currentBalance.toStringAsFixed(0) : "0"} / ${limitAmount.toStringAsFixed(0)}',
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: usedFraction > 0.9 ? const Color(0xFFDC2626) : const Color(0xFF1E293B),
                         ),
                       ),
                     ],
                   ),
-                ],
-
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(Icons.phone, size: 11, color: Color(0xFF94A3B8)),
-                    const SizedBox(width: 4),
-                    Text(
-                      _partyPhone,
-                      style: const TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF334155),
-                      ),
-                    ),
-                  ],
-                ),
-
-                // Credit Limit
-                if (party?.creditLimit != null && party!.creditLimit! > 0) ...[
-                  const SizedBox(height: 3),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 5, vertical: 1.5),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      'Credit Limit: PKR ${party.creditLimit!.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF475569),
+                  const SizedBox(height: 5),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: usedFraction,
+                      minHeight: 5,
+                      backgroundColor: const Color(0xFFE2E8F0),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        usedFraction > 0.9
+                            ? const Color(0xFFDC2626)
+                            : (usedFraction > 0.7 ? const Color(0xFFF59E0B) : const Color(0xFF16A34A)),
                       ),
                     ),
                   ),
                 ],
-              ],
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -613,12 +987,58 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
 
   // 2. Net Outstanding Balance Card
   Widget _buildNetBalanceCard() {
+    final party = _currentParty;
+    final isSupplier = party?.type == PartyType.supplier;
+    final bal = _currentBalance;
+
+    // Determine Financial Meaning
+    final bool isSettled = bal == 0;
+    final bool isReceivable = !isSupplier ? bal > 0 : bal < 0;
+    final bool isPayable = !isSupplier ? bal < 0 : bal > 0;
+
+    String titleText;
+    String badgeText;
+    Color cardBg;
+    Color borderColor;
+    Color primaryColor;
+    IconData statusIcon;
+
+    if (isSettled) {
+      titleText = 'ACCOUNT SETTLED (HISAB NILL)';
+      badgeText = 'Settled (Nill)';
+      cardBg = const Color(0xFFF8FAFC);
+      borderColor = const Color(0xFFE2E8F0);
+      primaryColor = const Color(0xFF475569);
+      statusIcon = Icons.check_circle_outline_rounded;
+    } else if (isReceivable) {
+      titleText = !isSupplier ? 'NET RECEIVABLE (AAP NE LENE HAIN)' : 'ADVANCE PAID (AAP NE LENE HAIN)';
+      badgeText = !isSupplier ? 'Receivable (Lena Hai)' : 'Advance (Lena Hai)';
+      cardBg = const Color(0xFFF0FDF4);
+      borderColor = const Color(0xFFBBF7D0);
+      primaryColor = const Color(0xFF15803D);
+      statusIcon = Icons.arrow_downward_rounded;
+    } else {
+      titleText = !isSupplier ? 'ADVANCE RECEIVED (AAP NE DENE HAIN)' : 'NET PAYABLE (AAP NE DENE HAIN)';
+      badgeText = !isSupplier ? 'Advance (Dena Hai)' : 'Payable (Dena Hai)';
+      cardBg = const Color(0xFFFEF2F2);
+      borderColor = const Color(0xFFFECACA);
+      primaryColor = const Color(0xFFDC2626);
+      statusIcon = Icons.arrow_upward_rounded;
+    }
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0FDF4),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFDCFCE7)),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: borderColor, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -628,12 +1048,12 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
             children: [
               Row(
                 children: [
-                  const Text(
-                    'NET OUTSTANDING BALANCE',
+                  Text(
+                    titleText,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF166534),
+                      color: primaryColor,
                       letterSpacing: 0.5,
                     ),
                   ),
@@ -641,12 +1061,12 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF166534),
+                      color: primaryColor,
                       borderRadius: BorderRadius.circular(6),
                     ),
-                    child: const Text(
-                      'Receivable',
-                      style: TextStyle(
+                    child: Text(
+                      badgeText,
+                      style: const TextStyle(
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -655,36 +1075,41 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   ),
                 ],
               ),
+              // Icon Badge replacing empty circle
               Container(
-                width: 28,
-                height: 28,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF059669),
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Icon(statusIcon, color: primaryColor, size: 18),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 6),
           Text(
-            'PKR ${_currentBalance.toStringAsFixed(0)}',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF064E3B),
+            'PKR ${bal.abs().toStringAsFixed(0)}',
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              color: primaryColor,
+              letterSpacing: -0.5,
             ),
           ),
-          const SizedBox(height: 4),
-          const Row(
+          const SizedBox(height: 6),
+          Row(
             children: [
-              Icon(Icons.access_time, size: 11, color: Color(0xFF15803D)),
-              SizedBox(width: 4),
+              Icon(Icons.history_rounded, size: 12, color: primaryColor.withValues(alpha: 0.8)),
+              const SizedBox(width: 4),
               Text(
-                'Last activity: Yesterday 06:45 PM',
+                _latestActivityText,
                 style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF15803D),
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w600,
+                  color: primaryColor.withValues(alpha: 0.85),
                 ),
               ),
             ],
@@ -696,16 +1121,18 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
 
   // 3. Quick Action Buttons Row: WhatsApp, Direct Call, Statement
   Widget _buildActionButtonsRow() {
+    final party = _currentParty;
+
     return Row(
       children: [
-        // WhatsApp
+        // WhatsApp Action
         Expanded(
-          child: GestureDetector(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
-              final p = _currentParty;
-              if (p != null) {
+              if (party != null) {
                 PrintingAndSharingService.instance.sendPartyLedgerViaWhatsApp(
-                  party: p,
+                  party: party,
                   shop: ShopState.instance.activeShop,
                 );
               }
@@ -736,12 +1163,14 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         ),
         const SizedBox(width: 8),
 
-        // Direct Call
+        // Direct Call Action
         Expanded(
-          child: GestureDetector(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
-              if (_partyPhone.isNotEmpty) {
-                PrintingAndSharingService.instance.makePhoneCall(_partyPhone);
+              final phone = party?.phone ?? '';
+              if (phone.isNotEmpty) {
+                PrintingAndSharingService.instance.makePhoneCall(phone);
               } else {
                 AppToast.showWarning(context, 'No phone number provided for this party');
               }
@@ -755,14 +1184,14 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               ),
               child: const Column(
                 children: [
-                  Icon(Icons.phone_outlined, size: 20, color: Color(0xFF2563EB)),
+                  Icon(Icons.phone_in_talk_rounded, size: 20, color: Color(0xFF2563EB)),
                   SizedBox(height: 4),
                   Text(
                     'Direct Call',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
                   ),
                   Text(
-                    'Dial Number',
+                    'Dial Phone',
                     style: TextStyle(fontSize: 9, color: Color(0xFF2563EB)),
                   ),
                 ],
@@ -772,15 +1201,15 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         ),
         const SizedBox(width: 8),
 
-        // Statement
+        // Statement PDF Action
         Expanded(
-          child: GestureDetector(
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
-              final p = _currentParty;
-              if (p != null) {
-                final entries = _khataState.getEntriesForParty(p.id);
+              if (party != null) {
+                final entries = _khataState.getEntriesForParty(party.id);
                 PrintingAndSharingService.instance.printOrSharePartyLedgerStatement(
-                  party: p,
+                  party: party,
                   entries: entries,
                   shop: ShopState.instance.activeShop,
                   isDirectPrint: false,
@@ -796,7 +1225,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               ),
               child: const Column(
                 children: [
-                  Icon(Icons.description_outlined, size: 20, color: Color(0xFF475569)),
+                  Icon(Icons.picture_as_pdf_outlined, size: 20, color: Color(0xFF475569)),
                   SizedBox(height: 4),
                   Text(
                     'Statement',
@@ -835,7 +1264,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'TOTAL GIVEN (DEBIT)',
+                      'YOU GAVE (DEBIT)',
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
@@ -857,7 +1286,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                 Text(
                   'Rs. ${_totalDebit.toStringAsFixed(0)}',
                   style: const TextStyle(
-                    fontSize: 14.5,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFFDC2626),
                   ),
@@ -868,7 +1297,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         ),
         const SizedBox(width: 10),
 
-        // Total Received
+        // Total Received (Credit)
         Expanded(
           child: Container(
             padding: const EdgeInsets.all(12),
@@ -884,7 +1313,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'TOTAL RECEIVED',
+                      'YOU GOT (CREDIT)',
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.bold,
@@ -906,7 +1335,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                 Text(
                   'Rs. ${_totalCredit.toStringAsFixed(0)}',
                   style: const TextStyle(
-                    fontSize: 14.5,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF16A34A),
                   ),
@@ -919,7 +1348,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     );
   }
 
-  // 5. Transaction Statement Header
+  // 5. Transaction Statement Header & Filters
   Widget _buildTransactionStatementHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -935,50 +1364,92 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               ),
             ),
             const SizedBox(width: 6),
-            Text(
+            const Text(
               'TRANSACTION STATEMENT',
               style: TextStyle(
                 fontSize: 11.5,
                 fontWeight: FontWeight.bold,
-                color: AppColors.text(context),
+                color: Color(0xFF0F172A),
                 letterSpacing: 0.5,
               ),
             ),
           ],
         ),
-        Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '${_partyTransactions.length} Entries',
-                style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
-              ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            '${_partyTransactions.length} Entries',
+            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChipsRow() {
+    return Row(
+      children: [
+        // Date Filter
+        PopupMenuButton<String>(
+          initialValue: _selectedDateFilter,
+          onSelected: (v) => setState(() => _selectedDateFilter = v),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
             ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF1F5F9),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.filter_list, size: 11, color: Color(0xFF64748B)),
-                  SizedBox(width: 4),
-                  Text(
-                    'All Dates',
-                    style: TextStyle(fontSize: 10, color: Color(0xFF64748B), fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
+            child: Row(
+              children: [
+                const Icon(Icons.calendar_today_outlined, size: 11, color: Color(0xFF64748B)),
+                const SizedBox(width: 4),
+                Text(
+                  _selectedDateFilter,
+                  style: const TextStyle(fontSize: 10.5, color: Color(0xFF334155), fontWeight: FontWeight.bold),
+                ),
+                const Icon(Icons.arrow_drop_down, size: 14, color: Color(0xFF64748B)),
+              ],
             ),
+          ),
+          itemBuilder: (_) => [
+            const PopupMenuItem(value: 'All Dates', child: Text('All Dates', style: TextStyle(fontSize: 12))),
+            const PopupMenuItem(value: 'This Month', child: Text('This Month', style: TextStyle(fontSize: 12))),
+            const PopupMenuItem(value: 'Last 30 Days', child: Text('Last 30 Days', style: TextStyle(fontSize: 12))),
           ],
         ),
+        const SizedBox(width: 8),
+
+        // Type Filter (All, Gave, Got)
+        ...['All', 'Gave', 'Got'].map((type) {
+          final isSelected = _selectedTypeFilter == type;
+          return Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: InkWell(
+              onTap: () => setState(() => _selectedTypeFilter = type),
+              borderRadius: BorderRadius.circular(6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  type == 'All' ? 'All Types' : (type == 'Gave' ? 'Gave (Dr)' : 'Got (Cr)'),
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: isSelected ? Colors.white : const Color(0xFF64748B),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
       ],
     );
   }
@@ -991,7 +1462,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'DATE & DETAILS',
+            'DATE & DETAILS (TAP FOR OPTIONS)',
             style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
           ),
           Row(
@@ -1014,176 +1485,209 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
 
   // 7. Transaction Feed Entries
   Widget _buildTransactionRow(LedgerDetailItem tx) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Left: Date, Tag, Description, Time & Balance
-          Expanded(
-            flex: 6,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      tx.date,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.text(context),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                      decoration: BoxDecoration(
-                        color: tx.tagColor,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        tx.tag,
-                        style: TextStyle(
-                          fontSize: 9,
+    return InkWell(
+      onTap: () => _showTransactionOptionsModal(tx),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 4),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: Color(0xFFF1F5F9))),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Left: Date, Tag, Description, Time & Running Balance
+            Expanded(
+              flex: 6,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        tx.date,
+                        style: const TextStyle(
+                          fontSize: 11.5,
                           fontWeight: FontWeight.bold,
-                          color: tx.tagTextColor,
+                          color: Color(0xFF0F172A),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  tx.title,
-                  style: TextStyle(
-                    fontSize: 10.5,
-                    color: Theme.of(context).brightness == Brightness.dark
-                        ? const Color(0xFFCBD5E1)
-                        : const Color(0xFF475569),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: tx.tagColor,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          tx.tag,
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                            color: tx.tagTextColor,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${tx.time}   Bal: ${tx.balanceAfter}',
-                  style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
-                ),
-              ],
-            ),
-          ),
-
-          // Center-Right: Debit Column
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (tx.debit != null) ...[
+                  const SizedBox(height: 2),
                   Text(
-                    'PKR ${tx.debit!.toStringAsFixed(0)}',
+                    tx.title,
                     style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFFDC2626),
+                      fontSize: 11,
+                      color: Color(0xFF334155),
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    tx.debitLabel ?? '',
-                    style: const TextStyle(fontSize: 9, color: Color(0xFFDC2626)),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      Text(
+                        tx.time,
+                        style: const TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                      ),
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF1F5F9),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        child: Text(
+                          'Bal: ${tx.balanceAfter}',
+                          style: const TextStyle(fontSize: 8.5, color: Color(0xFF475569), fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
                   ),
-                ] else
-                  const Text('—', style: TextStyle(color: Color(0xFFCBD5E1))),
-              ],
+                ],
+              ),
             ),
-          ),
 
-          // Right: Credit Column
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                if (tx.credit != null) ...[
-                  Text(
-                    'PKR ${tx.credit!.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF15803D),
+            // Center-Right: Debit Column
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (tx.debit != null) ...[
+                    Text(
+                      'PKR ${tx.debit!.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFDC2626),
+                      ),
                     ),
-                  ),
-                  Text(
-                    tx.creditLabel ?? '',
-                    style: const TextStyle(fontSize: 9, color: Color(0xFF15803D)),
-                  ),
-                ] else
-                  const Text('—', style: TextStyle(color: Color(0xFFCBD5E1))),
-              ],
+                    Text(
+                      tx.debitLabel ?? '',
+                      style: const TextStyle(fontSize: 9, color: Color(0xFFDC2626)),
+                    ),
+                  ] else
+                    const Text('—', style: TextStyle(color: Color(0xFFCBD5E1))),
+                ],
+              ),
             ),
-          ),
-        ],
+
+            // Right: Credit Column
+            Expanded(
+              flex: 3,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (tx.credit != null) ...[
+                    Text(
+                      'PKR ${tx.credit!.toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF15803D),
+                      ),
+                    ),
+                    Text(
+                      tx.creditLabel ?? '',
+                      style: const TextStyle(fontSize: 9, color: Color(0xFF15803D)),
+                    ),
+                  ] else
+                    const Text('—', style: TextStyle(color: Color(0xFFCBD5E1))),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   // 8. Weekly Payment Reminder Banner
   Widget _buildReminderBanner() {
+    final party = _currentParty;
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFF0F172A),
-        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x04000000),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(7),
+            padding: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
-              color: Color(0xFF166534),
+              color: Color(0xFFDCFCE7),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.notifications_active, size: 16, color: Color(0xFF86EFAC)),
+            child: const Icon(Icons.notifications_active_rounded, size: 18, color: Color(0xFF16A34A)),
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Weekly Payment Reminder',
+                const Text(
+                  'Automated WhatsApp Reminder',
                   style: TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 12,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
-                SizedBox(height: 2),
+                const SizedBox(height: 2),
                 Text(
-                  'Auto-send friendly Urdu/English WhatsApp reminder every Friday.',
-                  style: TextStyle(fontSize: 9.5, color: Color(0xFF94A3B8)),
+                  _isAutoReminderActive
+                      ? 'Auto-reminder enabled for scheduled balance updates.'
+                      : 'Auto-reminder currently paused for this account.',
+                  style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: const Color(0xFF22C55E),
-              borderRadius: BorderRadius.circular(10),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF16A34A),
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
-            child: const Text(
-              'Active',
-              style: TextStyle(
-                fontSize: 9.5,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF0F172A),
-              ),
-            ),
+            onPressed: () {
+              if (party != null) {
+                PrintingAndSharingService.instance.sendPartyLedgerViaWhatsApp(
+                  party: party,
+                  shop: ShopState.instance.activeShop,
+                );
+              }
+            },
+            child: const Text('Send Now', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1196,7 +1700,14 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFF1F5F9))),
+        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 8,
+            offset: Offset(0, -2),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -1207,9 +1718,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626),
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 9),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Column(
@@ -1218,12 +1729,12 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.remove_circle, size: 14, color: Colors.white),
-                      SizedBox(width: 5),
+                      Icon(Icons.arrow_upward_rounded, size: 16, color: Colors.white),
+                      SizedBox(width: 6),
                       Text(
-                        '+ Gave Credit',
+                        'You Gave (Debit)',
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -1232,9 +1743,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    '(You Gave / Debit)',
+                    'Udhaar Diya (-)',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 9.5,
                       color: Color(0xFFFECACA),
                     ),
                   ),
@@ -1251,9 +1762,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF16A34A),
                 elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 9),
+                padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: const Column(
@@ -1262,12 +1773,12 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_circle, size: 14, color: Colors.white),
-                      SizedBox(width: 5),
+                      Icon(Icons.arrow_downward_rounded, size: 16, color: Colors.white),
+                      SizedBox(width: 6),
                       Text(
-                        '+ Got Payment',
+                        'You Got (Credit)',
                         style: TextStyle(
-                          fontSize: 12.5,
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -1276,9 +1787,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   ),
                   SizedBox(height: 2),
                   Text(
-                    '(You Received / Credit)',
+                    'Raqam Wasool Ki (+)',
                     style: TextStyle(
-                      fontSize: 9,
+                      fontSize: 9.5,
                       color: Color(0xFFBBF7D0),
                     ),
                   ),

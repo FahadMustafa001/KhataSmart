@@ -15,7 +15,6 @@ class RecentSalesTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isUdhaar = order.paymentMode == PaymentMode.udhaar;
     final isCash = order.paymentMode == PaymentMode.cash;
 
@@ -29,10 +28,10 @@ class RecentSalesTile extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : Colors.white,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                color: const Color(0xFFE2E8F0),
               ),
             ),
             child: Row(
@@ -40,13 +39,11 @@ class RecentSalesTile extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF0F172A)
-                        : (isUdhaar
-                            ? const Color(0xFFFFE4E6)
-                            : (isCash
-                                ? const Color(0xFFDCFCE7)
-                                : const Color(0xFFDBEAFE))),
+                    color: isUdhaar
+                        ? const Color(0xFFFFE4E6)
+                        : (isCash
+                            ? const Color(0xFFDCFCE7)
+                            : const Color(0xFFDBEAFE)),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -70,10 +67,10 @@ class RecentSalesTile extends StatelessWidget {
                         children: [
                           Text(
                             '#${order.invoiceNo}',
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 13.5,
                               fontWeight: FontWeight.bold,
-                              color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                              color: Color(0xFF0F172A),
                             ),
                           ),
                           const SizedBox(width: 6),
@@ -81,17 +78,11 @@ class RecentSalesTile extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: isDark
-                                  ? (isUdhaar
-                                      ? const Color(0xFF3F1219)
-                                      : (isCash
-                                          ? const Color(0xFF0B2B1B)
-                                          : const Color(0xFF13233F)))
-                                  : (isUdhaar
-                                      ? const Color(0xFFFFE4E6)
-                                      : (isCash
-                                          ? const Color(0xFFDCFCE7)
-                                          : const Color(0xFFDBEAFE))),
+                              color: isUdhaar
+                                  ? const Color(0xFFFFE4E6)
+                                  : (isCash
+                                      ? const Color(0xFFDCFCE7)
+                                      : const Color(0xFFDBEAFE)),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(
@@ -101,17 +92,11 @@ class RecentSalesTile extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? (isUdhaar
-                                        ? const Color(0xFFFCA5A5)
-                                        : (isCash
-                                            ? const Color(0xFF86EFAC)
-                                            : const Color(0xFF93C5FD)))
-                                    : (isUdhaar
-                                        ? const Color(0xFFBE123C)
-                                        : (isCash
-                                            ? const Color(0xFF15803D)
-                                            : const Color(0xFF1D4ED8))),
+                                color: isUdhaar
+                                    ? const Color(0xFFBE123C)
+                                    : (isCash
+                                        ? const Color(0xFF15803D)
+                                        : const Color(0xFF1D4ED8)),
                               ),
                             ),
                           ),
@@ -120,9 +105,9 @@ class RecentSalesTile extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         '${order.customer?.name ?? 'Walk-in Counter'} • ${DateFormatter.formatShort(order.date)}',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 11,
-                          color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
+                          color: Color(0xFF64748B),
                         ),
                       ),
                     ],
@@ -133,10 +118,10 @@ class RecentSalesTile extends StatelessWidget {
                   children: [
                     Text(
                       CurrencyFormatter.format(order.total),
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w900,
-                        color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+                        color: Color(0xFF0F172A),
                       ),
                     ),
                     Text(

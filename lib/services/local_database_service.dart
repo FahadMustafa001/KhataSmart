@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -13,7 +14,6 @@ import '../models/shop_model.dart';
 import '../state/inventory_state.dart';
 import '../state/khata_state.dart';
 import '../state/shop_state.dart';
-import '../state/theme_state.dart';
 import 'google_drive_service.dart';
 import 'notification_service.dart';
 import 'security_service.dart';
@@ -48,6 +48,14 @@ class LocalDatabaseService {
   Future<void> init({bool forceRetry = false}) async {
     if (_isInitialized && !forceRetry) return;
     if (_isLoading) return;
+
+    if (kIsWeb) {
+      _isInitialized = true;
+      _isLoading = false;
+      _attachListeners();
+      return;
+    }
+
     _isLoading = true;
     _isInitialized = false;
 
@@ -120,7 +128,6 @@ class LocalDatabaseService {
     KhataState.instance.addListener(schedulePersist);
     SecurityService.instance.addListener(schedulePersist);
     NotificationService.instance.addListener(schedulePersist);
-    ThemeState.instance.addListener(schedulePersist);
   }
 
   /// Parses every section into local data structures before mutating state singletons.
@@ -230,9 +237,6 @@ class LocalDatabaseService {
       NotificationService.instance.init();
     }
 
-    if (data['themeMode'] is String) {
-      ThemeState.instance.loadFromDatabase(data['themeMode'] as String);
-    }
   }
 
   // 3. Debouncing & Coalescing Persistence
@@ -292,6 +296,7 @@ class LocalDatabaseService {
   }
 
   Future<void> _performWrite() async {
+    if (kIsWeb) return;
     try {
       final file = await _getFile();
       final Map<String, dynamic> payload = {
@@ -308,7 +313,6 @@ class LocalDatabaseService {
         'security': SecurityService.instance.toDatabaseMap(),
         'googleDrive': GoogleDriveService.instance.toMap(),
         'notifications': NotificationService.instance.toDatabaseList(),
-        'themeMode': ThemeState.instance.toDatabaseValue(),
       };
 
       final jsonStr = jsonEncode(payload);
@@ -387,7 +391,6 @@ class LocalDatabaseService {
     ShopState.instance.loadFromDatabase(shops: [], activeShopId: 'shop_1', hasCompletedOnboarding: false);
     SecurityService.instance.setLockEnabled(false, pin: '');
     NotificationService.instance.clearAll();
-    ThemeState.instance.setThemeMode(ThemeMode.light);
     _debounceTimer?.cancel();
     _attachListeners();
     _debounceTimer?.cancel();

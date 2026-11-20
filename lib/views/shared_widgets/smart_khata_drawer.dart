@@ -13,7 +13,6 @@ import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
-import '../../state/theme_state.dart';
 import '../khata/widgets/add_party_sheet.dart';
 
 class SmartKhataDrawer extends StatefulWidget {
@@ -49,7 +48,6 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     _notificationService.addListener(_rebuild);
     _authService.addListener(_rebuild);
     _cloudSyncService.addListener(_rebuild);
-    ThemeState.instance.addListener(_rebuild);
   }
 
   @override
@@ -62,7 +60,6 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     _notificationService.removeListener(_rebuild);
     _authService.removeListener(_rebuild);
     _cloudSyncService.removeListener(_rebuild);
-    ThemeState.instance.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -204,10 +201,9 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
   @override
   Widget build(BuildContext context) {
     final activeShop = _shopState.activeShop;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Drawer(
-      backgroundColor: isDark ? const Color(0xFF1E293B) : Colors.white,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.only(
           topRight: Radius.circular(24),
@@ -680,59 +676,6 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                       : const Color(0xFFDC2626),
                 ),
 
-                // Theme Mode Quick Toggle
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 4),
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? const Color(0xFF0F172A).withValues(alpha: 0.6)
-                        : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isDark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                        size: 20,
-                        color: isDark ? const Color(0xFF38BDF8) : const Color(0xFFF59E0B),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              isDark ? 'Dark Theme' : 'Light Theme',
-                              style: TextStyle(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.bold,
-                                color: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
-                              ),
-                            ),
-                            Text(
-                              isDark ? 'Tap switch for Day Mode' : 'Tap switch for Night Mode',
-                              style: TextStyle(
-                                fontSize: 9.5,
-                                color: isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Switch.adaptive(
-                        value: isDark,
-                        activeTrackColor: const Color(0xFF38BDF8),
-                        onChanged: (val) {
-                          ThemeState.instance.setThemeMode(val ? ThemeMode.dark : ThemeMode.light);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
           ),
@@ -741,9 +684,9 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              border: Border(
+              border: const Border(
                 top: BorderSide(
-                  color: isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9),
+                  color: Color(0xFFF1F5F9),
                 ),
               ),
             ),
@@ -911,7 +854,6 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     Color? badgeTextColor,
     bool showArrow = false,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () {
         Navigator.pop(context); // Close drawer
@@ -934,7 +876,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8.5),
         decoration: BoxDecoration(
           color: isSelected
-              ? (isDark ? const Color(0xFF312E81) : const Color(0xFFEEF2FF))
+              ? const Color(0xFFEEF2FF)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
         ),
@@ -944,8 +886,8 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
               icon,
               size: 19,
               color: isSelected
-                  ? (isDark ? const Color(0xFF818CF8) : const Color(0xFF3730A3))
-                  : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                  ? const Color(0xFF3730A3)
+                  : const Color(0xFF475569),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -958,17 +900,17 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                       fontSize: 12.5,
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                       color: isSelected
-                          ? (isDark ? Colors.white : const Color(0xFF1E1B4B))
-                          : (isDark ? const Color(0xFFF1F5F9) : const Color(0xFF1E293B)),
+                          ? const Color(0xFF1E1B4B)
+                          : const Color(0xFF1E293B),
                     ),
                   ),
                   if (subtitle != null) ...[
                     const SizedBox(height: 1),
                     Text(
                       subtitle,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 9.5,
-                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        color: Color(0xFF94A3B8),
                       ),
                     ),
                   ],
@@ -979,8 +921,8 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
               Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF818CF8) : const Color(0xFF3730A3),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF3730A3),
                   shape: BoxShape.circle,
                 ),
               )
@@ -988,7 +930,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                 decoration: BoxDecoration(
-                  color: badgeColor ?? (isDark ? const Color(0xFF334155) : const Color(0xFFF1F5F9)),
+                  color: badgeColor ?? const Color(0xFFF1F5F9),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -996,15 +938,15 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                   style: TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.bold,
-                    color: badgeTextColor ?? (isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569)),
+                    color: badgeTextColor ?? const Color(0xFF475569),
                   ),
                 ),
               )
             else if (showArrow)
-              Icon(
+              const Icon(
                 Icons.chevron_right,
                 size: 16,
-                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                color: Color(0xFF94A3B8),
               ),
           ],
         ),

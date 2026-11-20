@@ -83,6 +83,9 @@ class AuthService extends ChangeNotifier {
       }
 
       final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: kIsWeb
+            ? '711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn.apps.googleusercontent.com'
+            : null,
         scopes: ['email', 'profile'],
       );
 
@@ -116,7 +119,13 @@ class AuthService extends ChangeNotifier {
   /// Sign Out
   Future<void> signOut() async {
     try {
-      await GoogleSignIn().signOut();
+      if (kIsWeb) {
+        await GoogleSignIn(
+          clientId: '711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn.apps.googleusercontent.com',
+        ).signOut();
+      } else {
+        await GoogleSignIn().signOut();
+      }
     } catch (_) {}
     try {
       await FirebaseAuth.instance.signOut();
