@@ -25,13 +25,18 @@ class ReceiptPreviewScreen extends StatelessWidget {
     final activeShop = ShopState.instance.activeShop;
     OrderModel? actualOrder = order;
 
-    // 1. If not provided directly, check if KhataState has orders
-    if (actualOrder == null && KhataState.instance.orders.isNotEmpty) {
-      actualOrder = KhataState.instance.orders.first;
+    // 1. If not provided directly, check if KhataState has orders with items
+    if ((actualOrder == null || actualOrder.items.isEmpty) &&
+        KhataState.instance.orders.isNotEmpty) {
+      try {
+        actualOrder =
+            KhataState.instance.orders.firstWhere((o) => o.items.isNotEmpty);
+      } catch (_) {}
     }
 
     // 2. If no completed orders exist, but CartState currently has items, create a live preview from cart
-    if (actualOrder == null && CartState.instance.items.isNotEmpty) {
+    if ((actualOrder == null || actualOrder.items.isEmpty) &&
+        CartState.instance.items.isNotEmpty) {
       actualOrder = OrderModel(
         invoiceNo: 'SK-${DateTime.now().millisecondsSinceEpoch % 10000}',
         date: DateTime.now(),
@@ -44,8 +49,8 @@ class ReceiptPreviewScreen extends StatelessWidget {
       );
     }
 
-    // 3. If still null (e.g. fresh app preview without any cart or order), generate realistic demo products from Inventory
-    if (actualOrder == null) {
+    // 3. If still null or empty (e.g. fresh app preview without any cart or order), generate realistic demo products from Inventory
+    if (actualOrder == null || actualOrder.items.isEmpty) {
       final availableProducts = InventoryState.instance.products;
       final List<CartItemModel> sampleItems = [];
       if (availableProducts.isNotEmpty) {
@@ -112,15 +117,24 @@ class ReceiptPreviewScreen extends StatelessWidget {
     final netPayable = actualOrder.total;
     final effectiveOrder = actualOrder;
     final isUdhaar = actualOrder.paymentMode == PaymentMode.udhaar;
+    final hasSplit =
+        (actualOrder.creditAmount > 0 && actualOrder.paidAmount > 0);
     final tenderedAmount = isUdhaar
         ? 0.0
-        : (netPayable > 0
-            ? (netPayable < 1000 ? 1000.0 : ((netPayable / 500).ceil() * 500.0))
-            : 0.0);
-    final changeAmount = isUdhaar ? 0.0 : (tenderedAmount - netPayable);
+        : (hasSplit
+            ? actualOrder.paidAmount
+            : (netPayable > 0
+                ? (netPayable < 1000
+                    ? 1000.0
+                    : ((netPayable / 500).ceil() * 500.0))
+                : 0.0));
+    final changeAmount =
+        isUdhaar || hasSplit ? 0.0 : (tenderedAmount - netPayable);
     final paymentTag = isUdhaar
         ? 'STORE CREDIT'
-        : 'PAID • ${actualOrder.paymentMode.name.toUpperCase()}';
+        : (hasSplit
+            ? 'SPLIT PAYMENT'
+            : 'PAID • ${actualOrder.paymentMode.name.toUpperCase()}');
 
     return PopScope(
       canPop: false,
@@ -540,7 +554,9 @@ class ReceiptPreviewScreen extends StatelessWidget {
                                   Text(
                                     isUdhaar
                                         ? 'Payment: Store Credit'
-                                        : 'Tendered: ${CurrencyFormatter.format(tenderedAmount)}',
+                                        : (hasSplit
+                                            ? 'Paid: ${CurrencyFormatter.format(actualOrder.paidAmount)}'
+                                            : 'Tendered: ${CurrencyFormatter.format(tenderedAmount)}'),
                                     style: const TextStyle(
                                         fontFamily: 'monospace',
                                         fontSize: 10,
@@ -549,12 +565,14 @@ class ReceiptPreviewScreen extends StatelessWidget {
                                   Text(
                                     isUdhaar
                                         ? 'Balance Due: ${CurrencyFormatter.format(netPayable)}'
-                                        : 'Change: ${CurrencyFormatter.format(changeAmount)}',
+                                        : (hasSplit
+                                            ? 'Udhar Due: ${CurrencyFormatter.format(actualOrder.creditAmount)}'
+                                            : 'Change: ${CurrencyFormatter.format(changeAmount)}'),
                                     style: TextStyle(
                                       fontFamily: 'monospace',
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: isUdhaar
+                                      color: (isUdhaar || hasSplit)
                                           ? const Color(0xFFDC2626)
                                           : const Color(0xFF15803D),
                                     ),

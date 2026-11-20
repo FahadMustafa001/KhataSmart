@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_toast.dart';
+import '../../models/notification_model.dart';
 import '../../models/party_model.dart';
 import '../../models/product_model.dart';
 import '../../models/purchase_invoice_model.dart';
+import '../../routes/app_routes.dart';
+import '../../services/notification_service.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
@@ -255,6 +258,15 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
     );
 
     InventoryState.instance.processPurchaseInvoice(invoice, updateCostPrice: _updateCostPrice);
+
+    // Dispatch live stock notification
+    NotificationService.instance.addNotification(
+      title: 'Stock Inward Completed: #${invoice.invoiceNo}',
+      message: 'Purchased ${_items.length} items from ${invoice.supplierName} (Total: PKR ${invoice.totalAmount.toStringAsFixed(0)}, Paid: PKR ${invoice.paidAmount.toStringAsFixed(0)}, Udhar: PKR ${invoice.creditBalanceAdded.toStringAsFixed(0)}).',
+      type: NotificationType.stockAlert,
+      route: AppRoutes.inventoryList,
+      referenceId: invoice.invoiceNo,
+    );
 
     Navigator.pop(context);
 
@@ -537,6 +549,63 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
                     ],
                   ),
                   const Divider(height: 20),
+                  // Quick Payment Chips
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: BorderSide(
+                              color: _paidAmount >= _totalBill && _totalBill > 0
+                                  ? const Color(0xFF16A34A)
+                                  : const Color(0xFFCBD5E1),
+                            ),
+                            backgroundColor: _paidAmount >= _totalBill && _totalBill > 0
+                                ? const Color(0xFFDCFCE7)
+                                : Colors.transparent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _paidAmountController.text = _totalBill.toInt().toString();
+                            });
+                          },
+                          child: const Text(
+                            'Paid Full (Cash/Online)',
+                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF15803D)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: BorderSide(
+                              color: _paidAmount == 0 && _totalBill > 0
+                                  ? const Color(0xFFDC2626)
+                                  : const Color(0xFFCBD5E1),
+                            ),
+                            backgroundColor: _paidAmount == 0 && _totalBill > 0
+                                ? const Color(0xFFFEE2E2)
+                                : Colors.transparent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _paidAmountController.text = '0';
+                            });
+                          },
+                          child: const Text(
+                            'Full Udhar (Payable)',
+                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFB91C1C)),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       const Expanded(

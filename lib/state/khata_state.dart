@@ -157,15 +157,20 @@ class KhataState extends ChangeNotifier {
     for (final item in order.items) {
       InventoryState.instance.deductStock(item.product.id, item.quantity);
     }
-    if (order.paymentMode == PaymentMode.udhaar && order.customer != null) {
-      addTransaction(
-        partyId: order.customer!.id,
-        type: LedgerType.gave,
-        amount: order.total,
-        note: 'Bill #${order.invoiceNo}',
-        shopId: order.shopId,
-        date: order.date,
-      );
+    if (order.customer != null) {
+      if (order.creditAmount > 0) {
+        // Customer has unpaid / udhar balance
+        addTransaction(
+          partyId: order.customer!.id,
+          type: LedgerType.gave, // Udhar given to customer
+          amount: order.creditAmount,
+          note: order.paidAmount > 0
+              ? 'Bill #${order.invoiceNo} (Split: Paid ${order.paidAmount.toStringAsFixed(0)}, Udhar ${order.creditAmount.toStringAsFixed(0)})'
+              : 'Bill #${order.invoiceNo} (Full Udhar / Credit)',
+          shopId: order.shopId,
+          date: order.date,
+        );
+      }
     }
     notifyListeners();
   }

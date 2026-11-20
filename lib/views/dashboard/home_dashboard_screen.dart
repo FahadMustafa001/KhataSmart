@@ -329,18 +329,21 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
 
   // Settlement Split Widget
   Widget _buildSettlementSplit(List<OrderModel> orders) {
-    final cashSales = orders
-        .where((o) => o.paymentMode == PaymentMode.cash)
-        .fold(0.0, (s, o) => s + o.total);
-    final digitalSales = orders
-        .where((o) =>
-            o.paymentMode == PaymentMode.online ||
-            o.paymentMode == PaymentMode.raast ||
-            o.paymentMode == PaymentMode.digital)
-        .fold(0.0, (s, o) => s + o.total);
-    final udhaarSales = orders
-        .where((o) => o.paymentMode == PaymentMode.udhaar)
-        .fold(0.0, (s, o) => s + o.total);
+    double cashSales = 0;
+    double digitalSales = 0;
+    double udhaarSales = 0;
+    for (final o in orders) {
+      final paid = o.paidAmount;
+      final credit = o.creditAmount;
+      if (o.paymentMode == PaymentMode.online ||
+          o.paymentMode == PaymentMode.raast ||
+          o.paymentMode == PaymentMode.digital) {
+        digitalSales += paid;
+      } else {
+        cashSales += paid;
+      }
+      udhaarSales += credit;
+    }
     final totalOrders = cashSales + digitalSales + udhaarSales;
 
     final cashFlex = totalOrders > 0 && cashSales > 0

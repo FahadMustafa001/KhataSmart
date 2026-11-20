@@ -169,6 +169,8 @@ class CsvExportService {
       'Subtotal (PKR)',
       'Discount (PKR)',
       'Total Amount (PKR)',
+      'Paid Amount (PKR)',
+      'Udhar Pending (PKR)',
       'Items Detail',
     ].map(_sanitize).join(','));
 
@@ -184,6 +186,8 @@ class CsvExportService {
         o.subtotal.toStringAsFixed(0),
         o.discount.toStringAsFixed(0),
         o.total.toStringAsFixed(0),
+        o.paidAmount.toStringAsFixed(0),
+        o.creditAmount.toStringAsFixed(0),
         itemsSummary,
       ].map((v) => _sanitize(v.toString())).join(','));
     }

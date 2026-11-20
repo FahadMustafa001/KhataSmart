@@ -13,6 +13,8 @@ class OrderModel {
   final PaymentMode paymentMode;
   final DateTime date;
   final String shopId;
+  final double paidAmount;
+  final double creditAmount;
 
   OrderModel({
     required this.invoiceNo,
@@ -24,7 +26,13 @@ class OrderModel {
     required this.paymentMode,
     required this.date,
     this.shopId = 'shop_1',
-  }) : subtotal = subtotal ?? (total + discount);
+    double? paidAmount,
+    double? creditAmount,
+  })  : subtotal = subtotal ?? (total + discount),
+        paidAmount = paidAmount ??
+            (paymentMode == PaymentMode.udhaar ? 0.0 : total),
+        creditAmount = creditAmount ??
+            (paymentMode == PaymentMode.udhaar ? total : 0.0);
 
   DateTime get dateTime => date;
   String get id => invoiceNo;
@@ -41,6 +49,8 @@ class OrderModel {
       'paymentMode': paymentMode.name,
       'date': date.toIso8601String(),
       'shopId': shopId,
+      'paidAmount': paidAmount,
+      'creditAmount': creditAmount,
     };
   }
 
@@ -53,6 +63,12 @@ class OrderModel {
       }
     }
 
+    final total = (map['total'] as num?)?.toDouble() ?? 0.0;
+    final paid = (map['paidAmount'] as num?)?.toDouble() ??
+        (mode == PaymentMode.udhaar ? 0.0 : total);
+    final credit = (map['creditAmount'] as num?)?.toDouble() ??
+        (mode == PaymentMode.udhaar ? total : 0.0);
+
     return OrderModel(
       invoiceNo: map['invoiceNo'] ?? '',
       customer: map['customer'] != null ? PartyModel.fromMap(map['customer']) : null,
@@ -60,7 +76,7 @@ class OrderModel {
               ?.map((i) => CartItemModel.fromMap(Map<String, dynamic>.from(i)))
               .toList() ??
           [],
-      total: (map['total'] as num?)?.toDouble() ?? 0.0,
+      total: total,
       subtotal: (map['subtotal'] as num?)?.toDouble(),
       discount: (map['discount'] as num?)?.toDouble() ?? 0.0,
       paymentMode: mode,
@@ -68,6 +84,8 @@ class OrderModel {
           ? DateTime.tryParse(map['date']) ?? DateTime.now()
           : DateTime.now(),
       shopId: map['shopId'] ?? 'shop_1',
+      paidAmount: paid,
+      creditAmount: credit,
     );
   }
 }

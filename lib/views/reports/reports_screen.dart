@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../core/constants/app_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../models/ledger_entry_model.dart';
-import '../../models/party_model.dart';
+import '../../models/purchase_invoice_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
 import '../../services/csv_export_service.dart';
+import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 import '../shared_widgets/smart_bottom_navigation_bar.dart';
@@ -23,6 +23,7 @@ class ReportsScreen extends StatefulWidget {
 
 class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserver {
   ReportPeriod _selectedPeriod = ReportPeriod.today;
+  int _selectedActivityTab = 0; // 0: Sales Bills, 1: Purchase Bills
   Timer? _dateRefreshTimer;
 
   @override
@@ -31,6 +32,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
     WidgetsBinding.instance.addObserver(this);
     KhataState.instance.addListener(_refresh);
     ShopState.instance.addListener(_refresh);
+    InventoryState.instance.addListener(_refresh);
     _dateRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       if (mounted) setState(() {});
     });
@@ -42,6 +44,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
     WidgetsBinding.instance.removeObserver(this);
     KhataState.instance.removeListener(_refresh);
     ShopState.instance.removeListener(_refresh);
+    InventoryState.instance.removeListener(_refresh);
     super.dispose();
   }
 
@@ -79,6 +82,27 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
           return o.date.year == now.year && o.date.month == now.month;
         case ReportPeriod.year:
           return o.date.year == now.year;
+      }
+    }).toList();
+  }
+
+  // Filter purchase bills strictly for the active shop and selected time period
+  List<PurchaseInvoiceModel> _getFilteredPurchases() {
+    final now = DateTime.now();
+    final allPurchases = InventoryState.instance.purchases;
+
+    return allPurchases.where((p) {
+      switch (_selectedPeriod) {
+        case ReportPeriod.today:
+          return p.date.year == now.year &&
+              p.date.month == now.month &&
+              p.date.day == now.day;
+        case ReportPeriod.week:
+          return _isInCurrentCalendarWeek(p.date, now);
+        case ReportPeriod.month:
+          return p.date.year == now.year && p.date.month == now.month;
+        case ReportPeriod.year:
+          return p.date.year == now.year;
       }
     }).toList();
   }
@@ -188,7 +212,11 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
     final filteredEntries = _getFilteredEntries();
 
     // 100% Real Calculations based on actual store data
+    final filteredPurchases = _getFilteredPurchases();
     final totalSales = filteredOrders.fold(0.0, (sum, o) => sum + o.total);
+    final totalPurchases = filteredPurchases.fold(0.0, (sum, p) => sum + p.totalAmount);
+    final purchasesPaid = filteredPurchases.fold(0.0, (sum, p) => sum + p.paidAmount);
+    final purchasesPending = filteredPurchases.fold(0.0, (sum, p) => sum + p.creditBalanceAdded);
 
     // Real Profit: (Item sale price - Item sale-time cost price) * quantity
     double totalCost = 0.0;
@@ -199,56 +227,33 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
     }
     final netProfit = totalSales - totalCost;
 
-    // Total Recovered: Cash Sales + Ledger received entries
+    // Real Payment Breakdown for Sales
+    final cashSales = filteredOrders
+        .where((o) => o.paymentMode == PaymentMode.cash)
+        .fold(0.0, (sum, o) => sum + o.paidAmount);
+    final onlineSales = filteredOrders
+        .where((o) =>
+            o.paymentMode == PaymentMode.raast ||
+            o.paymentMode == PaymentMode.online ||
+            o.paymentMode == PaymentMode.digital)
+        .fold(0.0, (sum, o) => sum + o.paidAmount);
+    final creditSales = filteredOrders.fold(0.0, (sum, o) => sum + o.creditAmount);
+
+    // Total Recovered: Cash Sales + Online Sales + Ledger received entries
     final ledgerWasooli = filteredEntries
         .where((e) => e.type == LedgerType.got)
         .fold(0.0, (sum, e) => sum + e.amount);
-    final cashSales = filteredOrders
-        .where((o) => o.paymentMode != PaymentMode.udhaar)
-        .fold(0.0, (sum, o) => sum + o.total);
-    final totalWasooli = ledgerWasooli + cashSales;
+    final totalWasooli = ledgerWasooli + cashSales + onlineSales;
 
-    // Total Credit Extended: Credit Sales + Manual Ledger given entries to customers (excluding auto-generated order bills)
-    final allParties = KhataState.instance.allPartiesForDatabase;
-    final Map<String, PartyType> partyTypeMap = {for (var p in allParties) p.id: p.type};
+    // Total Customer Udhar (Market Receivables)
+    final customerReceivables = KhataState.instance.customers
+        .where((c) => c.balance > 0)
+        .fold(0.0, (sum, c) => sum + c.balance);
 
-    final creditSales = filteredOrders
-        .where((o) => o.paymentMode == PaymentMode.udhaar)
-        .fold(0.0, (sum, o) => sum + o.total);
-
-    final existingCreditOrderInvoices = {
-      for (var o in KhataState.instance.orders)
-        if (o.paymentMode == PaymentMode.udhaar) o.invoiceNo.trim().toLowerCase()
-    };
-
-    bool isOrderBillEntry(LedgerEntryModel e) {
-      final match = RegExp(r'^Bill\s*#\s*(.+)$', caseSensitive: false).firstMatch(e.note.trim());
-      if (match != null) {
-        final inv = match.group(1)?.trim().toLowerCase() ?? '';
-        return existingCreditOrderInvoices.contains(inv);
-      }
-      return false;
-    }
-
-    final manualCreditGiven = filteredEntries
-        .where((e) =>
-            e.type == LedgerType.gave &&
-            partyTypeMap[e.partyId] == PartyType.customer &&
-            !isOrderBillEntry(e))
-        .fold(0.0, (sum, e) => sum + e.amount);
-
-    final totalUdhaar = creditSales + manualCreditGiven;
-
-    // Operating expenses (supplier payouts and expense entries)
-    final operatingExpenses = filteredEntries
-        .where((e) =>
-            e.type == LedgerType.gave &&
-            (partyTypeMap[e.partyId] == PartyType.supplier ||
-                e.note.toLowerCase().contains('expense') ||
-                e.note.toLowerCase().contains('bill # electricity') ||
-                RegExp(r'(?<![a-zA-Z])rent(?:al)?(?![a-zA-Z])', caseSensitive: false).hasMatch(e.note) ||
-                e.note.toLowerCase().contains('utility')))
-        .fold(0.0, (sum, e) => sum + e.amount);
+    // Total Supplier Payables (Outstanding Debts to Suppliers)
+    final supplierPayables = KhataState.instance.suppliers
+        .where((s) => s.balance < 0)
+        .fold(0.0, (sum, s) => sum + s.balance.abs());
 
     return PopScope(
       canPop: true,
@@ -317,8 +322,8 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                   totalSales: totalSales,
                   grossProfit: netProfit,
                   netProfit: netProfit,
-                  totalExpenses: operatingExpenses,
-                  cashSales: cashSales,
+                  totalExpenses: purchasesPaid,
+                  cashSales: cashSales + onlineSales,
                   creditSales: creditSales,
                   orderCount: filteredOrders.length,
                 );
@@ -346,12 +351,13 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
             ),
             const SizedBox(height: 16),
 
+            // Top Financial Metrics Grid
             Row(
               children: [
                 Expanded(
                   child: _buildMetricCard(
                     title: 'Gross Revenue',
-                    subtitle: 'Gross Sales',
+                    subtitle: 'Total Sales',
                     amount: totalSales,
                     color: const Color(0xFF2563EB),
                     icon: Icons.payments_rounded,
@@ -362,7 +368,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
                 Expanded(
                   child: _buildMetricCard(
                     title: 'Net Profit',
-                    subtitle: 'Net Margin',
+                    subtitle: 'Sales - Cost',
                     amount: netProfit,
                     color: const Color(0xFF16A34A),
                     icon: Icons.trending_up_rounded,
@@ -376,23 +382,49 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
               children: [
                 Expanded(
                   child: _buildMetricCard(
-                    title: 'Total Recovered',
-                    subtitle: 'Cash In',
-                    amount: totalWasooli,
-                    color: const Color(0xFF0D9488),
-                    icon: Icons.input_rounded,
-                    bgColor: const Color(0xFFCCFBF1),
+                    title: 'Stock Purchases',
+                    subtitle: 'Vendor Inward',
+                    amount: totalPurchases,
+                    color: const Color(0xFFEA580C),
+                    icon: Icons.local_shipping_rounded,
+                    bgColor: const Color(0xFFFFEDD5),
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _buildMetricCard(
-                    title: 'Credit Extended',
-                    subtitle: 'Market Credit',
-                    amount: totalUdhaar,
-                    color: const Color(0xFFE11D48),
-                    icon: Icons.outbox_rounded,
-                    bgColor: const Color(0xFFFFE4E6),
+                    title: 'Total Recovered',
+                    subtitle: 'Cash & Online In',
+                    amount: totalWasooli,
+                    color: const Color(0xFF0D9488),
+                    icon: Icons.account_balance_wallet_rounded,
+                    bgColor: const Color(0xFFCCFBF1),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    title: 'Customer Udhar',
+                    subtitle: 'Market Due',
+                    amount: customerReceivables,
+                    color: const Color(0xFFDC2626),
+                    icon: Icons.arrow_outward_rounded,
+                    bgColor: const Color(0xFFFEE2E2),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildMetricCard(
+                    title: 'Supplier Payable',
+                    subtitle: 'Vendor Due',
+                    amount: supplierPayables,
+                    color: const Color(0xFF7C3AED),
+                    icon: Icons.call_received_rounded,
+                    bgColor: const Color(0xFFF3E8FF),
                   ),
                 ),
               ],
@@ -402,10 +434,19 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
             _buildRealChartCard(filteredOrders),
             const SizedBox(height: 20),
 
-            _buildPaymentBreakdownCard(filteredOrders),
+            _buildPaymentBreakdownCard(
+              cashSales: cashSales,
+              onlineSales: onlineSales,
+              creditSales: creditSales,
+              purchasesPaid: purchasesPaid,
+              purchasesPending: purchasesPending,
+            ),
             const SizedBox(height: 20),
 
-            _buildDetailedBillsSection(filteredOrders),
+            _buildDetailedBillsSection(
+              orders: filteredOrders,
+              purchases: filteredPurchases,
+            ),
             const SizedBox(height: 30),
           ],
         ),
@@ -633,11 +674,15 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
     );
   }
 
-  Widget _buildPaymentBreakdownCard(List<OrderModel> orders) {
-    final cash = orders.where((o) => o.paymentMode == PaymentMode.cash).fold(0.0, (s, o) => s + o.total);
-    final udhaar = orders.where((o) => o.paymentMode == PaymentMode.udhaar).fold(0.0, (s, o) => s + o.total);
-    final online = orders.where((o) => o.paymentMode == PaymentMode.online || o.paymentMode == PaymentMode.raast || o.paymentMode == PaymentMode.digital).fold(0.0, (s, o) => s + o.total);
-    final total = (cash + udhaar + online);
+  Widget _buildPaymentBreakdownCard({
+    required double cashSales,
+    required double onlineSales,
+    required double creditSales,
+    required double purchasesPaid,
+    required double purchasesPending,
+  }) {
+    final salesTotal = cashSales + onlineSales + creditSales;
+    final purchasesTotal = purchasesPaid + purchasesPending;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -650,19 +695,50 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Real Payment Distribution',
+            'Payment & Settlement Breakdown',
             style: TextStyle(
-              fontSize: 13.5,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+              color: Color(0xFF0F172A),
             ),
           ),
           const SizedBox(height: 14),
-          _buildPaymentRow('Cash Counter', cash, total, const Color(0xFF16A34A)),
+
+          // Sales Section
+          const Row(
+            children: [
+              Icon(Icons.point_of_sale_rounded, size: 15, color: Color(0xFF2563EB)),
+              SizedBox(width: 6),
+              Text(
+                'Customer Sales Settlement',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
-          _buildPaymentRow('Store Credit', udhaar, total, const Color(0xFFE11D48)),
+          _buildPaymentRow('Cash Counter', cashSales, salesTotal, const Color(0xFF16A34A)),
+          const SizedBox(height: 8),
+          _buildPaymentRow('Online / Raast', onlineSales, salesTotal, const Color(0xFF2563EB)),
+          const SizedBox(height: 8),
+          _buildPaymentRow('Market Udhar (Credit)', creditSales, salesTotal, const Color(0xFFDC2626)),
+
+          const Divider(height: 24),
+
+          // Purchases Section
+          const Row(
+            children: [
+              Icon(Icons.local_shipping_rounded, size: 15, color: Color(0xFFEA580C)),
+              SizedBox(width: 6),
+              Text(
+                'Supplier Purchases Settlement',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF334155)),
+              ),
+            ],
+          ),
           const SizedBox(height: 10),
-          _buildPaymentRow('Online / Raast', online, total, const Color(0xFF2563EB)),
+          _buildPaymentRow('Paid to Suppliers (Cash/Bank)', purchasesPaid, purchasesTotal, const Color(0xFF0D9488)),
+          const SizedBox(height: 8),
+          _buildPaymentRow('Pending to Suppliers (Udhar)', purchasesPending, purchasesTotal, const Color(0xFF7C3AED)),
         ],
       ),
     );
@@ -676,8 +752,11 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-            Text(CurrencyFormatter.format(amount), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+            Text(
+              CurrencyFormatter.format(amount),
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -694,105 +773,312 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
     );
   }
 
-  Widget _buildDetailedBillsSection(List<OrderModel> orders) {
+  Widget _buildDetailedBillsSection({
+    required List<OrderModel> orders,
+    required List<PurchaseInvoiceModel> purchases,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Bills & Invoices in Selected Period',
+            const Text(
+              'Detailed Activity & Invoices',
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
-                color: AppColors.text(context),
+                color: Color(0xFF0F172A),
               ),
             ),
-            Text(
-              '${orders.length} real bills',
-              style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                '${orders.length} Sales • ${purchases.length} Purchases',
+                style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF1E40AF)),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
-        if (orders.isEmpty)
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            alignment: Alignment.center,
-            child: const Column(
-              children: [
-                Icon(Icons.receipt_long_outlined, size: 36, color: Color(0xFF94A3B8)),
-                SizedBox(height: 8),
-                Text(
-                  'No bills generated yet for this period',
-                  style: TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
-                ),
-              ],
-            ),
-          )
-        else
-          ...orders.map((o) {
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFE2E8F0)),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
+        const SizedBox(height: 12),
+
+        // Tab Selector: Sales Bills vs Purchase Inwards
+        Container(
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => setState(() => _selectedActivityTab = 0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: o.paymentMode == PaymentMode.udhaar
-                          ? const Color(0xFFFFE4E6)
-                          : const Color(0xFFEFF6FF),
+                      color: _selectedActivityTab == 0 ? Colors.white : Colors.transparent,
                       borderRadius: BorderRadius.circular(8),
+                      boxShadow: _selectedActivityTab == 0
+                          ? const [
+                              BoxShadow(color: Color(0x12000000), blurRadius: 4, offset: Offset(0, 2)),
+                            ]
+                          : null,
                     ),
-                    child: Icon(
-                      o.paymentMode == PaymentMode.udhaar
-                          ? Icons.pending_actions_rounded
-                          : Icons.receipt_rounded,
-                      color: o.paymentMode == PaymentMode.udhaar
-                          ? const Color(0xFFE11D48)
-                          : const Color(0xFF2563EB),
-                      size: 20,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Invoice #${o.invoiceNo}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${o.items.length} items • ${o.paymentMode.name.toUpperCase()} • ${o.customer?.name ?? "Walk-in"}',
-                          style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                        ),
-                      ],
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Customer Sales (${orders.length})',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: _selectedActivityTab == 0 ? FontWeight.bold : FontWeight.w600,
+                        color: _selectedActivityTab == 0 ? const Color(0xFF2563EB) : const Color(0xFF64748B),
+                      ),
                     ),
                   ),
-                  Text(
-                    CurrencyFormatter.format(o.total),
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                ],
+                ),
               ),
-            );
-          }),
+              Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: () => setState(() => _selectedActivityTab = 1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _selectedActivityTab == 1 ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: _selectedActivityTab == 1
+                          ? const [
+                              BoxShadow(color: Color(0x12000000), blurRadius: 4, offset: Offset(0, 2)),
+                            ]
+                          : null,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Stock Inward (${purchases.length})',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: _selectedActivityTab == 1 ? FontWeight.bold : FontWeight.w600,
+                        color: _selectedActivityTab == 1 ? const Color(0xFFEA580C) : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        if (_selectedActivityTab == 0) ...[
+          // Sales Invoices List
+          if (orders.isEmpty)
+            _buildEmptyState('No sales bills generated yet for this period', Icons.receipt_long_outlined)
+          else
+            ...orders.map((o) {
+              final isUdhar = o.paymentMode == PaymentMode.udhaar || o.creditAmount > 0;
+              final customerTitle = o.customer?.name ?? 'Walk-in Customer';
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => Navigator.pushNamed(context, AppRoutes.receiptPreview, arguments: o),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 38,
+                            height: 38,
+                            decoration: BoxDecoration(
+                              color: isUdhar ? const Color(0xFFFEE2E2) : const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              isUdhar ? Icons.assignment_late_outlined : Icons.check_circle_outline,
+                              color: isUdhar ? const Color(0xFFDC2626) : const Color(0xFF2563EB),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Invoice #${o.invoiceNo}',
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                      decoration: BoxDecoration(
+                                        color: isUdhar ? const Color(0xFFFFE4E6) : const Color(0xFFDCFCE7),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        o.creditAmount > 0 && o.paidAmount > 0
+                                            ? 'SPLIT'
+                                            : o.paymentMode.name.toUpperCase(),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.bold,
+                                          color: isUdhar ? const Color(0xFFBE123C) : const Color(0xFF15803D),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '$customerTitle • ${o.items.length} items',
+                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                                ),
+                                if (o.creditAmount > 0)
+                                  Text(
+                                    'Paid: PKR ${o.paidAmount.toStringAsFixed(0)} • Udhar: PKR ${o.creditAmount.toStringAsFixed(0)}',
+                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                CurrencyFormatter.format(o.total),
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                              ),
+                              const SizedBox(height: 2),
+                              const Icon(Icons.arrow_forward_ios_rounded, size: 11, color: Color(0xFF94A3B8)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+        ] else ...[
+          // Purchases List
+          if (purchases.isEmpty)
+            _buildEmptyState('No purchase bills recorded yet for this period', Icons.local_shipping_outlined)
+          else
+            ...purchases.map((p) {
+              final isPending = p.creditBalanceAdded > 0;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: isPending ? const Color(0xFFF3E8FF) : const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        isPending ? Icons.pending_actions_rounded : Icons.inventory_rounded,
+                        color: isPending ? const Color(0xFF7C3AED) : const Color(0xFF059669),
+                        size: 20,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                p.invoiceNo,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: isPending ? const Color(0xFFF3E8FF) : const Color(0xFFDCFCE7),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  isPending ? 'UDHAR' : 'PAID',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: isPending ? const Color(0xFF6D28D9) : const Color(0xFF15803D),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${p.supplierName} • ${p.items.length} items',
+                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          ),
+                          if (isPending)
+                            Text(
+                              'Paid: PKR ${p.paidAmount.toStringAsFixed(0)} • Payable: PKR ${p.creditBalanceAdded.toStringAsFixed(0)}',
+                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF7C3AED)),
+                            ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      CurrencyFormatter.format(p.totalAmount),
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                    ),
+                  ],
+                ),
+              );
+            }),
+        ],
       ],
+    );
+  }
+
+  Widget _buildEmptyState(String message, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      alignment: Alignment.center,
+      child: Column(
+        children: [
+          Icon(icon, size: 36, color: const Color(0xFF94A3B8)),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: const TextStyle(fontSize: 12.5, color: Color(0xFF64748B)),
+          ),
+        ],
+      ),
     );
   }
 }

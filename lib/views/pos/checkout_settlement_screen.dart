@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
+import '../../core/utils/app_toast.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
 import '../../models/notification_model.dart';
@@ -8,7 +9,6 @@ import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/notification_service.dart';
 import '../../state/cart_state.dart';
-import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 import '../khata/widgets/add_party_sheet.dart';
@@ -25,7 +25,6 @@ class CheckoutSettlementScreen extends StatefulWidget {
 class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
   final _cartState = CartState.instance;
   final _khataState = KhataState.instance;
-  final _inventoryState = InventoryState.instance;
 
   String _selectedPaymentMethod = 'Cash'; // Cash, Store Credit, Raast QR
   late TextEditingController _cashReceivedController;
@@ -39,9 +38,6 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
     if (_selectedCustomer != null) {
       return _khataState.customers.where((c) => c.id == _selectedCustomer!.id).firstOrNull ??
           _selectedCustomer;
-    }
-    if (_khataState.customers.isNotEmpty) {
-      return _khataState.customers.first;
     }
     return null;
   }
@@ -73,7 +69,18 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
   }
 
   void _onCompleteSale() {
-    // Check Customer Credit Limit Breach Warning
+    // 1. If any Udhar / Credit is pending, ensure a Customer is selected
+    final isCreditOrPartialUdhar = _selectedPaymentMethod == 'Store Credit' || _newUdhaar > 0;
+    if (isCreditOrPartialUdhar && _customer == null) {
+      AppToast.showWarning(
+        context,
+        'Please select a customer for Udhar / Credit sale (ادھار کے لیے گاہک منتخب کریں)',
+      );
+      _showCustomerPicker();
+      return;
+    }
+
+    // 2. Check Customer Credit Limit Breach Warning
     if (_selectedPaymentMethod == 'Store Credit' &&
         _customer != null &&
         _customer!.creditLimit != null &&
@@ -181,47 +188,72 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
   }
 
   void _executeCompleteSale() {
-    // 1. Deduct stock in inventory
-    for (final item in _cartState.items) {
-      _inventoryState.deductStock(item.product.id, item.quantity);
+    final invoiceNo = 'SK-${DateTime.now().millisecondsSinceEpoch % 10000}';
+    PaymentMode paymentMode;
+    double paid;
+    double credit;
+
+    if (_selectedPaymentMethod == 'Store Credit') {
+      paymentMode = PaymentMode.udhaar;
+      paid = 0.0;
+      credit = _billAmount;
+    } else if (_selectedPaymentMethod == 'Raast QR') {
+      paymentMode = PaymentMode.raast;
+      paid = _billAmount;
+      credit = 0.0;
+    } else {
+      // Cash / Split Cash & Udhar
+      if (_cashReceived >= _billAmount) {
+        paymentMode = PaymentMode.cash;
+        paid = _billAmount;
+        credit = 0.0;
+      } else if (_cashReceived <= 0) {
+        paymentMode = PaymentMode.udhaar;
+        paid = 0.0;
+        credit = _billAmount;
+      } else {
+        paymentMode = PaymentMode.cash;
+        paid = _cashReceived;
+        credit = _billAmount - _cashReceived;
+      }
     }
 
-    // 2. Build order model
-    final invoiceNo = 'SK-${DateTime.now().millisecondsSinceEpoch % 10000}';
-    final paymentMode = _selectedPaymentMethod == 'Store Credit'
-        ? PaymentMode.udhaar
-        : (_selectedPaymentMethod == 'Raast QR'
-            ? PaymentMode.raast
-            : PaymentMode.cash);
-
+    // 1. Build order model with accurate paid and credit amounts
     final order = OrderModel(
       invoiceNo: invoiceNo,
       date: DateTime.now(),
-      customer: _selectedPaymentMethod == 'Store Credit' ? _customer : null,
+      customer: _customer,
       items: List.from(_cartState.items),
       subtotal: _grossAmount,
       discount: _discountAmount,
       total: _billAmount,
       paymentMode: paymentMode,
       shopId: ShopState.instance.activeShopId,
+      paidAmount: paid,
+      creditAmount: credit,
     );
 
-    // 3. Add order to khata state
+    // 2. Add order to khata state (this deducts product stocks once & updates customer ledger if credit > 0)
     _khataState.addOrder(order);
 
-    // 4. Trigger live POS sales notification
+    // 3. Trigger live POS sales notification
+    final customerSuffix = _customer != null ? ' to ${_customer!.name}' : ' (Counter Sale)';
+    final settlementDetail = credit > 0
+        ? 'Cash: PKR ${paid.toStringAsFixed(0)}, Udhar: PKR ${credit.toStringAsFixed(0)}'
+        : 'Paid: PKR ${paid.toStringAsFixed(0)} via ${paymentMode.name.toUpperCase()}';
+
     NotificationService.instance.addNotification(
       title: 'POS Sale Completed: #${order.id}',
-      message: 'Bill #${order.id} for PKR ${order.total.toStringAsFixed(0)} settled via ${order.paymentMode.name.toUpperCase()} (${order.items.length} items billed).',
+      message: 'Bill #${order.id}$customerSuffix — $settlementDetail (${order.items.length} items billed).',
       type: NotificationType.saleSummary,
       route: AppRoutes.receiptPreview,
       referenceId: order.id,
     );
 
-    // 5. Clear cart
+    // 4. Clear cart
     _cartState.clear();
 
-    // 6. Navigate to receipt preview with order
+    // 5. Navigate to receipt preview with order
     Navigator.pushReplacementNamed(context, AppRoutes.receiptPreview,
         arguments: order);
   }
@@ -1320,6 +1352,22 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     },
                   ),
                   const SizedBox(height: 10),
+                  // Walk-in / Counter Option
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 4),
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFF1F5F9),
+                      child: Icon(Icons.person_off_outlined, color: Color(0xFF64748B), size: 18),
+                    ),
+                    title: const Text('Counter Sale / Walk-in Customer', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
+                    subtitle: const Text('No ledger credit will be posted', style: TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8))),
+                    trailing: _customer == null ? const Icon(Icons.check_circle, color: Color(0xFF16A34A), size: 18) : null,
+                    onTap: () {
+                      setState(() => _selectedCustomer = null);
+                      Navigator.pop(ctx);
+                    },
+                  ),
+                  const Divider(height: 8),
                   Expanded(
                     child: customers.isEmpty
                         ? const Center(

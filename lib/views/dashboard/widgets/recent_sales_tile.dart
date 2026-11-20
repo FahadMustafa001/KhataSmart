@@ -17,6 +17,18 @@ class RecentSalesTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUdhaar = order.paymentMode == PaymentMode.udhaar;
     final isCash = order.paymentMode == PaymentMode.cash;
+    final isSplit = (order.creditAmount > 0 && order.paidAmount > 0);
+
+    final statusText = isSplit
+        ? 'SPLIT'
+        : (isUdhaar
+            ? 'DUE'
+            : 'PAID');
+    final statusColor = isSplit
+        ? const Color(0xFFD97706)
+        : (isUdhaar
+            ? const Color(0xFFE11D48)
+            : const Color(0xFF16A34A));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -125,13 +137,11 @@ class RecentSalesTile extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      isUdhaar ? 'DUE' : 'PAID',
+                      statusText,
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
-                        color: isUdhaar
-                            ? const Color(0xFFE11D48)
-                            : const Color(0xFF16A34A),
+                        color: statusColor,
                         letterSpacing: 0.5,
                       ),
                     ),
