@@ -854,33 +854,34 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
     Color? badgeTextColor,
     bool showArrow = false,
   }) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.pop(context); // Close drawer
-        if (route != null && route != widget.currentRoute) {
-          if (route == AppRoutes.dashboard) {
-            Navigator.pushNamedAndRemoveUntil(
-              context,
-              AppRoutes.dashboard,
-              (r) => false,
-            );
-          } else if (widget.currentRoute == AppRoutes.dashboard) {
-            Navigator.pushNamed(context, route);
-          } else {
-            Navigator.pushReplacementNamed(context, route);
-          }
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8.5),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? const Color(0xFFEEF2FF)
-              : Colors.transparent,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2),
+      child: Material(
+        color: isSelected
+            ? const Color(0xFFEEF2FF)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
           borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
+          onTap: () {
+            Navigator.pop(context); // Close drawer
+            if (route != null && route != widget.currentRoute) {
+              if (route == AppRoutes.dashboard) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  AppRoutes.dashboard,
+                  (r) => false,
+                );
+              } else if (widget.currentRoute == AppRoutes.dashboard) {
+                Navigator.pushNamed(context, route);
+              } else {
+                Navigator.pushReplacementNamed(context, route);
+              }
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8.5),
+            child: Row(
           children: [
             Icon(
               icon,
@@ -951,6 +952,8 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

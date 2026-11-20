@@ -602,71 +602,115 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            Text(
-              'Stock & Products',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-                color: AppColors.text(context),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFDBEAFE),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                '${_inventoryState.products.length} Items',
-                style: const TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1D4ED8),
+        Expanded(
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Flexible(
+                child: Text(
+                  'Stock & Products',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 16.5,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.text(context),
+                  ),
                 ),
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Material(
+                color: const Color(0xFFDBEAFE),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      _selectedCategory = 'All Items';
+                      _searchController.clear();
+                      _searchQuery = '';
+                    });
+                    AppToast.showInfo(context, 'Showing all ${_inventoryState.products.length} products');
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
+                    child: Text(
+                      '${_inventoryState.products.length} Items',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1D4ED8),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 6),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Stock Inward button
+            // Stock Inward (Purchase Bill / مال کی خریداری)
             _actionIconBtn(
-              icon: Icons.input_rounded,
+              icon: Icons.post_add_rounded,
+              tooltip: 'Stock Inward / Purchase Bill (مال خریداری)',
+              iconColor: const Color(0xFF2563EB),
+              bgColor: const Color(0xFFEFF6FF),
+              borderColor: const Color(0xFFBFDBFE),
               onTap: () => Navigator.pushNamed(context, AppRoutes.purchaseInward),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             // Export CSV button
             _actionIconBtn(
               icon: Icons.table_view_rounded,
+              tooltip: 'Export Stock to Excel / CSV',
+              iconColor: const Color(0xFF16A34A),
               onTap: () async {
-                final file = await CsvExportService.instance.generateInventoryCsv(
-                  products: _inventoryState.products,
-                  shop: ShopState.instance.activeShop,
-                );
-                await CsvExportService.instance.shareCsvFile(
-                  file,
-                  subject: 'Inventory Stock Export - ${ShopState.instance.activeShop.name}',
-                );
+                if (_inventoryState.products.isEmpty) {
+                  AppToast.showWarning(context, 'No products to export');
+                  return;
+                }
+                AppToast.showInfo(context, 'Exporting inventory to CSV...');
+                try {
+                  final file = await CsvExportService.instance.generateInventoryCsv(
+                    products: _inventoryState.products,
+                    shop: ShopState.instance.activeShop,
+                  );
+                  await CsvExportService.instance.shareCsvFile(
+                    file,
+                    subject: 'Inventory Stock Export - ${ShopState.instance.activeShop.name}',
+                  );
+                } catch (e) {
+                  if (context.mounted) AppToast.showError(context, 'Export failed: $e');
+                }
               },
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             // Export PDF button
             _actionIconBtn(
-              icon: Icons.file_download_outlined,
+              icon: Icons.picture_as_pdf_outlined,
+              tooltip: 'Export Catalog PDF',
+              iconColor: const Color(0xFFDC2626),
               onTap: () {
+                if (_inventoryState.products.isEmpty) {
+                  AppToast.showWarning(context, 'No products to export');
+                  return;
+                }
+                AppToast.showInfo(context, 'Generating Catalog PDF...');
                 PrintingAndSharingService.instance.exportInventoryCatalog(
                   products: _inventoryState.products,
                   shop: ShopState.instance.activeShop,
                 );
               },
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: 6),
             // Filter button
             _actionIconBtn(
-              icon: Icons.tune,
+              icon: Icons.tune_rounded,
+              tooltip: 'Filter & Sort Products',
+              iconColor: const Color(0xFF475569),
               onTap: _showFilterBottomSheet,
             ),
           ],
@@ -675,18 +719,34 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
     );
   }
 
-  Widget _actionIconBtn({required IconData icon, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 34,
-        height: 34,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
+  Widget _actionIconBtn({
+    required IconData icon,
+    required VoidCallback onTap,
+    required String tooltip,
+    Color? iconColor,
+    Color? bgColor,
+    Color? borderColor,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: bgColor ?? Colors.white,
+        borderRadius: BorderRadius.circular(9),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(9),
+          child: Container(
+            width: 35,
+            height: 35,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(9),
+              border: Border.all(color: borderColor ?? const Color(0xFFE2E8F0)),
+            ),
+            child: Center(
+              child: Icon(icon, size: 18, color: iconColor ?? const Color(0xFF475569)),
+            ),
+          ),
         ),
-        child: Icon(icon, size: 18, color: const Color(0xFF475569)),
       ),
     );
   }
@@ -820,23 +880,37 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
         hintStyle: const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
         prefixIcon:
             const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
-        suffixIcon: GestureDetector(
-          onTap: () async {
-            final result = await Navigator.pushNamed(
-              context,
-              AppRoutes.posScanner,
-              arguments: {'mode': 'lookup'},
-            );
-            if (!mounted) return;
-            if (result is String && result.isNotEmpty) {
-              setState(() {
-                _searchController.text = result;
-                _searchQuery = result;
-              });
-            }
-          },
-          child: const Icon(Icons.qr_code_scanner,
-              size: 18, color: Color(0xFF2563EB)),
+        suffixIcon: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_searchController.text.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.clear, size: 16, color: Color(0xFF64748B)),
+                tooltip: 'Clear search',
+                onPressed: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                },
+              ),
+            IconButton(
+              icon: const Icon(Icons.qr_code_scanner, size: 18, color: Color(0xFF2563EB)),
+              tooltip: 'Scan barcode',
+              onPressed: () async {
+                final result = await Navigator.pushNamed(
+                  context,
+                  AppRoutes.posScanner,
+                  arguments: {'mode': 'lookup'},
+                );
+                if (!mounted) return;
+                if (result is String && result.isNotEmpty) {
+                  setState(() {
+                    _searchController.text = result;
+                    _searchQuery = result;
+                  });
+                }
+              },
+            ),
+          ],
         ),
         filled: true,
         fillColor: Colors.white,
@@ -974,30 +1048,34 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
 
   // ── Product Card ────────────────────────────────────────────────────────────
   Widget _buildProductCard(InventoryProductItem item) {
-    return GestureDetector(
-      onTap: () => Navigator.pushNamed(
-        context,
-        AppRoutes.addEditProduct,
-        arguments: _inventoryState.products.firstWhere((p) => p.id == item.id),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        decoration: BoxDecoration(
-          color: Colors.white,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFF1F5F9)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            // Top: icon, title, badges, restock button
-            Padding(
+          onTap: () => Navigator.pushNamed(
+            context,
+            AppRoutes.addEditProduct,
+            arguments: _inventoryState.products.firstWhere((p) => p.id == item.id),
+          ),
+          child: Column(
+            children: [
+              // Top: icon, title, badges, restock button
+              Padding(
               padding: const EdgeInsets.all(12),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1194,27 +1272,32 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _restockBtn(
       InventoryProductItem item, String label, Color bg, Color textColor,
       {Color? borderColor}) {
-    return GestureDetector(
-      onTap: () => _showRestockDialog(item),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(6),
-          border: borderColor != null ? Border.all(color: borderColor) : null,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.bold,
-            color: textColor,
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(6),
+      child: InkWell(
+        onTap: () => _showRestockDialog(item),
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(6),
+            border: borderColor != null ? Border.all(color: borderColor) : null,
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
           ),
         ),
       ),

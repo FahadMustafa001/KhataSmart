@@ -488,17 +488,21 @@ class _PosScannerScreenState extends State<PosScannerScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Close button
-          GestureDetector(
-            onTap: () => _navigateBackWithResult(),
-            child: Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white24),
+          Material(
+            color: const Color(0x80000000),
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => _navigateBackWithResult(),
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white24),
+                ),
+                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
               ),
-              child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
             ),
           ),
 
@@ -506,57 +510,69 @@ class _PosScannerScreenState extends State<PosScannerScreen>
           Row(
             children: [
               // Manual Barcode entry button
-              GestureDetector(
-                onTap: _showManualInputDialog,
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white24),
+              Material(
+                color: const Color(0x80000000),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: _showManualInputDialog,
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Icon(Icons.keyboard_alt_outlined, color: Colors.white, size: 19),
                   ),
-                  child: const Icon(Icons.keyboard_alt_outlined, color: Colors.white, size: 19),
                 ),
               ),
 
               // Switch camera button
-              GestureDetector(
-                onTap: () => _scannerController.switchCamera(),
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white24),
+              Material(
+                color: const Color(0x80000000),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => _scannerController.switchCamera(),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    margin: const EdgeInsets.only(right: 8),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Icon(Icons.cameraswitch_outlined, color: Colors.white, size: 19),
                   ),
-                  child: const Icon(Icons.cameraswitch_outlined, color: Colors.white, size: 19),
                 ),
               ),
 
               // Flash / Torch button
-              GestureDetector(
-                onTap: () async {
-                  await _scannerController.toggleTorch();
-                  setState(() => _flashOn = !_flashOn);
-                },
-                child: Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: _flashOn
-                        ? const Color(0xFFF59E0B)
-                        : Colors.black.withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white24),
-                  ),
-                  child: Icon(
-                    _flashOn ? Icons.flash_on : Icons.flash_off,
-                    color: Colors.white,
-                    size: 19,
+              Material(
+                color: _flashOn
+                    ? const Color(0xFFF59E0B)
+                    : const Color(0x80000000),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () async {
+                    await _scannerController.toggleTorch();
+                    setState(() => _flashOn = !_flashOn);
+                  },
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: Icon(
+                      _flashOn ? Icons.flash_on : Icons.flash_off,
+                      color: Colors.white,
+                      size: 19,
+                    ),
                   ),
                 ),
               ),
@@ -693,20 +709,21 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      GestureDetector(
-                        onTap: () {
-                          if (_scannedQty > 1) {
-                            setState(() => _scannedQty--);
-                            _cartState.decrement(product);
-                          }
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
+                      Material(
+                        color: Colors.white,
+                        shape: const CircleBorder(),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            if (_scannedQty > 1) {
+                              setState(() => _scannedQty--);
+                              _cartState.decrement(product);
+                            }
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(Icons.remove, size: 14, color: Color(0xFF1E293B)),
                           ),
-                          child: const Icon(Icons.remove, size: 14, color: Color(0xFF1E293B)),
                         ),
                       ),
                       Padding(
@@ -720,18 +737,19 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                           ),
                         ),
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          setState(() => _scannedQty++);
-                          _cartState.addItem(product);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF1E3A8A),
-                            shape: BoxShape.circle,
+                      Material(
+                        color: const Color(0xFF1E3A8A),
+                        shape: const CircleBorder(),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            setState(() => _scannedQty++);
+                            _cartState.addItem(product);
+                          },
+                          child: const Padding(
+                            padding: EdgeInsets.all(6),
+                            child: Icon(Icons.add, size: 14, color: Colors.white),
                           ),
-                          child: const Icon(Icons.add, size: 14, color: Colors.white),
                         ),
                       ),
                     ],
@@ -845,21 +863,28 @@ class _PosScannerScreenState extends State<PosScannerScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              GestureDetector(
-                onTap: _showManualInputDialog,
-                child: const Row(
-                  children: [
-                    Icon(Icons.keyboard_alt_outlined, size: 15, color: Color(0xFF1E293B)),
-                    SizedBox(width: 6),
-                    Text(
-                      'Manual Input',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E293B),
-                      ),
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(8),
+                  onTap: _showManualInputDialog,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    child: Row(
+                      children: [
+                        Icon(Icons.keyboard_alt_outlined, size: 15, color: Color(0xFF1E293B)),
+                        SizedBox(width: 6),
+                        Text(
+                          'Manual Input',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ),
               Row(

@@ -233,9 +233,8 @@ class LocalDatabaseService {
 
     if (parsedNotifications != null) {
       NotificationService.instance.loadFromDatabase(parsedNotifications);
-    } else {
-      NotificationService.instance.init();
     }
+    NotificationService.instance.init();
 
   }
 

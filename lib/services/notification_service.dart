@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/notification_model.dart';
 import '../models/party_model.dart';
+import '../models/shop_model.dart';
 import '../routes/app_routes.dart';
 import '../state/inventory_state.dart';
 import '../state/khata_state.dart';
@@ -15,6 +16,7 @@ class NotificationService extends ChangeNotifier {
 
   final List<NotificationModel> _notifications = [];
   bool _hasSystemPermission = true;
+  bool _listenersAttached = false;
 
   List<NotificationModel> get notifications => List.unmodifiable(_notifications);
   int get unreadCount => _notifications.where((n) => !n.isRead).length;
@@ -22,13 +24,16 @@ class NotificationService extends ChangeNotifier {
 
   // Initialize and attach store event listeners
   void init() {
-    // Generate initial live contextual notifications if empty
-    refreshContextualNotifications();
+    if (!_listenersAttached) {
+      _listenersAttached = true;
+      // Listen to changes in inventory and khata to generate timely alerts
+      InventoryState.instance.addListener(_onInventoryChanged);
+      KhataState.instance.addListener(_onKhataChanged);
+      GoogleDriveService.instance.addListener(_onDriveChanged);
+    }
 
-    // Listen to changes in inventory and khata to generate timely alerts
-    InventoryState.instance.addListener(_onInventoryChanged);
-    KhataState.instance.addListener(_onKhataChanged);
-    GoogleDriveService.instance.addListener(_onDriveChanged);
+    // Generate initial live contextual notifications
+    refreshContextualNotifications();
   }
 
   void _onInventoryChanged() {
@@ -232,7 +237,181 @@ class NotificationService extends ChangeNotifier {
       }
     }
 
+    // 6. If notifications list is still empty, seed helpful shop baseline notifications
+    if (_notifications.isEmpty) {
+      _seedDefaultStoreAlerts(activeShop);
+    }
+
     notifyListeners();
+  }
+
+  void _seedDefaultStoreAlerts(ShopModel activeShop) {
+    // 1. Store System Active
+    _notifications.add(
+      NotificationModel(
+        id: 'seed_system_${activeShop.id}',
+        title: '🏪 Store System Ready: ${activeShop.name}',
+        message: 'KhataSmart offline-first engine is running smoothly. Local database and encryption active.',
+        type: NotificationType.security,
+        timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
+        route: AppRoutes.settings,
+      ),
+    );
+
+    // 2. Inventory Alert or Status
+    final products = InventoryState.instance.products;
+    final lowStock = products.where((p) => p.isLowStock || p.stockQty <= 3).toList();
+    if (lowStock.isNotEmpty) {
+      final p = lowStock.first;
+      _notifications.add(
+        NotificationModel(
+          id: 'seed_stock_${p.id}',
+          title: 'Low Stock Alert: ${p.name}',
+          message: p.stockQty == 0
+              ? 'This item is out of stock! Tap to reorder or add stock.'
+              : 'Only ${p.stockQty} ${p.unit} remaining. Restock recommended.',
+          type: NotificationType.stockAlert,
+          timestamp: DateTime.now().subtract(const Duration(minutes: 30)),
+          route: AppRoutes.inventoryList,
+          referenceId: p.id,
+        ),
+      );
+    } else {
+      _notifications.add(
+        NotificationModel(
+          id: 'seed_stock_health',
+          title: '📦 Inventory Tracking Active',
+          message: products.isEmpty
+              ? 'No products added yet. Tap to add your first product to catalog.'
+              : '${products.length} product(s) tracked with safety stock thresholds.',
+          type: NotificationType.stockAlert,
+          timestamp: DateTime.now().subtract(const Duration(minutes: 35)),
+          route: AppRoutes.inventoryList,
+        ),
+      );
+    }
+
+    // 3. Khata Ledger Alert
+    final customers = KhataState.instance.customers;
+    final debtor = customers.where((c) => c.balance > 0).firstOrNull;
+    final advanceCust = customers.where((c) => c.balance < 0).firstOrNull;
+
+    if (debtor != null) {
+      _notifications.add(
+        NotificationModel(
+          id: 'seed_khata_${debtor.id}',
+          title: 'Payment Due: ${debtor.name}',
+          message: 'PKR ${debtor.balance.toStringAsFixed(0)} pending receivable. Tap to send WhatsApp reminder.',
+          type: NotificationType.paymentDue,
+          timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+          route: AppRoutes.partyLedgerDetail,
+          referenceId: debtor.id,
+        ),
+      );
+    } else if (advanceCust != null) {
+      _notifications.add(
+        NotificationModel(
+          id: 'seed_advance_${advanceCust.id}',
+          title: 'Credit Advance: ${advanceCust.name}',
+          message: 'Customer has advance credit balance of PKR ${advanceCust.balance.abs().toStringAsFixed(0)}.',
+          type: NotificationType.paymentDue,
+          timestamp: DateTime.now().subtract(const Duration(hours: 1)),
+          route: AppRoutes.partyLedgerDetail,
+          referenceId: advanceCust.id,
+        ),
+      );
+    } else {
+      _notifications.add(
+        NotificationModel(
+          id: 'seed_khata_guide',
+          title: '📖 Udhaar Register Active',
+          message: 'Customer & Supplier Ledgers ready. Send automated WhatsApp bills and payment reminders.',
+          type: NotificationType.paymentDue,
+          timestamp: DateTime.now().subtract(const Duration(hours: 2)),
+          route: AppRoutes.khataDirectory,
+        ),
+      );
+    }
+
+    // 4. Sales Closing / POS alert
+    _notifications.add(
+      NotificationModel(
+        id: 'seed_sales_pos',
+        title: '📊 Daily Sales & Profit Closing',
+        message: 'POS Counter is open. Tap to view today\'s revenue, gross margins, and settlement split.',
+        type: NotificationType.saleSummary,
+        timestamp: DateTime.now().subtract(const Duration(hours: 3)),
+        route: AppRoutes.reports,
+      ),
+    );
+
+    // 5. Cloud Backup Reminder
+    _notifications.add(
+      NotificationModel(
+        id: 'seed_cloud_backup',
+        title: '☁️ Google Drive Cloud Backup',
+        message: 'Protect your ledger data against device loss with 1-tap Google Drive cloud backup.',
+        type: NotificationType.cloudBackup,
+        timestamp: DateTime.now().subtract(const Duration(hours: 4)),
+        route: AppRoutes.settings,
+        referenceId: 'backup_due',
+      ),
+    );
+  }
+
+  void simulateTestAlert({NotificationType? type}) {
+    final t = type ?? NotificationType.stockAlert;
+    final shopName = ShopState.instance.activeShop.name;
+    switch (t) {
+      case NotificationType.stockAlert:
+        addNotification(
+          title: 'Stock Warning: Fresh Milk Pack',
+          message: 'Only 2 units remaining in $shopName inventory. Reorder soon.',
+          type: NotificationType.stockAlert,
+          route: AppRoutes.inventoryList,
+        );
+        break;
+      case NotificationType.paymentDue:
+        addNotification(
+          title: 'Payment Reminder: Muhammad Tariq',
+          message: 'Pending balance PKR 3,500 due for settlement.',
+          type: NotificationType.paymentDue,
+          route: AppRoutes.khataDirectory,
+        );
+        break;
+      case NotificationType.creditLimitBreach:
+        addNotification(
+          title: '⚠️ Credit Limit Exceeded: Ali Khan',
+          message: 'Current balance PKR 15,200 exceeds approved limit PKR 10,000.',
+          type: NotificationType.creditLimitBreach,
+          route: AppRoutes.khataDirectory,
+        );
+        break;
+      case NotificationType.saleSummary:
+        addNotification(
+          title: '📈 POS Sale Completed: Bill #SK-520',
+          message: 'Gross amount PKR 1,450 settled via Cash. 3 items billed.',
+          type: NotificationType.saleSummary,
+          route: AppRoutes.reports,
+        );
+        break;
+      case NotificationType.cloudBackup:
+        addNotification(
+          title: '☁️ Cloud Backup Successful',
+          message: 'All shop ledger accounts safely encrypted and backed up to Google Drive.',
+          type: NotificationType.cloudBackup,
+          route: AppRoutes.settings,
+        );
+        break;
+      case NotificationType.security:
+        addNotification(
+          title: 'Security: Register Locked',
+          message: 'Terminal app PIN verification is currently active.',
+          type: NotificationType.security,
+          route: AppRoutes.settings,
+        );
+        break;
+    }
   }
 
   void notifyCreditLimitBreach(PartyModel party) {

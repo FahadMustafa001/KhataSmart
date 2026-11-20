@@ -35,11 +35,11 @@ class QuickActionButton extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFF1E3A5F), // Deep Navy
               borderRadius: BorderRadius.circular(14),
-              boxShadow: [
+              boxShadow: const [
                 BoxShadow(
-                  color: const Color(0xFF1E3A5F).withValues(alpha: 0.2),
+                  color: Color(0x331E3A5F),
                   blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  offset: Offset(0, 4),
                 ),
               ],
             ),
@@ -52,7 +52,7 @@ class QuickActionButton extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(6),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: const Color(0x1FFFFFFF),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Icon(icon, color: Colors.white, size: 20),
@@ -130,7 +130,7 @@ class QuickActionButton extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: iconBg ?? color.withValues(alpha: 0.12),
+                      color: iconBg ?? color.withAlpha(30),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(icon, color: color, size: 20),

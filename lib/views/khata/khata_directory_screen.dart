@@ -753,46 +753,53 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
 
   // 6. Khata Customer / Supplier Card
   Widget _buildKhataCard(KhataCustomerItem item) {
-    return GestureDetector(
-      onTap: () {
-        PartyModel party;
-        try {
-          party = _khataState.parties.firstWhere((p) => p.id == item.id);
-        } catch (_) {
-          party = PartyModel(
-            id: item.id,
-            name: item.name,
-            phone: item.phone,
-            type: item.type,
-            city: item.city,
-            area: item.area,
-            address: item.address,
-            creditLimit: item.creditLimit,
-            balance: item.isReceivable ? item.balance : -item.balance,
-          );
-        }
-        Navigator.pushNamed(context, AppRoutes.partyLedgerDetail,
-            arguments: party);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.white,
+    PartyModel getParty() {
+      try {
+        return _khataState.parties.firstWhere((p) => p.id == item.id);
+      } catch (_) {
+        return PartyModel(
+          id: item.id,
+          name: item.name,
+          phone: item.phone,
+          type: item.type,
+          city: item.city,
+          area: item.area,
+          address: item.address,
+          creditLimit: item.creditLimit,
+          balance: item.isReceivable ? item.balance : -item.balance,
+        );
+      }
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 5,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: const Color(0xFFF1F5F9)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Initials Avatar
+          onTap: () {
+            final party = getParty();
+            Navigator.pushNamed(context, AppRoutes.partyLedgerDetail, arguments: party);
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Initials Avatar
             Container(
               width: 44,
               height: 44,
@@ -1015,6 +1022,8 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
           ],
         ),
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

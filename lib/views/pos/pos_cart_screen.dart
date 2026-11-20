@@ -917,42 +917,43 @@ class _PosCartScreenState extends State<PosCartScreen> {
   }) {
     final isSelected = _selectedPaymentMode == label;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedPaymentMode = label),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color:
-                isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: isSelected
-                  ? const Color(0xFF1D4ED8)
-                  : const Color(0xFFE2E8F0),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 15,
+      child: Material(
+        color: isSelected ? const Color(0xFFEFF6FF) : const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: () => setState(() => _selectedPaymentMode = label),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
                 color: isSelected
                     ? const Color(0xFF1D4ED8)
-                    : const Color(0xFF64748B),
+                    : const Color(0xFFE2E8F0),
               ),
-              const SizedBox(width: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  icon,
+                  size: 15,
                   color: isSelected
                       ? const Color(0xFF1D4ED8)
-                      : const Color(0xFF475569),
+                      : const Color(0xFF64748B),
                 ),
-              ),
-            ],
+                const SizedBox(width: 4),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                    color: isSelected ? const Color(0xFF1D4ED8) : const Color(0xFF475569),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

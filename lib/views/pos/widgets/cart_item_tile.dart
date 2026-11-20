@@ -100,16 +100,20 @@ class CartItemTile extends StatelessWidget {
                     color: AppColors.primaryNavy,
                   ),
                 ),
-                GestureDetector(
-                  onTap: onRemove,
-                  child: const Padding(
-                    padding: EdgeInsets.only(top: 4.0),
-                    child: Text(
-                      'Remove',
-                      style: TextStyle(
-                        color: AppColors.red,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onRemove,
+                    borderRadius: BorderRadius.circular(4),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4.0, vertical: 2.0),
+                      child: Text(
+                        'Remove',
+                        style: TextStyle(
+                          color: AppColors.red,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),

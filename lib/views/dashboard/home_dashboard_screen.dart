@@ -231,24 +231,23 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           tooltip: 'Reports & Analytics',
           onPressed: () => Navigator.pushNamed(context, AppRoutes.reports),
         ),
-        Padding(
-          padding: const EdgeInsets.only(right: 14.0, left: 2.0),
-          child: GestureDetector(
-            onTap: () => Navigator.pushNamed(context, AppRoutes.settings),
-            child: Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
-              ),
-              child: const CircleAvatar(
-                radius: 15,
-                backgroundColor: Color(0xFF1E293B),
-                child: Icon(Icons.settings_outlined, color: Colors.white, size: 16),
-              ),
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
+            ),
+            child: const CircleAvatar(
+              radius: 13,
+              backgroundColor: Color(0xFF1E293B),
+              child: Icon(Icons.settings_outlined, color: Colors.white, size: 15),
             ),
           ),
+          tooltip: 'Settings & Multi-Store',
+          onPressed: () => Navigator.pushNamed(context, AppRoutes.settings),
         ),
+        const SizedBox(width: 4),
       ],
     );
   }

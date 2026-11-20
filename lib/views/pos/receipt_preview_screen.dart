@@ -844,33 +844,41 @@ class ReceiptPreviewScreen extends StatelessWidget {
             const SizedBox(height: 18),
 
             // Next Customer (New Sale) Link
-            GestureDetector(
-              onTap: () {
-                CartState.instance.clear();
-                Navigator.pushNamedAndRemoveUntil(
-                  context,
-                  AppRoutes.posCart,
-                  (route) => route.settings.name == AppRoutes.dashboard,
-                );
-              },
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Next Customer (New Sale)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E3A8A),
-                    ),
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(10),
+                onTap: () {
+                  CartState.instance.clear();
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.posCart,
+                    (route) => route.settings.name == AppRoutes.dashboard,
+                  );
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Next Customer (New Sale)',
+                        style: TextStyle(
+                          fontSize: 14.5,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                      SizedBox(width: 6),
+                      Icon(
+                        Icons.arrow_forward_rounded,
+                        size: 16,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 6),
-                  const Icon(
-                    Icons.arrow_forward,
-                    size: 16,
-                    color: Color(0xFF1E3A8A),
-                  ),
-                ],
+                ),
               ),
             ),
 

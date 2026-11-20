@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../models/order_model.dart';
+import '../../models/notification_model.dart';
 import '../../models/party_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/notification_service.dart';
 import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
@@ -207,10 +209,19 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
     // 3. Add order to khata state
     _khataState.addOrder(order);
 
-    // 4. Clear cart
+    // 4. Trigger live POS sales notification
+    NotificationService.instance.addNotification(
+      title: 'POS Sale Completed: #${order.id}',
+      message: 'Bill #${order.id} for PKR ${order.total.toStringAsFixed(0)} settled via ${order.paymentMode.name.toUpperCase()} (${order.items.length} items billed).',
+      type: NotificationType.saleSummary,
+      route: AppRoutes.receiptPreview,
+      referenceId: order.id,
+    );
+
+    // 5. Clear cart
     _cartState.clear();
 
-    // 5. Navigate to receipt preview with order
+    // 6. Navigate to receipt preview with order
     Navigator.pushReplacementNamed(context, AppRoutes.receiptPreview,
         arguments: order);
   }

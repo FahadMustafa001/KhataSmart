@@ -1030,7 +1030,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
         border: Border.all(color: borderColor, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withValues(alpha: 0.05),
+            color: primaryColor.withAlpha(12),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -1076,7 +1076,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                 width: 32,
                 height: 32,
                 decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: 0.15),
+                  color: primaryColor.withAlpha(38),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -1098,14 +1098,14 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
           const SizedBox(height: 6),
           Row(
             children: [
-              Icon(Icons.history_rounded, size: 12, color: primaryColor.withValues(alpha: 0.8)),
+              Icon(Icons.history_rounded, size: 12, color: primaryColor.withAlpha(200)),
               const SizedBox(width: 4),
               Text(
                 _latestActivityText,
                 style: TextStyle(
                   fontSize: 10.5,
                   fontWeight: FontWeight.w600,
-                  color: primaryColor.withValues(alpha: 0.85),
+                  color: primaryColor.withAlpha(215),
                 ),
               ),
             ],

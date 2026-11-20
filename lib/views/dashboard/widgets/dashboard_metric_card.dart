@@ -63,7 +63,7 @@ class DashboardMetricCard extends StatelessWidget {
             boxShadow: isGradient
                 ? [
                     BoxShadow(
-                      color: gradientColors!.first.withValues(alpha: 0.3),
+                      color: gradientColors!.first.withAlpha(75),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     ),
@@ -92,7 +92,7 @@ class DashboardMetricCard extends StatelessWidget {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: isGradient
-                          ? Colors.white.withValues(alpha: 0.2)
+                          ? const Color(0x33FFFFFF)
                           : (badgeBg ?? const Color(0xFFDCFCE7)),
                       shape: BoxShape.circle,
                     ),
@@ -124,7 +124,7 @@ class DashboardMetricCard extends StatelessWidget {
                       const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                   decoration: BoxDecoration(
                     color: isGradient
-                        ? Colors.white.withValues(alpha: 0.2)
+                        ? const Color(0x33FFFFFF)
                         : (badgeBg ?? const Color(0xFFDCFCE7)),
                     borderRadius: BorderRadius.circular(6),
                   ),
