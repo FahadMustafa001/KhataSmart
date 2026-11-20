@@ -80,6 +80,8 @@ class QuickActionButton extends StatelessWidget {
                 const SizedBox(height: 16),
                 Text(
                   label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -90,6 +92,8 @@ class QuickActionButton extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 11,
                       color: Colors.white70,
@@ -153,6 +157,8 @@ class QuickActionButton extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.bold,
@@ -163,6 +169,8 @@ class QuickActionButton extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 11,
                     color: Color(0xFF64748B),

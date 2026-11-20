@@ -33,34 +33,45 @@ class PartyCard extends StatelessWidget {
         ),
         title: Text(
           party.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
         ),
         subtitle: Row(
           children: [
             const Icon(Icons.phone, size: 12, color: AppColors.textMuted),
             const SizedBox(width: 4),
-            Text(
-              party.phone,
-              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+            Expanded(
+              child: Text(
+                party.phone,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
             ),
           ],
         ),
         trailing: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              CurrencyFormatter.format(party.balance.abs()),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                color: willGet
-                    ? AppColors.green
-                    : (willGive ? AppColors.red : AppColors.textMuted),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                CurrencyFormatter.format(party.balance.abs()),
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  color: willGet
+                      ? AppColors.green
+                      : (willGive ? AppColors.red : AppColors.textMuted),
+                ),
               ),
             ),
             Text(
               willGet ? 'Receivable' : (willGive ? 'Payable' : 'Settled'),
+              maxLines: 1,
               style: TextStyle(
                 fontSize: 11,
                 color: willGet

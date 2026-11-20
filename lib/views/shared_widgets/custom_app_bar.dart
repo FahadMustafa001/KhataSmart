@@ -76,7 +76,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       titleSpacing: (leadingWidget != null) ? 0 : 16,
       title: titleWidget ??
           Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               if (showLogo) ...[
                 ClipRRect(

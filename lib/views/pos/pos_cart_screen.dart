@@ -4,6 +4,7 @@ import '../../models/cart_item_model.dart';
 import '../../routes/app_routes.dart';
 import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
+import '../../state/shop_state.dart';
 import '../shared_widgets/custom_app_bar.dart';
 import '../shared_widgets/empty_state_widget.dart';
 import '../shared_widgets/smart_khata_drawer.dart';
@@ -124,23 +125,24 @@ class _PosCartScreenState extends State<PosCartScreen> {
         drawer: const SmartKhataDrawer(currentRoute: AppRoutes.posCart),
       appBar: CustomAppBar(
         title: 'Counter Billing',
-        subtitle: 'SmartKhata POS',
+        subtitle: ShopState.instance.activeShop.name,
         showLogo: true,
         showMenu: true,
         actions: [
-          TextButton(
-            onPressed: () {
-              setState(() => _items.clear());
-            },
-            child: const Text(
-              'Clear Cart',
-              style: TextStyle(
-                color: Color(0xFFDC2626),
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+          if (_items.isNotEmpty)
+            TextButton(
+              onPressed: () {
+                _cartState.clear();
+              },
+              child: const Text(
+                'Clear Cart',
+                style: TextStyle(
+                  color: Color(0xFFDC2626),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
-          ),
           const Padding(
             padding: EdgeInsets.only(right: 14.0),
             child: CircleAvatar(
@@ -626,8 +628,20 @@ class _PosCartScreenState extends State<PosCartScreen> {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: () => Navigator.pushNamed(
-                          context, AppRoutes.receiptPreview),
+                      onPressed: () {
+                        if (_items.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Cart is empty. Please add items to checkout.'),
+                              backgroundColor: Color(0xFFDC2626),
+                              duration: Duration(seconds: 2),
+                            ),
+                          );
+                          return;
+                        }
+                        Navigator.pushNamed(
+                            context, AppRoutes.checkoutSettlement);
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF1E3A5F), // Deep Navy
                         foregroundColor: Colors.white,

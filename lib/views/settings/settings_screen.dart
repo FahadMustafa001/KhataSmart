@@ -860,22 +860,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Paper Size:', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
-                          ChoiceChip(
-                            label: const Text('58mm (Pocket)'),
-                            selected: activeShop.paperSize == '58mm',
-                            onSelected: (_) => ShopState.instance.updateActiveShop(paperSize: '58mm'),
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const Center(child: Text('58mm (Pocket)')),
+                              selected: activeShop.paperSize == '58mm',
+                              onSelected: (_) => ShopState.instance.updateActiveShop(paperSize: '58mm'),
+                            ),
                           ),
                           const SizedBox(width: 8),
-                          ChoiceChip(
-                            label: const Text('80mm (Standard)'),
-                            selected: activeShop.paperSize == '80mm',
-                            onSelected: (_) => ShopState.instance.updateActiveShop(paperSize: '80mm'),
+                          Expanded(
+                            child: ChoiceChip(
+                              label: const Center(child: Text('80mm (Standard)')),
+                              selected: activeShop.paperSize == '80mm',
+                              onSelected: (_) => ShopState.instance.updateActiveShop(paperSize: '80mm'),
+                            ),
                           ),
                         ],
                       ),

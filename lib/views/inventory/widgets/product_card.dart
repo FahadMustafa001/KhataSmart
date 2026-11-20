@@ -120,44 +120,55 @@ class ProductCard extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Sale Price',
-                        style: TextStyle(fontSize: 9.5, color: AppColors.subtext(context)),
-                      ),
-                      Text(
-                        CurrencyFormatter.format(product.salePrice),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: Color(0xFF16A34A),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Sale Price',
+                          style: TextStyle(fontSize: 9.5, color: AppColors.subtext(context)),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 16),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Cost Price',
-                        style: TextStyle(fontSize: 9.5, color: AppColors.subtext(context)),
-                      ),
-                      Text(
-                        CurrencyFormatter.format(product.costPrice),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.subtext(context),
-                          fontWeight: FontWeight.w500,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            CurrencyFormatter.format(product.salePrice),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: Color(0xFF16A34A),
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const Spacer(),
-                  // Margin badge
-                  if (product.salePrice > product.costPrice)
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Cost Price',
+                          style: TextStyle(fontSize: 9.5, color: AppColors.subtext(context)),
+                        ),
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            CurrencyFormatter.format(product.costPrice),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.subtext(context),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (product.salePrice > product.costPrice) ...[
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                       decoration: BoxDecoration(
@@ -165,7 +176,7 @@ class ProductCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        '+${((product.salePrice - product.costPrice) / product.costPrice * 100).toStringAsFixed(1)}%',
+                        '+${((product.salePrice - product.costPrice) / (product.costPrice > 0 ? product.costPrice : 1) * 100).toStringAsFixed(1)}%',
                         style: const TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -173,6 +184,7 @@ class ProductCard extends StatelessWidget {
                         ),
                       ),
                     ),
+                  ],
                 ],
               ),
             ),

@@ -100,27 +100,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Notifications & Alerts',
-                  style: TextStyle(
-                    fontSize: 15.5,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF0F172A),
+                const Flexible(
+                  child: Text(
+                    'Notifications',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
                   ),
                 ),
                 if (unread > 0) ...[
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 6),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                     decoration: BoxDecoration(
                       color: const Color(0xFFEF4444),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
-                      '$unread New',
+                      '$unread',
                       style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -132,7 +138,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               ],
             ),
             Text(
-              '${activeShop.name} • Live Store Alerts',
+              '${activeShop.name} • Live Alerts',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
             ),
           ],
@@ -140,10 +148,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         actions: [
           if (_notifService.notifications.isNotEmpty) ...[
             TextButton(
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
               onPressed: () => _notifService.markAllAsRead(),
               child: const Text('Read All', style: TextStyle(fontSize: 12, color: Color(0xFF2563EB))),
             ),
             IconButton(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              constraints: const BoxConstraints(),
               icon: const Icon(Icons.clear_all, size: 22, color: Color(0xFF64748B)),
               tooltip: 'Clear All',
               onPressed: () {
@@ -151,6 +166,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 AppToast.showInfo(context, 'All notifications cleared');
               },
             ),
+            const SizedBox(width: 8),
           ],
         ],
       ),

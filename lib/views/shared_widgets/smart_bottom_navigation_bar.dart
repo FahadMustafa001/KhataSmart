@@ -103,36 +103,40 @@ class SmartBottomNavigationBar extends StatelessWidget {
     const activeTextColor = Color(0xFF0F172A);
     const inactiveColor = Color(0xFF64748B);
 
-    return InkWell(
-      onTap: () => _onTabTapped(context, route),
-      borderRadius: BorderRadius.circular(14),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3.5),
-              decoration: BoxDecoration(
-                color: isActive ? activeBg : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
+    return Expanded(
+      child: InkWell(
+        onTap: () => _onTabTapped(context, route),
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3.5),
+                decoration: BoxDecoration(
+                  color: isActive ? activeBg : Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  isActive ? icon : inactiveIcon,
+                  size: 19,
+                  color: isActive ? activeIconColor : inactiveColor,
+                ),
               ),
-              child: Icon(
-                isActive ? icon : inactiveIcon,
-                size: 19,
-                color: isActive ? activeIconColor : inactiveColor,
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
+                  color: isActive ? activeTextColor : inactiveColor,
+                ),
               ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-                color: isActive ? activeTextColor : inactiveColor,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

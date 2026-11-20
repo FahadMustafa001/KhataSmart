@@ -74,16 +74,20 @@ class DashboardMetricCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: isGradient ? Colors.white70 : primaryColor,
+                  Expanded(
+                    child: Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: isGradient ? Colors.white70 : primaryColor,
+                      ),
                     ),
                   ),
+                  const SizedBox(width: 4),
                   Container(
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
@@ -99,14 +103,18 @@ class DashboardMetricCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              Text(
-                amount,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: isGradient
-                      ? Colors.white
-                      : const Color(0xFF0F172A),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  amount,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: isGradient
+                        ? Colors.white
+                        : const Color(0xFF0F172A),
+                  ),
                 ),
               ),
               const SizedBox(height: 8),

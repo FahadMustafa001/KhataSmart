@@ -86,6 +86,7 @@ class AuthService extends ChangeNotifier {
         clientId: kIsWeb
             ? '711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn.apps.googleusercontent.com'
             : null,
+        serverClientId: '711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn.apps.googleusercontent.com',
         scopes: ['email', 'profile'],
       );
 
@@ -133,8 +134,18 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Translates Firebase Auth error codes into clear, user-friendly messages
+  /// Translates Firebase Auth and Google Sign-In error codes into clear, user-friendly messages
   static String formatAuthError(dynamic error) {
+    final errorString = error.toString();
+    if (errorString.contains('ApiException: 10') || errorString.contains('10:')) {
+      return 'Google Sign-In configuration error: Please register the app SHA-1 fingerprint in Firebase Console settings.';
+    }
+    if (errorString.contains('ApiException: 12500') || errorString.contains('12500:')) {
+      return 'Google Sign-In failed (12500). Please ensure Google Sign-In is enabled in Firebase Authentication.';
+    }
+    if (errorString.contains('network_error') || errorString.contains('ApiException: 7')) {
+      return 'Network error connecting to Google Play Services. Please check your internet connection.';
+    }
     if (error is FirebaseAuthException) {
       switch (error.code) {
         case 'user-not-found':

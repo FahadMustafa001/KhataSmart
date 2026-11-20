@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
 import '../../core/utils/currency_formatter.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../models/cart_item_model.dart';
 import '../../models/order_model.dart';
+import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/esc_pos_service.dart';
 import '../../services/printing_and_sharing_service.dart';
+import '../../state/cart_state.dart';
+import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 import '../shared_widgets/barcode_visual_widget.dart';
@@ -18,39 +22,105 @@ class ReceiptPreviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeShop = ShopState.instance.activeShop;
     OrderModel? actualOrder = order;
+
+    // 1. If not provided directly, check if KhataState has orders
     if (actualOrder == null && KhataState.instance.orders.isNotEmpty) {
       actualOrder = KhataState.instance.orders.first;
     }
 
-    final invoiceNumber = actualOrder?.invoiceNo ??
-        'SK-${DateTime.now().millisecondsSinceEpoch % 10000}';
-    final items = actualOrder?.items ?? [];
-    final subtotal = actualOrder?.subtotal ?? 0.0;
-    final discount = actualOrder?.discount ?? 0.0;
-    final netPayable = actualOrder?.total ?? 0.0;
-    final effectiveOrder = actualOrder ??
-        OrderModel(
-          invoiceNo: invoiceNumber,
-          items: items,
-          total: netPayable,
-          subtotal: subtotal,
-          discount: discount,
-          paymentMode: PaymentMode.cash,
-          date: DateTime.now(),
+    // 2. If no completed orders exist, but CartState currently has items, create a live preview from cart
+    if (actualOrder == null && CartState.instance.items.isNotEmpty) {
+      actualOrder = OrderModel(
+        invoiceNo: 'SK-${DateTime.now().millisecondsSinceEpoch % 10000}',
+        date: DateTime.now(),
+        items: List.from(CartState.instance.items),
+        subtotal: CartState.instance.subtotal,
+        discount: CartState.instance.discount,
+        total: CartState.instance.netPayable,
+        paymentMode: PaymentMode.cash,
+        shopId: activeShop.id,
+      );
+    }
+
+    // 3. If still null (e.g. fresh app preview without any cart or order), generate realistic demo products from Inventory
+    if (actualOrder == null) {
+      final availableProducts = InventoryState.instance.products;
+      final List<CartItemModel> sampleItems = [];
+      if (availableProducts.isNotEmpty) {
+        for (var i = 0; i < availableProducts.take(3).length; i++) {
+          sampleItems.add(CartItemModel(product: availableProducts[i], quantity: i + 1));
+        }
+      } else {
+        // High quality realistic retail products
+        final sampleProd1 = ProductModel(
+          id: 'sample_1',
+          barcode: '896400012345',
+          title: 'Olpers Milk 1 Litre (UHT)',
+          salePrice: 290.0,
+          costPrice: 260.0,
+          stockQty: 50,
+          category: 'Dairy',
+          shopId: activeShop.id,
         );
-    final isUdhaar = actualOrder?.paymentMode == PaymentMode.udhaar;
+        final sampleProd2 = ProductModel(
+          id: 'sample_2',
+          barcode: '896400067890',
+          title: 'Tapal Danedar Tea 450g',
+          salePrice: 680.0,
+          costPrice: 620.0,
+          stockQty: 30,
+          category: 'Grocery',
+          shopId: activeShop.id,
+        );
+        final sampleProd3 = ProductModel(
+          id: 'sample_3',
+          barcode: '896400098765',
+          title: 'Habib Cooking Oil 1 Litre Pouch',
+          salePrice: 540.0,
+          costPrice: 495.0,
+          stockQty: 40,
+          category: 'Cooking Essentials',
+          shopId: activeShop.id,
+        );
+        sampleItems.add(CartItemModel(product: sampleProd1, quantity: 2));
+        sampleItems.add(CartItemModel(product: sampleProd2, quantity: 1));
+        sampleItems.add(CartItemModel(product: sampleProd3, quantity: 1));
+      }
+
+      final sub = sampleItems.fold(0.0, (s, i) => s + (i.product.salePrice * i.quantity));
+      final disc = 40.0;
+      actualOrder = OrderModel(
+        invoiceNo: 'SK-519',
+        date: DateTime.now(),
+        items: sampleItems,
+        subtotal: sub,
+        discount: disc,
+        total: (sub - disc).clamp(0.0, double.infinity),
+        paymentMode: PaymentMode.cash,
+        shopId: activeShop.id,
+      );
+    }
+
+    final invoiceNumber = actualOrder.invoiceNo.isNotEmpty
+        ? actualOrder.invoiceNo
+        : 'SK-${DateTime.now().millisecondsSinceEpoch % 10000}';
+    final items = actualOrder.items;
+    final subtotal = actualOrder.subtotal;
+    final discount = actualOrder.discount;
+    final netPayable = actualOrder.total;
+    final effectiveOrder = actualOrder;
+    final isUdhaar = actualOrder.paymentMode == PaymentMode.udhaar;
     final tenderedAmount = isUdhaar
         ? 0.0
         : (netPayable > 0
             ? (netPayable < 1000 ? 1000.0 : ((netPayable / 500).ceil() * 500.0))
             : 0.0);
     final changeAmount = isUdhaar ? 0.0 : (tenderedAmount - netPayable);
-    final paymentTag = actualOrder != null
-        ? (isUdhaar
-            ? 'STORE CREDIT'
-            : 'PAID • ${actualOrder.paymentMode.name.toUpperCase()}')
-        : 'PAID • CASH';
+    final paymentTag = isUdhaar
+        ? 'STORE CREDIT'
+        : 'PAID • ${actualOrder.paymentMode.name.toUpperCase()}';
 
     return PopScope(
       canPop: false,
@@ -203,19 +273,25 @@ class ReceiptPreviewScreen extends StatelessWidget {
                         const SizedBox(height: 8),
 
                         // Store Details
-                        const Text(
-                          'SMARTKHATA RETAIL POS',
-                          style: TextStyle(
+                        Text(
+                          activeShop.name.isNotEmpty
+                              ? activeShop.name.toUpperCase()
+                              : 'SMARTKHATA RETAIL POS',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
                             fontFamily: 'monospace',
-                            fontSize: 14,
+                            fontSize: 14.5,
                             fontWeight: FontWeight.w900,
                             color: Color(0xFF0F172A),
                             letterSpacing: 0.5,
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        const SizedBox(height: 3),
                         Text(
-                          'Counter POS Terminal 01\nCashier: ${actualOrder?.customer != null ? "Customer: ${actualOrder!.customer!.name}" : "Cash Counter"}',
+                          '${activeShop.ownerName.isNotEmpty ? "${activeShop.ownerName}'s Store • " : ""}Counter POS Terminal 01\n'
+                          '${activeShop.address.isNotEmpty ? "${activeShop.address}\n" : ""}'
+                          '${activeShop.phone.isNotEmpty ? "Ph: ${activeShop.phone} • " : ""}'
+                          'Cashier: ${activeShop.ownerName.isNotEmpty ? activeShop.ownerName : "Cash Counter"}',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontFamily: 'monospace',
@@ -224,6 +300,27 @@ class ReceiptPreviewScreen extends StatelessWidget {
                             height: 1.35,
                           ),
                         ),
+                        if (actualOrder.customer != null) ...[
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEFF6FF),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: const Color(0xFFBFDBFE)),
+                            ),
+                            child: Text(
+                              'Customer: ${actualOrder.customer!.name}${actualOrder.customer!.phone.isNotEmpty ? " (${actualOrder.customer!.phone})" : ""}',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontFamily: 'monospace',
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1D4ED8),
+                              ),
+                            ),
+                          ),
+                        ],
 
                         const SizedBox(height: 8),
 
@@ -233,7 +330,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
                           children: [
                             Text(
                               DateFormatter.format(
-                                  actualOrder?.dateTime ?? DateTime.now()),
+                                  actualOrder.dateTime),
                               style: const TextStyle(
                                   fontFamily: 'monospace',
                                   fontSize: 10,
@@ -261,7 +358,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
                         const Row(
                           children: [
                             Expanded(
-                                flex: 4,
+                                flex: 5,
                                 child: Text('ITEM',
                                     style: TextStyle(
                                         fontFamily: 'monospace',
@@ -300,10 +397,10 @@ class ReceiptPreviewScreen extends StatelessWidget {
                         if (items.isNotEmpty)
                           ...items.map(
                             (i) => _buildReceiptRow(
-                              i.product.title,
+                              i.product.name.isNotEmpty ? i.product.name : i.product.title,
                               '${i.quantity}',
-                              i.product.salePrice.toStringAsFixed(0),
-                              i.subtotal.toStringAsFixed(2),
+                              CurrencyFormatter.format(i.product.salePrice),
+                              CurrencyFormatter.format(i.product.salePrice * i.quantity),
                             ),
                           )
                         else
@@ -523,10 +620,12 @@ class ReceiptPreviewScreen extends StatelessWidget {
                         const SizedBox(height: 14),
 
                         // Receipt Footnotes
-                        const Text(
-                          '*** Thank you for shopping with us! ***\nGoods once sold can be exchanged within 3 days with\nreceipt.',
+                        Text(
+                          activeShop.receiptFooter.isNotEmpty
+                              ? activeShop.receiptFooter
+                              : '*** Thank you for shopping with us! ***\nGoods once sold can be exchanged within 3 days with receipt.',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontFamily: 'monospace',
                             fontSize: 9.5,
                             color: Color(0xFF475569),
@@ -609,10 +708,11 @@ class ReceiptPreviewScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         onTap: () async {
                           final activeShop = ShopState.instance.activeShop;
-                          if (activeShop.preferredPrinterUrl != null) {
+                          final printerUrl = activeShop.preferredPrinterUrl;
+                          if (printerUrl != null) {
                             try {
                               final printers = await EscPosService.instance.getAvailablePrinters();
-                              final targetList = printers.where((p) => p.url == activeShop.preferredPrinterUrl).toList();
+                              final targetList = printers.where((dynamic p) => p.url == printerUrl).toList();
                               if (targetList.isNotEmpty) {
                                 await EscPosService.instance.directPrintReceipt(
                                   order: effectiveOrder,
@@ -746,6 +846,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
             // Next Customer (New Sale) Link
             GestureDetector(
               onTap: () {
+                CartState.instance.clear();
                 Navigator.pushNamedAndRemoveUntil(
                   context,
                   AppRoutes.posCart,
@@ -755,9 +856,9 @@ class ReceiptPreviewScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
+                  const Text(
                     'Next Customer (New Sale)',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1E3A8A),
@@ -784,11 +885,11 @@ class ReceiptPreviewScreen extends StatelessWidget {
   static Widget _buildReceiptRow(
       String item, String qty, String rate, String total) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.5),
+      padding: const EdgeInsets.symmetric(vertical: 3.0),
       child: Row(
         children: [
           Expanded(
-            flex: 4,
+            flex: 5,
             child: Text(
               item,
               maxLines: 1,
@@ -796,6 +897,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
               style: const TextStyle(
                   fontFamily: 'monospace',
                   fontSize: 10,
+                  fontWeight: FontWeight.w600,
                   color: Color(0xFF1E293B)),
             ),
           ),
