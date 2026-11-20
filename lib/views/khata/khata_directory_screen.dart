@@ -907,80 +907,109 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
               ),
             ),
 
-            // Balance, Status Badge & Remind Action
+            // Balance, Status Badge & Quick Action Buttons
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  'Rs. ${item.balance.toStringAsFixed(0)}',
+                  'PKR ${item.balance.toStringAsFixed(0)}',
                   style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w900,
                     color: item.balance == 0
                         ? const Color(0xFF64748B)
-                        : (item.isReceivable
-                            ? const Color(0xFF15803D)
-                            : const Color(0xFFDC2626)),
+                        : (item.type == PartyType.customer
+                            ? (item.isReceivable ? const Color(0xFF15803D) : const Color(0xFFDC2626))
+                            : (item.isReceivable ? const Color(0xFFDC2626) : const Color(0xFF15803D))),
                   ),
                 ),
                 const SizedBox(height: 3),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: item.balance == 0
                         ? const Color(0xFFF1F5F9)
-                        : (item.isReceivable
-                            ? const Color(0xFFDCFCE7)
-                            : const Color(0xFFFEE2E2)),
-                    borderRadius: BorderRadius.circular(4),
+                        : (item.type == PartyType.customer
+                            ? (item.isReceivable ? const Color(0xFFDCFCE7) : const Color(0xFFFEE2E2))
+                            : (item.isReceivable ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7))),
+                    borderRadius: BorderRadius.circular(5),
                   ),
                   child: Text(
                     item.balance == 0
                         ? 'Chukta (Settled)'
-                        : (item.isReceivable ? 'Receivable' : 'Advance (Payable)'),
+                        : (item.type == PartyType.customer
+                            ? (item.isReceivable ? 'Receivable (Lena)' : 'Advance (Dena)')
+                            : (item.isReceivable ? 'Payable (Dena)' : 'Advance (Lena)')),
                     style: TextStyle(
-                      fontSize: 8.5,
+                      fontSize: 9,
                       fontWeight: FontWeight.bold,
                       color: item.balance == 0
                           ? const Color(0xFF475569)
-                          : (item.isReceivable
-                              ? const Color(0xFF15803D)
-                              : const Color(0xFFDC2626)),
+                          : (item.type == PartyType.customer
+                              ? (item.isReceivable ? const Color(0xFF15803D) : const Color(0xFFDC2626))
+                              : (item.isReceivable ? const Color(0xFFDC2626) : const Color(0xFF15803D))),
                     ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                if (item.isReceivable && item.balance > 0)
-                  GestureDetector(
-                    onTap: () {
-                      AppToast.showSuccess(
-                        context,
-                        'WhatsApp Payment Reminder sent to ${item.name}!',
-                      );
-                    },
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.asset(AppAssets.whatsappIcon, width: 12, height: 12),
-                        const SizedBox(width: 4),
-                        const Text(
-                          'Remind',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF15803D),
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // One-tap Call
+                    if (item.phone.isNotEmpty)
+                      InkWell(
+                        onTap: () => PrintingAndSharingService.instance.makePhoneCall(item.phone),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFEFF6FF),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(color: const Color(0xFFDBEAFE)),
                           ),
+                          child: const Icon(Icons.phone, size: 13, color: Color(0xFF2563EB)),
                         ),
-                      ],
+                      ),
+                    const SizedBox(width: 6),
+                    // One-tap WhatsApp Reminder
+                    InkWell(
+                      onTap: () {
+                        try {
+                          final party = _khataState.parties.firstWhere((p) => p.id == item.id);
+                          PrintingAndSharingService.instance.sendPartyLedgerViaWhatsApp(
+                            party: party,
+                            shop: ShopState.instance.activeShop,
+                          );
+                        } catch (_) {
+                          AppToast.showInfo(context, 'Sending reminder to ${item.name}...');
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFDCFCE7),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFBBF7D0)),
+                        ),
+                        child: Row(
+                          children: [
+                            Image.asset(AppAssets.whatsappIcon, width: 13, height: 13),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Remind',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF15803D),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  )
-                else if (item.note != null)
-                  Text(
-                    item.note!,
-                    style:
-                        const TextStyle(fontSize: 9, color: Color(0xFF94A3B8)),
-                  ),
+                  ],
+                ),
               ],
             ),
           ],

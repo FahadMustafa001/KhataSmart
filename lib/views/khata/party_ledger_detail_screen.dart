@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
-import '../../core/constants/app_colors.dart';
 import '../../core/utils/app_toast.dart';
 import '../../models/ledger_entry_model.dart';
 import '../../models/party_model.dart';
@@ -8,7 +7,6 @@ import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
-import 'widgets/add_party_sheet.dart';
 import 'widgets/add_transaction_modal.dart';
 
 class LedgerDetailItem {
@@ -60,9 +58,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedDateFilter = 'All Dates'; // 'All Dates', 'This Month', 'Last 30 Days'
-  String _selectedTypeFilter = 'All'; // 'All', 'Gave', 'Got'
-  bool _isAutoReminderActive = true;
+  String _selectedDateFilter = 'All Dates';
+  String _selectedTypeFilter = 'All';
+  final bool _isAutoReminderActive = true;
 
   PartyModel? get _currentParty {
     try {
@@ -83,11 +81,10 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     final rawEntries = _khataState.getEntriesForParty(_partyId);
     if (rawEntries.isEmpty) return [];
 
-    // 1. Sort chronological ascending to calculate running balance accurately
+    // Sort ascending to accurately compute historical running balances
     final sortedAsc = List<LedgerEntryModel>.from(rawEntries)
       ..sort((a, b) => a.date.compareTo(b.date));
 
-    // Calculate historical balance progression
     double totalGave = 0;
     double totalGot = 0;
     for (final e in sortedAsc) {
@@ -109,11 +106,11 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
       runningBalanceMap[e.id] = running;
     }
 
-    // 2. Sort descending (newest first) for UI display
+    // Sort descending for display (latest on top)
     var entries = List<LedgerEntryModel>.from(rawEntries)
       ..sort((a, b) => b.date.compareTo(a.date));
 
-    // 3. Search filter
+    // Search filter
     if (_searchQuery.trim().isNotEmpty) {
       final q = _searchQuery.trim().toLowerCase();
       entries = entries.where((e) {
@@ -123,7 +120,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
       }).toList();
     }
 
-    // 4. Date filter
+    // Date filter
     if (_selectedDateFilter == 'This Month') {
       final now = DateTime.now();
       entries = entries.where((e) => e.date.year == now.year && e.date.month == now.month).toList();
@@ -132,7 +129,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
       entries = entries.where((e) => e.date.isAfter(cutoff)).toList();
     }
 
-    // 5. Type filter
+    // Type filter
     if (_selectedTypeFilter == 'Gave') {
       entries = entries.where((e) => e.type == LedgerType.gave).toList();
     } else if (_selectedTypeFilter == 'Got') {
@@ -994,7 +991,6 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     // Determine Financial Meaning
     final bool isSettled = bal == 0;
     final bool isReceivable = !isSupplier ? bal > 0 : bal < 0;
-    final bool isPayable = !isSupplier ? bal < 0 : bal > 0;
 
     String titleText;
     String badgeText;
