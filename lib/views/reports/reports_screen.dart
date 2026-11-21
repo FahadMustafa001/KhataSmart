@@ -850,7 +850,12 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
               Expanded(
                 child: InkWell(
                   borderRadius: BorderRadius.circular(8),
-                  onTap: () => setState(() => _selectedActivityTab = 1),
+                  onTap: () => setState(() {
+                    _selectedActivityTab = 1;
+                    if (_paymentFilter == 'Online / Digital') {
+                      _paymentFilter = 'All';
+                    }
+                  }),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
@@ -923,7 +928,10 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: ['All', 'Cash', 'Online / Digital', 'Udhar / Credit'].map((chip) {
+            children: (_selectedActivityTab == 1
+                    ? ['All', 'Cash', 'Udhar / Credit']
+                    : ['All', 'Cash', 'Online / Digital', 'Udhar / Credit'])
+                .map((chip) {
               final isSelected = _paymentFilter == chip;
               return GestureDetector(
                 onTap: () => setState(() => _paymentFilter = chip),
@@ -1131,6 +1139,9 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
               }
               if (_paymentFilter == 'Udhar / Credit') {
                 return p.creditBalanceAdded > 0;
+              }
+              if (_paymentFilter == 'Online / Digital') {
+                return false;
               }
               return true;
             }).toList();

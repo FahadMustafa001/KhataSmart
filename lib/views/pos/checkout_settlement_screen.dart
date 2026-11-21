@@ -187,7 +187,11 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
     _executeCompleteSale();
   }
 
+  bool _isCompletingSale = false;
+
   void _executeCompleteSale() {
+    if (_isCompletingSale) return;
+    _isCompletingSale = true;
     final invoiceNo = 'SK-${DateTime.now().millisecondsSinceEpoch % 10000}';
     PaymentMode paymentMode;
     double paid;

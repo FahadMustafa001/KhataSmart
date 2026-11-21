@@ -122,10 +122,21 @@ class _PosCartScreenState extends State<PosCartScreen> {
       ),
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
-          final double weight = double.tryParse(weightCtrl.text.trim()) ?? 1.0;
-          final double rate = double.tryParse(rateCtrl.text.trim()) ?? 0.0;
-          final double totalAmount =
-              (selectedUnit == 'kg' ? weight : weight / 1000.0) * rate;
+          final weightParsed = double.tryParse(weightCtrl.text.trim());
+          final bool isWeightValid =
+              weightParsed != null && weightParsed.isFinite && weightParsed > 0;
+          final rateParsed = double.tryParse(rateCtrl.text.trim());
+          final bool isRateValid =
+              rateParsed != null && rateParsed.isFinite && rateParsed > 0;
+          final String title = nameCtrl.text.trim();
+          final bool isValid = title.isNotEmpty && isWeightValid && isRateValid;
+
+          final double effectiveWeight = isWeightValid ? weightParsed : 0.0;
+          final double effectiveRate = isRateValid ? rateParsed : 0.0;
+          final double weightInKg = selectedUnit == 'kg'
+              ? effectiveWeight
+              : effectiveWeight / 1000.0;
+          final double totalAmount = weightInKg * effectiveRate;
 
           return Padding(
             padding: EdgeInsets.only(
@@ -210,6 +221,10 @@ class _PosCartScreenState extends State<PosCartScreen> {
                               decimal: true),
                           decoration: InputDecoration(
                             labelText: 'Weight / Qty',
+                            errorText: weightCtrl.text.trim().isNotEmpty &&
+                                    !isWeightValid
+                                ? 'Enter valid weight'
+                                : null,
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(10)),
                           ),
@@ -246,6 +261,10 @@ class _PosCartScreenState extends State<PosCartScreen> {
                         decimal: true),
                     decoration: InputDecoration(
                       labelText: 'Rate per kg (PKR)',
+                      errorText:
+                          rateCtrl.text.trim().isNotEmpty && !isRateValid
+                              ? 'Enter valid rate'
+                              : null,
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10)),
                     ),
@@ -290,25 +309,29 @@ class _PosCartScreenState extends State<PosCartScreen> {
                           style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold)),
-                      onPressed: () {
-                        final title = nameCtrl.text.trim();
-                        if (title.isEmpty) return;
-                        final customProd = ProductModel(
-                          id: 'loose_${DateTime.now().millisecondsSinceEpoch}',
-                          barcode:
-                              'LOOSE-${DateTime.now().millisecondsSinceEpoch % 10000}',
-                          title: '$title ($weight $selectedUnit)',
-                          salePrice: totalAmount,
-                          costPrice: totalAmount * 0.9,
-                          stockQty: 999,
-                          category: 'Loose Grocery',
-                          shopId: ShopState.instance.activeShop.id,
-                        );
-                        _cartState.addItem(customProd);
-                        Navigator.pop(ctx);
-                        AppToast.showSuccess(
-                            context, 'Added $title to bill!');
-                      },
+                      onPressed: isValid
+                          ? () {
+                              final weightStr = selectedUnit == 'kg'
+                                  ? '${effectiveWeight.toStringAsFixed(effectiveWeight.truncateToDouble() == effectiveWeight ? 0 : 2)} kg'
+                                  : '${effectiveWeight.toInt()} g';
+                              final customProd = ProductModel(
+                                id: 'loose_${DateTime.now().millisecondsSinceEpoch}',
+                                barcode:
+                                    'LOOSE-${DateTime.now().millisecondsSinceEpoch % 10000}',
+                                title:
+                                    '$title ($weightStr @ Rs. ${effectiveRate.toStringAsFixed(0)}/kg)',
+                                salePrice: totalAmount,
+                                costPrice: totalAmount * 0.9,
+                                stockQty: 999,
+                                category: 'Loose Grocery',
+                                shopId: ShopState.instance.activeShop.id,
+                              );
+                              _cartState.addItem(customProd);
+                              Navigator.pop(ctx);
+                              AppToast.showSuccess(
+                                  context, 'Added $title to bill!');
+                            }
+                          : null,
                     ),
                   ),
                 ],
@@ -341,15 +364,18 @@ class _PosCartScreenState extends State<PosCartScreen> {
       iconBg = const Color(0xFFF1F5F9);
     }
 
+    final bool isLooseItem = m.product.id.startsWith('loose_') ||
+        m.product.category.toLowerCase().contains('grocery') ||
+        m.product.title.toLowerCase().contains('atta');
+
     return _PosCartItem(
       id: m.product.id,
       title: m.product.title,
       barcode: m.product.barcode,
       unitPrice: m.product.salePrice,
-      unitName: 'unit',
+      unitName: m.product.id.startsWith('loose_') ? 'portion' : 'unit',
       qty: m.quantity.toDouble(),
-      isLoose: m.product.category.toLowerCase().contains('grocery') ||
-          m.product.title.toLowerCase().contains('atta'),
+      isLoose: isLooseItem,
       iconBg: iconBg,
       icon: icon,
     );
@@ -1207,9 +1233,11 @@ class _PosCartScreenState extends State<PosCartScreen> {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12.0),
                       child: Text(
-                        item.isLoose
-                            ? '${item.qty.toStringAsFixed(1)} kg'
-                            : '${item.qty.toInt()}',
+                        item.isLoose && item.unitName == 'portion'
+                            ? '${item.qty.toInt()}x'
+                            : (item.isLoose
+                                ? '${item.qty.toStringAsFixed(1)} kg'
+                                : '${item.qty.toInt()}'),
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.bold,

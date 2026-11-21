@@ -54,7 +54,20 @@ class _PosScannerScreenState extends State<PosScannerScreen>
     if (Navigator.canPop(context)) {
       Navigator.pop(context, result);
     } else {
-      Navigator.pushReplacementNamed(context, AppRoutes.posCart);
+      final barcode = result ?? _lastScannedBarcode;
+      if (_isCaptureMode) {
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.addEditProduct,
+          arguments: barcode,
+        );
+      } else {
+        Navigator.pushReplacementNamed(
+          context,
+          AppRoutes.posCart,
+          arguments: barcode,
+        );
+      }
     }
   }
 
@@ -505,28 +518,109 @@ class _PosScannerScreenState extends State<PosScannerScreen>
   Widget _buildTopControls(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Close button
-          Material(
-            color: const Color(0x80000000),
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => _navigateBackWithResult(),
-              child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Close button
+              Material(
+                color: const Color(0x80000000),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () => _navigateBackWithResult(),
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white24),
+                    ),
+                    child: const Icon(Icons.arrow_back,
+                        color: Colors.white, size: 20),
+                  ),
                 ),
-                child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
               ),
-            ),
-          ),
 
+              // Flashlight, Camera Switch & Manual Input Actions
+              Row(
+                children: [
+                  // Manual Barcode entry button
+                  Material(
+                    color: const Color(0x80000000),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: _showManualInputDialog,
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: const Icon(Icons.keyboard_alt_outlined,
+                            color: Colors.white, size: 19),
+                      ),
+                    ),
+                  ),
+
+                  // Switch camera button
+                  Material(
+                    color: const Color(0x80000000),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () => _scannerController.switchCamera(),
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: const Icon(Icons.cameraswitch_outlined,
+                            color: Colors.white, size: 19),
+                      ),
+                    ),
+                  ),
+
+                  // Flash / Torch button
+                  Material(
+                    color: _flashOn
+                        ? const Color(0xFFF59E0B)
+                        : const Color(0x80000000),
+                    shape: const CircleBorder(),
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () async {
+                        await _scannerController.toggleTorch();
+                        setState(() => _flashOn = !_flashOn);
+                      },
+                      child: Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Icon(
+                          _flashOn ? Icons.flash_on : Icons.flash_off,
+                          color: Colors.white,
+                          size: 19,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           // Mode Switcher: Bill Scan vs Product Entry
           Container(
             padding: const EdgeInsets.all(3),
@@ -544,21 +638,27 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                     setState(() => _isCaptureMode = false);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: !_isCaptureMode ? const Color(0xFF16A34A) : Colors.transparent,
+                      color: !_isCaptureMode
+                          ? const Color(0xFF16A34A)
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.shopping_cart_outlined, size: 13, color: Colors.white),
+                        const Icon(Icons.shopping_cart_outlined,
+                            size: 13, color: Colors.white),
                         const SizedBox(width: 4),
                         Text(
                           'Bill Scan',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: !_isCaptureMode ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: !_isCaptureMode
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                             color: Colors.white,
                           ),
                         ),
@@ -572,21 +672,27 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                     setState(() => _isCaptureMode = true);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _isCaptureMode ? const Color(0xFF2563EB) : Colors.transparent,
+                      color: _isCaptureMode
+                          ? const Color(0xFF2563EB)
+                          : Colors.transparent,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.qr_code, size: 13, color: Colors.white),
+                        const Icon(Icons.qr_code,
+                            size: 13, color: Colors.white),
                         const SizedBox(width: 4),
                         Text(
                           'Product Entry',
                           style: TextStyle(
                             fontSize: 11,
-                            fontWeight: _isCaptureMode ? FontWeight.bold : FontWeight.normal,
+                            fontWeight: _isCaptureMode
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                             color: Colors.white,
                           ),
                         ),
@@ -596,79 +702,6 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                 ),
               ],
             ),
-          ),
-
-          // Flashlight, Camera Switch & Manual Input Actions
-          Row(
-            children: [
-              // Manual Barcode entry button
-              Material(
-                color: const Color(0x80000000),
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: _showManualInputDialog,
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: const Icon(Icons.keyboard_alt_outlined, color: Colors.white, size: 19),
-                  ),
-                ),
-              ),
-
-              // Switch camera button
-              Material(
-                color: const Color(0x80000000),
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () => _scannerController.switchCamera(),
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    margin: const EdgeInsets.only(right: 8),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: const Icon(Icons.cameraswitch_outlined, color: Colors.white, size: 19),
-                  ),
-                ),
-              ),
-
-              // Flash / Torch button
-              Material(
-                color: _flashOn
-                    ? const Color(0xFFF59E0B)
-                    : const Color(0x80000000),
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: () async {
-                    await _scannerController.toggleTorch();
-                    setState(() => _flashOn = !_flashOn);
-                  },
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white24),
-                    ),
-                    child: Icon(
-                      _flashOn ? Icons.flash_on : Icons.flash_off,
-                      color: Colors.white,
-                      size: 19,
-                    ),
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),

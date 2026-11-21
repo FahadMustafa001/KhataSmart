@@ -122,6 +122,7 @@ class InventoryState extends ChangeNotifier {
   }
 
   void deductStock(String productId, int qty) {
+    if (productId.startsWith('loose_')) return;
     final idx = _products.indexWhere((p) => p.id == productId);
     if (idx != -1) {
       _products[idx].stockQty = (_products[idx].stockQty - qty).clamp(0, 999999);

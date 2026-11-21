@@ -150,8 +150,8 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
         return item.isOutOfStock;
       }
       if (_selectedCategory != 'All Items') {
-        return item.category
-            .toLowerCase() == _selectedCategory.toLowerCase();
+        return item.category.trim().toLowerCase() ==
+            _selectedCategory.trim().toLowerCase();
       }
       return true;
     }).toList();
@@ -957,7 +957,8 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
     final List<Map<String, String?>> categories = [
       {'name': 'All Items', 'badge': '${products.length}'},
       {'name': 'Low Stock (<5)', 'badge': '${_inventoryState.lowStockCount}'},
-      if (products.any((p) => p.stockQty == 0))
+      if (_selectedCategory == 'Out of Stock (0)' ||
+          products.any((p) => p.stockQty == 0))
         {
           'name': 'Out of Stock (0)',
           'badge': '${products.where((p) => p.stockQty == 0).length}'

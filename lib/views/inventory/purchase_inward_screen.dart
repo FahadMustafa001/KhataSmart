@@ -122,11 +122,11 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
                             AppRoutes.posScanner,
                             arguments: {'mode': 'barcode_capture'},
                           );
+                          if (!ctx.mounted) return;
                           if (code != null && code is String) {
                             final found = products
                                 .where((p) =>
-                                    p.barcode.trim().toLowerCase() ==
-                                    code.trim().toLowerCase())
+                                    p.barcode.trim() == code.trim())
                                 .firstOrNull;
                             if (found != null) {
                               setSheetState(() {
@@ -137,9 +137,9 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
                                     : cost.toString();
                               });
                               AppToast.showSuccess(
-                                  context, 'Matched: ${found.name}');
+                                  ctx, 'Matched: ${found.name}');
                             } else {
-                              AppToast.showWarning(context,
+                              AppToast.showWarning(ctx,
                                   'No product with barcode "$code" in store');
                             }
                           }
