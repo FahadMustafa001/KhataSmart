@@ -33,19 +33,41 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
   int _stockQuantity = 50;
   int _lowStockThreshold = 5;
-  String _selectedCategory = 'Packaged Goods / Tea';
-  final String _selectedUnit = 'Pack';
+  String _selectedCategory = 'General Store & Kiryana';
+  String _selectedUnit = 'Pcs';
   bool _trackExpiry = false;
 
+  static const List<String> _units = [
+    'Pcs',
+    'Kg',
+    'Gram',
+    'Mann (40kg)',
+    'Bori / Bag',
+    'Carton / Box',
+    'Pack',
+    'Dozen',
+    'Liter',
+    'Meter',
+    'Pair',
+    'Roll / Than',
+    'Other',
+  ];
+
   static const List<String> _categories = [
+    'General Store & Kiryana',
+    'Auto Spare Parts',
+    'Hardware & Sanitary',
+    'Mobile & Electronics',
+    'Garments & Fabrics',
+    'Medicines & Pharmacy',
+    'Grains & Mandi (غلہ منڈی)',
+    'Fruits & Vegetables (سبزی منڈی)',
+    'Cosmetics & Perfumes',
+    'Dairy & Bakery',
+    'Wholesale & Bulk',
     'Packaged Goods / Tea',
-    'Dairy & Milk',
     'Cooking Oil & Ghee',
-    'Snacks & Biscuits',
-    'Beverages & Drinks',
-    'Spices & Condiments',
-    'Bakery & Bread',
-    'Household Goods',
+    'Snacks & Beverages',
     'Other',
   ];
 
@@ -66,6 +88,9 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       _stockQuantity = p.stockQty;
       _lowStockThreshold = p.minStockAlert;
       _selectedCategory = p.category;
+      if (p.unit.isNotEmpty) {
+        _selectedUnit = p.unit;
+      }
     }
     _stockController = TextEditingController(text: '$_stockQuantity');
     _lowStockController = TextEditingController(text: '$_lowStockThreshold');
@@ -120,6 +145,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       salePrice: _retailPrice,
       stockQty: stockVal,
       category: _selectedCategory,
+      unit: _selectedUnit,
       shopId: widget.existingProduct?.shopId ?? ShopState.instance.activeShopId,
       minStockAlert: lowStockVal,
     );
@@ -467,65 +493,92 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
           const SizedBox(height: 10),
 
-          // Category Selector
-          _fieldLabel('Category'),
-          const SizedBox(height: 5),
-
-          Container(
-            height: 48,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _categories.contains(_selectedCategory)
-                    ? _selectedCategory
-                    : _categories.first,
-                isExpanded: true,
-                isDense: true,
-                icon: const Icon(Icons.keyboard_arrow_down,
-                    size: 18, color: Color(0xFF64748B)),
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF0F172A),
-                ),
-                items: _categories
-                    .map(
-                        (cat) => DropdownMenuItem(value: cat, child: Text(cat)))
-                    .toList(),
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedCategory = val);
-                },
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 10),
-
-          // Unit chip (static)
           Row(
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
+              Expanded(
+                flex: 3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.inventory_2_outlined,
-                        size: 11, color: Color(0xFF2563EB)),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Unit: $_selectedUnit',
-                      style: const TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2563EB),
+                    _fieldLabel('Category'),
+                    const SizedBox(height: 5),
+                    Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _categories.contains(_selectedCategory)
+                              ? _selectedCategory
+                              : _categories.first,
+                          isExpanded: true,
+                          isDense: true,
+                          icon: const Icon(Icons.keyboard_arrow_down,
+                              size: 18, color: Color(0xFF64748B)),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A),
+                          ),
+                          items: _categories
+                              .map(
+                                  (cat) => DropdownMenuItem(
+                                      value: cat,
+                                      child: Text(cat, overflow: TextOverflow.ellipsis)))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) setState(() => _selectedCategory = val);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                flex: 2,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _fieldLabel('Unit (UOM)'),
+                    const SizedBox(height: 5),
+                    Container(
+                      height: 48,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _units.contains(_selectedUnit)
+                              ? _selectedUnit
+                              : _units.first,
+                          isExpanded: true,
+                          isDense: true,
+                          icon: const Icon(Icons.keyboard_arrow_down,
+                              size: 18, color: Color(0xFF64748B)),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF0F172A),
+                          ),
+                          items: _units
+                              .map(
+                                  (u) => DropdownMenuItem(
+                                      value: u,
+                                      child: Text(u, overflow: TextOverflow.ellipsis)))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) setState(() => _selectedUnit = val);
+                          },
+                        ),
                       ),
                     ),
                   ],
