@@ -924,8 +924,14 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                                 color: const Color(0xFF15803D),
                               ),
                               const SizedBox(width: 6),
+                              const Icon(
+                                Icons.chat_bubble_outline_rounded,
+                                size: 15,
+                                color: Color(0xFF2563EB),
+                              ),
+                              const SizedBox(width: 5),
                               const Text(
-                                '📱 Send Instant SMS & WhatsApp Ledger Bill',
+                                'Send Instant SMS & WhatsApp Ledger Bill',
                                 style: TextStyle(
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
