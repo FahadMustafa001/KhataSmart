@@ -1012,37 +1012,41 @@ class _PosCartScreenState extends State<PosCartScreen> {
                         ),
                         elevation: 0,
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(Icons.shopping_cart_outlined, size: 18),
-                              SizedBox(width: 8),
-                              Text(
-                                'Proceed to Checkout',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.shopping_cart_outlined, size: 18),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Proceed to Checkout',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              Text(
-                                'PKR ${_netPayable.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF86EFAC),
+                              ],
+                            ),
+                            const SizedBox(width: 12),
+                            Row(
+                              children: [
+                                Text(
+                                  'PKR ${_netPayable.toStringAsFixed(0)}',
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF86EFAC),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.arrow_forward, size: 16),
-                            ],
-                          ),
-                        ],
+                                const SizedBox(width: 4),
+                                const Icon(Icons.arrow_forward, size: 16),
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

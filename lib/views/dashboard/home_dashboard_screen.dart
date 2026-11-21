@@ -281,14 +281,18 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '$lowStockCount Items Low on Stock!',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF881337),
+                    Expanded(
+                      child: Text(
+                        '$lowStockCount Items Low on Stock!',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF881337),
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
+                    const SizedBox(width: 6),
                     GestureDetector(
                       onTap: () =>
                           Navigator.pushNamed(context, AppRoutes.inventoryList),

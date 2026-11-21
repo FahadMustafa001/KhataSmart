@@ -359,12 +359,20 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
-                        children: [
-                          Icon(Icons.local_shipping_outlined, size: 18, color: Color(0xFFEA580C)),
-                          SizedBox(width: 8),
-                          Text('Supplier / Vendor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A))),
-                        ],
+                      const Expanded(
+                        child: Row(
+                          children: [
+                            Icon(Icons.local_shipping_outlined, size: 18, color: Color(0xFFEA580C)),
+                            SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Supplier / Vendor',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       TextButton.icon(
                         onPressed: () {
@@ -489,14 +497,18 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'Received Products (${_items.length})',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.text(context),
+                Expanded(
+                  child: Text(
+                    'Received Products (${_items.length})',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.text(context),
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                const SizedBox(width: 8),
                 ElevatedButton.icon(
                   onPressed: _showAddProductSheet,
                   icon: const Icon(Icons.add, size: 16),

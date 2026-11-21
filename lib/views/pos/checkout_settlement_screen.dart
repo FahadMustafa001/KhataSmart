@@ -329,20 +329,27 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     ],
                   ),
                 ),
-                Row(
-                  children: [
-                    const Icon(Icons.verified_outlined,
-                        size: 14, color: Color(0xFF16A34A)),
-                    const SizedBox(width: 4),
-                    Text(
-                      _customer?.name ?? 'Counter Sale',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.text(context),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.verified_outlined,
+                          size: 14, color: Color(0xFF16A34A)),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: Text(
+                          _customer?.name ?? 'Counter Sale',
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.text(context),
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -780,21 +787,27 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.menu_book,
-                                      size: 18, color: Color(0xFFDC2626)),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Full Bill on Udhaar (ادھار)',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF991B1B),
+                              const Expanded(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.menu_book,
+                                        size: 18, color: Color(0xFFDC2626)),
+                                    SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Full Bill on Udhaar (ادھار)',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF991B1B),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Text(
                                 'PKR ${_billAmount.toStringAsFixed(0)}',
                                 style: const TextStyle(
@@ -941,21 +954,27 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.qr_code_2,
-                                      size: 20, color: Color(0xFF15803D)),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Raast Instant QR',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF15803D),
+                              const Expanded(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.qr_code_2,
+                                        size: 20, color: Color(0xFF15803D)),
+                                    SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        'Raast Instant QR',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF15803D),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 8),
                               Text(
                                 'PKR ${_billAmount.toStringAsFixed(0)}',
                                 style: const TextStyle(
@@ -992,21 +1011,27 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.payments_outlined,
-                                      size: 15, color: Color(0xFF15803D)),
-                                  SizedBox(width: 5),
-                                  Text(
-                                    'Cash Received (Naqd)',
-                                    style: TextStyle(
-                                      fontSize: 12.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF0F172A),
+                              const Expanded(
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.payments_outlined,
+                                        size: 15, color: Color(0xFF15803D)),
+                                    SizedBox(width: 5),
+                                    Expanded(
+                                      child: Text(
+                                        'Cash Received (Naqd)',
+                                        style: TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
+                              const SizedBox(width: 6),
                               Text(
                                 'Bill: PKR ${_billAmount.toStringAsFixed(0)}',
                                 style: const TextStyle(
@@ -1329,75 +1354,80 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (_selectedPaymentMethod == 'Store Credit')
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                          fontSize: 11, color: Color(0xFF334155)),
-                      children: [
-                        const TextSpan(text: 'Payment Mode: '),
-                        const TextSpan(
-                          text: 'Full Udhaar / Khata',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFDC2626)),
-                        ),
-                        const TextSpan(text: ' • Credit: '),
-                        TextSpan(
-                          text: 'PKR ${_billAmount.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFDC2626)),
-                        ),
-                      ],
-                    ),
-                  )
-                else if (_selectedPaymentMethod == 'Raast QR')
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                          fontSize: 11, color: Color(0xFF334155)),
-                      children: [
-                        const TextSpan(text: 'Payment Mode: '),
-                        const TextSpan(
-                          text: 'Raast Digital QR',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1D4ED8)),
-                        ),
-                        const TextSpan(text: ' • Amount: '),
-                        TextSpan(
-                          text: 'PKR ${_billAmount.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF15803D)),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                          fontSize: 11, color: Color(0xFF334155)),
-                      children: [
-                        const TextSpan(text: 'Cash: '),
-                        TextSpan(
-                          text: 'PKR ${_cashReceived.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF16A34A)),
-                        ),
-                        const TextSpan(text: ' • Credit: '),
-                        TextSpan(
-                          text: 'PKR ${_newUdhaar.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFDC2626)),
-                        ),
-                      ],
-                    ),
-                  ),
+                Expanded(
+                  child: _selectedPaymentMethod == 'Store Credit'
+                      ? RichText(
+                          overflow: TextOverflow.ellipsis,
+                          text: TextSpan(
+                            style: const TextStyle(
+                                fontSize: 11, color: Color(0xFF334155)),
+                            children: [
+                              const TextSpan(text: 'Mode: '),
+                              const TextSpan(
+                                text: 'Full Udhaar',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFDC2626)),
+                              ),
+                              const TextSpan(text: ' • Credit: '),
+                              TextSpan(
+                                text: 'PKR ${_billAmount.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFFDC2626)),
+                              ),
+                            ],
+                          ),
+                        )
+                      : (_selectedPaymentMethod == 'Raast QR'
+                          ? RichText(
+                              overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                style: const TextStyle(
+                                    fontSize: 11, color: Color(0xFF334155)),
+                                children: [
+                                  const TextSpan(text: 'Mode: '),
+                                  const TextSpan(
+                                    text: 'Raast QR',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1D4ED8)),
+                                  ),
+                                  const TextSpan(text: ' • Amount: '),
+                                  TextSpan(
+                                    text: 'PKR ${_billAmount.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF15803D)),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : RichText(
+                              overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                style: const TextStyle(
+                                    fontSize: 11, color: Color(0xFF334155)),
+                                children: [
+                                  const TextSpan(text: 'Cash: '),
+                                  TextSpan(
+                                    text: 'PKR ${_cashReceived.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF16A34A)),
+                                  ),
+                                  const TextSpan(text: ' • Credit: '),
+                                  TextSpan(
+                                    text: 'PKR ${_newUdhaar.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFFDC2626)),
+                                  ),
+                                ],
+                              ),
+                            )),
+                ),
+                const SizedBox(width: 8),
                 Text(
                   _selectedPaymentMethod == 'Store Credit'
                       ? 'KHATA RECORD'
@@ -1426,46 +1456,50 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                           ? const Color(0xFF1D4ED8)
                           : const Color(0xFF15803D)),
                   foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
                   ),
                   elevation: 0,
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      _selectedPaymentMethod == 'Store Credit'
-                          ? Icons.menu_book
-                          : (_selectedPaymentMethod == 'Raast QR'
-                              ? Icons.qr_code_2
-                              : Icons.check_circle_outline),
-                      size: 18,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      _selectedPaymentMethod == 'Store Credit'
-                          ? 'Complete Udhaar Sale & Record'
-                          : (_selectedPaymentMethod == 'Raast QR'
-                              ? 'Verify Raast & Complete'
-                              : 'Complete Sale & Print'),
-                      style: const TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.bold,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        _selectedPaymentMethod == 'Store Credit'
+                            ? Icons.menu_book
+                            : (_selectedPaymentMethod == 'Raast QR'
+                                ? Icons.qr_code_2
+                                : Icons.check_circle_outline),
+                        size: 18,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'PKR ${_billAmount.toStringAsFixed(0)} →',
-                      style: TextStyle(
-                        fontSize: 14.5,
-                        fontWeight: FontWeight.w900,
-                        color: _selectedPaymentMethod == 'Store Credit'
-                            ? const Color(0xFFFCA5A5)
-                            : const Color(0xFF86EFAC),
+                      const SizedBox(width: 8),
+                      Text(
+                        _selectedPaymentMethod == 'Store Credit'
+                            ? 'Complete Udhaar Sale & Record'
+                            : (_selectedPaymentMethod == 'Raast QR'
+                                ? 'Verify Raast & Complete'
+                                : 'Complete Sale & Print'),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Text(
+                        'PKR ${_billAmount.toStringAsFixed(0)} →',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: _selectedPaymentMethod == 'Store Credit'
+                              ? const Color(0xFFFCA5A5)
+                              : const Color(0xFF86EFAC),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

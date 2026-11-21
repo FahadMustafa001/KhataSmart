@@ -233,21 +233,24 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle_outline,
-                      size: 18, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    _isEditing ? 'Update Product' : 'Save Product to Inventory',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.check_circle_outline,
+                        size: 18, color: Colors.white),
+                    const SizedBox(width: 8),
+                    Text(
+                      _isEditing ? 'Update Product' : 'Save Product to Inventory',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 10),
@@ -346,12 +349,16 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                 padding: const EdgeInsets.all(12),
                 child: Image.asset(AppAssets.barcodeIcon, width: 20, height: 20),
               ),
+              suffixIconConstraints: const BoxConstraints(
+                minWidth: 0,
+                minHeight: 0,
+              ),
               suffixIcon: Padding(
-                padding: const EdgeInsets.only(right: 6),
+                padding: const EdgeInsets.only(right: 8),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                     onTap: () async {
                       final scanned = await Navigator.pushNamed(
                         context,
@@ -367,7 +374,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                           horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,

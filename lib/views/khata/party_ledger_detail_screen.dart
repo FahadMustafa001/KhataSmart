@@ -1046,35 +1046,40 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Text(
-                    titleText,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: primaryColor,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: primaryColor,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      badgeText,
-                      style: const TextStyle(
-                        fontSize: 9,
+              Expanded(
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      titleText,
+                      style: TextStyle(
+                        fontSize: 10,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: primaryColor,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                  ),
-                ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: primaryColor,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        badgeText,
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               // Icon Badge replacing empty circle
               Container(
                 width: 32,
@@ -1727,33 +1732,36 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.arrow_upward_rounded, size: 16, color: Colors.white),
-                      SizedBox(width: 6),
-                      Text(
-                        'You Gave (Debit)',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              child: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.arrow_upward_rounded, size: 16, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'You Gave (Debit)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Udhaar Diya (-)',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      color: Color(0xFFFECACA),
+                      ],
                     ),
-                  ),
-                ],
+                    SizedBox(height: 2),
+                    Text(
+                      'Udhaar Diya (-)',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        color: Color(0xFFFECACA),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1771,33 +1779,36 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.arrow_downward_rounded, size: 16, color: Colors.white),
-                      SizedBox(width: 6),
-                      Text(
-                        'You Got (Credit)',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              child: const FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.arrow_downward_rounded, size: 16, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text(
+                          'You Got (Credit)',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Raqam Wasool Ki (+)',
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      color: Color(0xFFBBF7D0),
+                      ],
                     ),
-                  ),
-                ],
+                    SizedBox(height: 2),
+                    Text(
+                      'Raqam Wasool Ki (+)',
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        color: Color(0xFFBBF7D0),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

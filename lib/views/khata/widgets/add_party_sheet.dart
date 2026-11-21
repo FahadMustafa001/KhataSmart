@@ -840,22 +840,28 @@ class _AddPartySheetState extends State<AddPartySheet> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.tune, size: 16, color: Color(0xFF475569)),
-                const SizedBox(width: 8),
-                Text(
-                  _showAdvancedDetails
-                      ? 'Mazeed Maloomat Chupayein'
-                      : 'Mazeed Maloomat (Credit Limit, CNIC, Notes)',
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF334155),
+            Expanded(
+              child: Row(
+                children: [
+                  const Icon(Icons.tune, size: 16, color: Color(0xFF475569)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _showAdvancedDetails
+                          ? 'Mazeed Maloomat Chupayein'
+                          : 'Mazeed Maloomat (Credit Limit, CNIC, Notes)',
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF334155),
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 6),
             Icon(
               _showAdvancedDetails ? Icons.expand_less : Icons.expand_more,
               size: 18,
