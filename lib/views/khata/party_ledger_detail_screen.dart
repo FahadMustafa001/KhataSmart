@@ -141,9 +141,13 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
       final dateStr = '${e.date.day} ${_monthName(e.date.month)} ${e.date.year}';
       final hour = e.date.hour % 12 == 0 ? 12 : e.date.hour % 12;
       final timeStr = '${hour.toString().padLeft(2, '0')}:${e.date.minute.toString().padLeft(2, '0')} ${e.date.hour >= 12 ? 'PM' : 'AM'}';
-      final tagStr = e.note.startsWith('Bill #')
-          ? e.note.replaceAll('Bill ', '')
-          : '#TXN-${e.id.length > 4 ? e.id.substring(e.id.length - 4) : e.id}';
+      String tagStr;
+      if (e.note.startsWith('Bill #')) {
+        final spaceIdx = e.note.indexOf(' ', 5);
+        tagStr = spaceIdx != -1 ? e.note.substring(5, spaceIdx) : e.note.substring(5);
+      } else {
+        tagStr = '#TXN-${e.id.length > 4 ? e.id.substring(e.id.length - 4) : e.id}';
+      }
 
       final balAtTime = runningBalanceMap[e.id] ?? _currentBalance;
 
@@ -1508,18 +1512,22 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: tx.tagColor,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          tx.tag,
-                          style: TextStyle(
-                            fontSize: 9,
-                            fontWeight: FontWeight.bold,
-                            color: tx.tagTextColor,
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: tx.tagColor,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            tx.tag,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: tx.tagTextColor,
+                            ),
                           ),
                         ),
                       ),
