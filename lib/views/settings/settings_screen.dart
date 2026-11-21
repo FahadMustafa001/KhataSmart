@@ -1396,6 +1396,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           context,
                                           'Backup uploaded to Google Drive successfully (${res['size']})!',
                                         );
+                                      } else if (res['error']?.toString().contains('Google Drive API is disabled') == true) {
+                                        _showGoogleDriveApiGuidance(context);
                                       } else {
                                         AppToast.showError(
                                           context,
@@ -1425,6 +1427,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                           context,
                                           'Latest backup restored from Google Drive!',
                                         );
+                                      } else if (res['error']?.toString().contains('Google Drive API is disabled') == true) {
+                                        _showGoogleDriveApiGuidance(context);
                                       } else {
                                         AppToast.showInfo(
                                           context,
@@ -1514,6 +1518,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(height: 12),
           child,
+        ],
+      ),
+    );
+  }
+
+  void _showGoogleDriveApiGuidance(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(
+          children: [
+            Icon(Icons.info_outline, color: Color(0xFF2563EB), size: 22),
+            SizedBox(width: 8),
+            Text('Google Drive API Setup', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Google Drive API is disabled in your Google Cloud Project (711388054106).',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Option 1 (Recommended):\nUse "Cloud Firestore Sync" above. It is automatic and requires zero configuration.',
+              style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Option 2:\nOpen Google Cloud Console for project 711388054106 and click "ENABLE" on Google Drive API.',
+              style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Got It'),
+          ),
         ],
       ),
     );

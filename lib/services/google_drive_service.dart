@@ -212,7 +212,7 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('Google Drive Backup Error: $e');
       _isSyncing = false;
       notifyListeners();
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': _formatDriveError(e)};
     }
   }
 
@@ -295,8 +295,18 @@ class GoogleDriveService extends ChangeNotifier {
       debugPrint('Google Drive Restore Error: $e');
       _isSyncing = false;
       notifyListeners();
-      return {'success': false, 'error': e.toString()};
+      return {'success': false, 'error': _formatDriveError(e)};
     }
+  }
+
+  String _formatDriveError(dynamic e) {
+    final str = e.toString();
+    if (str.contains('Google Drive API has not been used') ||
+        str.contains('drive.googleapis.com') ||
+        (str.contains('403') && str.contains('project'))) {
+      return 'Google Drive API is disabled in your Google Cloud project. Please click "ENABLE" on Google Cloud Console or use Cloud Firestore Sync above.';
+    }
+    return str;
   }
 
   // Database Serialization
