@@ -5,8 +5,8 @@
 </p>
 
 <p align="center">
-  <b>Modern Offline-First POS & Digital Ledger for Retailers & Wholesalers</b><br>
-  <i>Empowering retail shops, supermarkets, and distributors with blazing-fast billing, smart inventory tracking, and double-entry Khata management.</i>
+  <b>Modern Offline-First POS, Inventory & Digital Ledger System</b><br>
+  <i>Tailored for Retailers, Wholesalers, Auto Parts, Garments, Pharmacies, and Mandi Commission Agents.</i>
 </p>
 
 <p align="center">
@@ -14,6 +14,7 @@
   <img src="https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart" alt="Dart Badge"/>
   <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web-green" alt="Platform Badge"/>
   <img src="https://img.shields.io/badge/Database-SQLite%20(Offline--First)-003B57?logo=sqlite" alt="SQLite Badge"/>
+  <img src="https://img.shields.io/badge/Real--Time%20Sync-Cloud%20Firestore-FFA611?logo=firebase" alt="Firestore Badge"/>
   <img src="https://img.shields.io/badge/Cloud%20Backup-Google%20Drive%2015GB-FFBA00?logo=googledrive" alt="Google Drive Badge"/>
   <img src="https://img.shields.io/badge/License-Proprietary-blue" alt="License Badge"/>
 </p>
@@ -22,55 +23,84 @@
 
 ## 📌 Executive Summary
 
-**KhataSmart** is a production-grade, offline-first Point of Sale (POS) and Customer/Supplier Ledger (Khata / Udhaar) application engineered specifically for the fast-paced retail ecosystem of Pakistan and emerging markets.
+**KhataSmart** is a production-grade, offline-first Point of Sale (POS), Inventory Management, and Digital Ledger (Khata / Udhaar) platform engineered for the dynamic commercial ecosystem of Pakistan and emerging markets.
 
-Retail businesses frequently suffer from slow billing lines, lost udhaar records, inaccurate manual math, and unstable internet connections. **KhataSmart completely eliminates these bottlenecks:**
-- **Zero Internet Required:** Runs 100% offline on a high-performance local SQLite database engine.
-- **Fast 1-Tap POS Checkout:** Camera barcode scanning, loose items weighing, and multi-mode payment settlement (Cash, Udhaar, Raast QR).
-- **Automated Ledger Sync:** Every credit transaction posts directly to the customer's ledger with instant WhatsApp bill sharing.
-- **Data Protection:** Personal 15 GB Google Drive cloud backup and hardware-level biometric PIN locking.
+From neighborhood Kiryana stores to high-volume Auto Spare Parts dealers, and from Multi-branch Wholesalers to **Dana Mandi (Grain Market)** and **Fruit & Sabzi Mandi** commission houses, KhataSmart replaces cumbersome paper ledgers with an agile, reliable, and fault-tolerant digital system:
+- **100% Offline-First Operation:** Instant SQLite engine ensures uninterrupted checkout and ledger posting even without internet connectivity.
+- **Real-Time Live Cloud Auto-Sync:** Automated background mirroring to Firebase Cloud Firestore within seconds of any transaction.
+- **Instant Cloud Auto-Restore:** Seamless data recovery on new device login or app re-installation.
+- **Fast 1-Tap POS Checkout:** High-speed barcode scanning, custom units pricing (Mann, Bori, Kg, Meter, Pcs), and multi-mode payment settlement (Cash, Udhaar, Raast QR).
+- **Automated Double-Entry Ledger:** Comprehensive Customer (Receivable) and Supplier (Payable) tracking with one-click WhatsApp statement sharing.
+- **Hardware-Level Security:** Biometric (Fingerprint / Face ID) and 4-digit PIN terminal lock.
 
 ---
 
-## 🌟 Key Features
+## 🏢 Supported Business Verticals & Use-Cases
+
+KhataSmart has been architected with adaptable Units of Measurement (UOM) and flexible workflows to fit diverse business models:
+
+| # | Business Type | Key App Capabilities | Primary Units (UOM) |
+|---|---|---|---|
+| **1** | **General Stores, Kiryana & Supermarts** | High-speed barcode scanner billing, loose items weighing, customer udhaar limits, and thermal receipt printing. | `Pack`, `Kg`, `Gram`, `Carton / Box`, `Pcs` |
+| **2** | **Auto Spare Parts & Hardware Stores** | Part numbers in barcode/SKU, mechanic monthly khata, supplier purchase inwards with bills, and loose parts tracking. | `Pcs`, `Pair`, `Set`, `Box`, `Meter` |
+| **3** | **Mobile, Accessories & Electronics** | Custom barcode sticker generator, supplier purchase tracking, and gross/net profit margin analytics. | `Pcs`, `Pack`, `Box` |
+| **4** | **Garments, Cloth & Footwear Boutiques** | Measurement by meter/yard or rolls, seasonal customer credit tracking, and WhatsApp ledger reminders. | `Meter`, `Roll / Than`, `Pair`, `Pcs` |
+| **5** | **Medical Stores & Pharmacies** | Supplier distributor invoices, safety reorder stock warnings, and clean itemized receipts. | `Pack`, `Pcs`, `Box` |
+| **6** | **Wholesalers & Distributors (تھوک فروش)** | Multi-Store management (Godown vs. Front Shop), approved credit limits, and full A4 PDF ledger statements. | `Carton / Box`, `Bori / Bag`, `Pack` |
+| **7** | **Dana Mandi / Grain Markets (غلہ منڈی)** | Commission agent (Aarhati) ledgers, farmer crop amad (Inwards), trader bori/mann invoicing, and truck challans. | `Mann (40kg)`, `Bori / Bag`, `Kg` |
+| **8** | **Fruit & Sabzi Mandi (سبزی و پھل منڈی)** | Fast crate/carton/bori entry, daily cash/credit settlements, and wholesale rate management. | `Carton / Box (پیٹی)`, `Bori / Bag`, `Kg`, `Dozen` |
+| **9** | **Cosmetics, Perfumes & Gift Centers** | Rush-hour checkout, multi-tender split payments (Cash + Raast), and customer loyalty logs. | `Pcs`, `Pack`, `Set` |
+
+---
+
+## 🌟 Core System Modules
 
 ### 🛒 1. Point of Sale (POS) Billing Engine
-- **Instant Barcode & QR Scanning:** Integrated device camera scanner (`mobile_scanner`) with auto-torch, continuous scanning mode, and audible detection feedback.
-- **Loose Items & Produce Pricing:** Built-in gram-to-kilogram conversion and dynamic price steppers for loose grains, vegetables, spices, and fluids.
-- **Real-Time Cart Calculations:** Automatic gross total, line-item discounts, custom bill discounts, net payable, and customer savings badges.
-- **Flexible Checkout Settlement Modes:**
-  - 💵 **Cash (Direct Drawer):** Instant change-to-return calculator with quick denomination chips (`+10`, `+50`, `+100`, `+500`, `+1000`).
-  - 📖 **Udhaar / Khata (Credit Ledger):** 1-tap customer ledger posting. Checks credit limits in real time and warns before approving over-limit sales.
-  - 🔀 **Split Billing:** Collect partial cash at the counter and post the remaining balance to the customer's credit ledger.
-  - 📱 **Raast Instant QR:** Dynamic Raast digital payment QR code for zero-fee instant mobile transfers.
+- **Hardware & Camera Barcode Scanning:** Powered by `mobile_scanner` with continuous scanning, auto-flash/torch, and duplicate-prevention debounce.
+- **Dynamic Units of Measurement (UOM):** Native support for `Mann (40kg)`, `Bori / Bag`, `Carton / Box`, `Kg`, `Gram`, `Meter`, `Roll / Than`, `Pair`, `Pcs`, `Pack`, and `Dozen`.
+- **Flexible Settlement Options:**
+  - 💵 **Cash:** Built-in change return calculator with rapid denomination helpers (`+10`, `+50`, `+100`, `+500`, `+1000`).
+  - 📖 **Udhaar / Khata (Credit Ledger):** 1-tap customer ledger posting with credit limit verification and overdue warnings.
+  - 🔀 **Split Tender:** Collect partial cash and post the remaining balance to the customer's ledger in a single transaction.
+  - 📱 **Raast Instant QR:** Dynamic payment QR for instant bank-to-bank settlement without payment gateway fees.
 
-### 📖 2. Digital Khata & Party Ledgers (Double-Entry Accounting)
-- **Customer & Supplier Accounts:** Unified directory categorized by Customers (Receivables) and Suppliers (Payables).
-- **Double-Entry Transaction Journal:** Transparent *You Gave (Debit / ادھار دیا)* and *You Got (Credit / وصول کیا)* ledger timeline with running balances.
-- **Credit Limit & Risk Monitoring:** Set individual credit limits per customer with real-time visual progress bars and limit breach alerts.
-- **Instant WhatsApp Ledger Reminders:** One-tap sharing of detailed payment reminder statements and itemized bills via WhatsApp (`wa.me`).
+### 📖 2. Digital Khata & Double-Entry Ledgers
+- **Unified Directory:** Categorized into Customers (*Receivables / آپ نے لینے ہیں*) and Suppliers (*Payables / آپ نے دینے ہیں*).
+- **Audit-Proof Journal:** Full chronological timeline showing transaction dates, invoice references, debit/credit entries, and running net balances.
+- **Credit Limit & Risk Alerts:** Set maximum credit ceilings per customer with real-time visual progress indicators and breach alerts.
+- **Instant WhatsApp Invoicing:** Send itemized digital receipts and payment reminders directly to customer WhatsApp with a single tap.
 
-### 📦 3. Smart Inventory & Stock Control
-- **Product Catalog Management:** Barcode / SKU lookup, category filtering, wholesale cost, retail sales price, and profit margin analysis.
-- **Purchase Inward (Stock Restocking):** Restock inventory directly by scanning supplier goods, updating cost prices, and recording supplier payable balances in one seamless flow.
-- **Safety Stock & Expiry Alerts:** Real-time low stock badges, out-of-stock reconciliation, and expiry date monitoring for perishable goods.
-- **Wholesale vs. Retail Margins:** Automatic margin calculation (`% Profit Margin = ((Sale - Cost) / Sale) * 100`) to guarantee profitability.
+### 📦 3. Smart Inventory & Stock Inward
+- **Real-Time Catalog:** Wholesale cost price, retail sale price, stock quantity, safety reorder thresholds, and profit margin analysis.
+- **Supplier Purchase Inward (Stock Restocking):**
+  - Searchable supplier picker and dynamic product picker.
+  - Itemized inward entries (quantity, purchase rate, total amount).
+  - Flexible payment settlement (Paid from Cash in Hand or Added to Supplier Payable Ledger).
+  - Automatically updates inventory stock counts and average cost prices.
+- **Safety Reorder Alerts:** Visual badges and system notifications when product stock falls below custom reorder thresholds.
 
-### 🖨️ 4. Thermal Printing & Digital Receipts
-- **Bluetooth ESC/POS Support:** Compatible with industry-standard 58mm and 80mm wireless thermal receipt printers.
-- **A4 PDF Statement Generation:** Generate and download professional financial statements, stock catalogs, and customer account summaries.
-- **Zero Paper Mode:** Send clean digital invoices via WhatsApp and Email directly from the POS checkout screen.
+### ☁️ 4. Dual-Engine Cloud Resilience & Auto-Sync
+- **Engine 1: Cloud Firestore Real-Time Mirror:**
+  - Every inventory change, stock inward, sale, or ledger entry automatically schedules a background sync (2.5s debounce).
+  - Automatic zero-click cloud restore upon Google/Email login or fresh application setup.
+- **Engine 2: Google Drive Personal Backup:**
+  - Free, encrypted backup directly into the shop owner's personal 15 GB Google Drive.
+  - Zero server subscription fees and complete data ownership.
 
-### 🔒 5. Enterprise Security & Cloud Safeguards
-- **Terminal App Lock:** Secure your cash drawer and ledgers with biometric authentication (Fingerprint on Android, Face ID / Touch ID on iOS) and 4-digit master PIN.
-- **Google Drive Backup:** Free, encrypted cloud backup directly into the shop owner's personal 15 GB Google Drive storage — zero costly server subscriptions.
-- **Multi-Store Management:** Seamlessly manage and switch between multiple shop branches or warehouses from a single device.
+### 🖨️ 5. Printing & Digital Exports
+- **Bluetooth ESC/POS Support:** Compatible with standard 58mm and 80mm wireless thermal receipt printers.
+- **A4 PDF Statement Builder:** Generate clean, print-ready financial statements, stock catalogs, and customer account summaries.
+- **Zero Paper Mode:** Instant digital receipt delivery via WhatsApp and Email.
+
+### 🔒 6. Enterprise Security & Multi-Store Management
+- **Terminal App Lock:** Hardware-level biometric authentication (Fingerprint on Android, Face ID / Touch ID on iOS) and 4-digit PIN.
+- **Multi-Branch Switching:** Manage multiple store locations, warehouses, or mandi godowns from a single account.
 
 ---
 
 ## 🏛️ System Architecture
 
-KhataSmart follows clean architecture principles with a decoupled, reactive MVVM (Model-View-ViewModel / Service-State-View) design:
+KhataSmart follows clean architecture principles with a decoupled, reactive MVVM (Model-View-ViewModel / Service-State-View) pattern:
 
 ```
 lib/
@@ -78,19 +108,20 @@ lib/
 ├── firebase_options.dart              # Multi-platform Firebase credentials
 │
 ├── models/                            # Domain Data Models (Immutable)
-│   ├── product_model.dart             # Inventory items, barcode, pricing & stock
+│   ├── product_model.dart             # Inventory items, barcode, UOM units, pricing & stock
 │   ├── party_model.dart               # Customers & Suppliers with balances & limits
 │   ├── order_model.dart               # Invoices, items, payment mode, split amounts
-│   ├── shop_model.dart                # Store profile, tax rates, receipt headers
+│   ├── purchase_model.dart            # Stock inward purchases, supplier reference, bill no
+│   ├── shop_model.dart                # Store profile, branch settings, receipt headers
 │   └── notification_model.dart        # System alerts & operational notifications
 │
 ├── services/                          # Core System & Hardware Services
-│   ├── local_database_service.dart    # SQLite DB wrapper, schema migrations, disk flush
+│   ├── local_database_service.dart    # SQLite DB wrapper, atomic file writes & disk sync
+│   ├── cloud_sync_service.dart        # Real-time Firestore auto-sync & auto-restore
 │   ├── google_drive_service.dart      # Google Drive REST API v3 backup engine
-│   ├── notification_service.dart      # Real-time event & background notification bus
 │   ├── printing_and_sharing_service.dart # ESC/POS printer adapter, PDF builder & WhatsApp
 │   ├── security_service.dart          # Local authentication (Biometrics & PIN hash)
-│   └── auth_service.dart              # Firebase Auth & Cloud Firestore sync
+│   └── auth_service.dart              # Firebase Auth & Google Identity Provider
 │
 ├── state/                             # Reactive State Management (Provider)
 │   ├── cart_state.dart                # Active POS cart, line items, discounts & weight
@@ -99,12 +130,12 @@ lib/
 │   └── shop_state.dart                # Active store session & branch switcher
 │
 └── views/                             # User Interface (100% Light Theme)
-    ├── auth/                          # Login, PIN setup & store registration
-    ├── inventory/                     # Catalog, Add/Edit product, Purchase Inward
+    ├── auth/                          # Login, PIN setup & auto-restore onboarding
+    ├── inventory/                     # Catalog, Add/Edit product (UOM units), Purchase Inward
     ├── khata/                         # Party directory, Ledger details, Statement sheet
     ├── pos/                           # Barcode scanner, Cart, Checkout settlement
     ├── reports/                       # Sales revenue, Daily closing & P&L analytics
-    ├── settings/                      # Multi-store, Google Drive, Bluetooth printer
+    ├── settings/                      # Multi-store, Cloud Firestore, Google Drive, Printers
     ├── notifications/                 # Real-time notification center
     └── shared_widgets/                # Custom AppBars, BottomNav, Drawer, Metric cards
 ```
@@ -116,12 +147,13 @@ lib/
 | Category | Technology | Purpose |
 | :--- | :--- | :--- |
 | **Framework** | **Flutter 3.x / Dart 3.x** | Cross-platform native mobile and web compilation |
-| **Database** | **SQLite (`sqflite`)** | Offline-first, ACID-compliant local structured database |
+| **Database** | **SQLite (`sqflite`)** | Offline-first, ACID-compliant local database engine |
+| **Cloud Database** | **Cloud Firestore** | Real-time automated background synchronization |
+| **Cloud Storage** | **`googleapis` (Drive v3)** | Google Drive personal 15 GB cloud backup |
+| **Cloud Auth** | **`firebase_auth` / `google_sign_in`** | Secure user identification and cloud pairing |
 | **State Management** | **`provider`** | Reactive, lightweight state management with minimal rebuilds |
 | **Hardware Scanner** | **`mobile_scanner`** | High-speed camera barcode and QR detection (Android / iOS) |
 | **Thermal Printing** | **`printing` / `pdf`** | Native ESC/POS thermal printing & PDF generation |
-| **Cloud Storage** | **`googleapis` (Drive v3)** | Google Drive personal 15 GB cloud backup |
-| **Cloud Auth** | **`firebase_auth` / `google_sign_in`** | Secure user identification and cloud pairing |
 | **Biometrics** | **`local_auth` / `crypto`** | Fingerprint, Face ID, and SHA-256 PIN security |
 | **External Sharing** | **`url_launcher` / `share_plus`** | Direct WhatsApp bill sending and OS sharing |
 | **Localization** | **`intl`** | Number, currency (PKR), and datetime formatting |
@@ -147,91 +179,70 @@ cd KhataSmart
 flutter pub get
 ```
 
-### 3. Run the App
-
-#### Running on Android (Physical Device or Emulator - Recommended)
-Connect your Android phone via USB (with USB Debugging enabled):
+### 3. Verify Code Health
 ```bash
-flutter run
+flutter analyze
 ```
 
-#### Running on iOS (Mac & Simulator)
+### 4. Run the Application
 ```bash
+# Running on Android (Physical Device or Emulator)
+flutter run
+
+# Running on iOS (Mac & Simulator)
 cd ios && pod install && cd ..
 flutter run -d ios
-```
 
-#### Running on Web (Google Chrome)
-When running on Web with Google Drive OAuth enabled, specify a fixed port:
-```bash
+# Running on Web (Google Chrome)
 flutter run -d chrome --web-port=5000
 ```
 
 ---
 
-## ⚙️ Configuration & Credentials
+## ⚙️ Cloud Configuration & Setup
 
-### Android Firebase Setup
-Place your `google-services.json` file inside:
-```
-android/app/google-services.json
-```
+### Firebase Authentication & Firestore Setup
+1. Place your `google-services.json` inside `android/app/google-services.json`.
+2. Place your `GoogleService-Info.plist` inside `ios/Runner/GoogleService-Info.plist`.
+3. In the Firebase Console:
+   - Enable **Authentication** (Email/Password & Google Sign-In).
+   - Enable **Cloud Firestore** in Production or Test mode.
 
-### iOS Firebase & Google Sign-In Setup
-Place your `GoogleService-Info.plist` file inside:
-```
-ios/Runner/GoogleService-Info.plist
-```
-*Note: Camera (`NSCameraUsageDescription`), Bluetooth (`NSBluetoothAlwaysUsageDescription`), and Face ID (`NSFaceIDUsageDescription`) permissions are already configured in `ios/Runner/Info.plist`.*
-
-### Web OAuth Configuration (Google Drive Backup)
-If testing Google Drive connection on Chrome Web:
-1. Open [Google Cloud Console Credentials](https://console.cloud.google.com/apis/credentials).
-2. Select your Firebase project (`smartkhata-19806`).
-3. Under **OAuth 2.0 Client IDs**, select the Web Client.
-4. Add `http://localhost:5000` to **Authorized JavaScript origins**.
+### Google Drive API Configuration (Optional Drive Backup)
+If enabling manual Google Drive backups in addition to Cloud Firestore:
+1. Open the [Google Cloud Console API Library](https://console.cloud.google.com/apis/library/drive.googleapis.com).
+2. Select your Firebase project and click **ENABLE** for the **Google Drive API**.
 
 ---
 
 ## 📦 Building Production Releases
 
-### Generate Android APK (Direct Install)
+### Generate Optimized Android APK (Direct Sideloading)
 ```bash
 flutter build apk --release --split-per-abi
 ```
-The optimized APKs will be generated in:
+The resulting APKs will be located in:
 `build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`
 
 ### Generate Android App Bundle (Google Play Store)
 ```bash
 flutter build appbundle --release
 ```
-The bundle will be generated in:
+The release bundle will be located in:
 `build/app/outputs/bundle/release/app-release.aab`
 
 ---
 
-## 🔒 Design System & UI Principles
+## 🔒 UI/UX Design System
 
-- **100% Light Theme Guarantee:** Engineered with high-contrast slate blues (`#0F172A`), clean whites (`#FFFFFF`), forest greens (`#15803D`), and crimson alerts (`#DC2626`) to ensure crystal-clear visibility under harsh supermarket and outdoor retail lighting.
-- **Zero Distracting Emojis:** All UI components use crisp, scalable vector icons (`Icons.*`) for a sleek, enterprise-grade finish.
-- **Large Touch Targets:** Minimum 48px touch targets tailored for fast thumb operation on mobile and tablet counters.
-- **Bilingual Context:** Natural integration of Urdu retail terminology (*ادھار / Khata, وصولی / Got, جمع / Gave*) alongside English for effortless staff adoption.
-
----
-
-## 🤝 Contributing
-
-Contributions, bug reports, and feature suggestions are welcome!
-1. Fork the Project.
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the Branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
+- **100% Light Theme Guarantee:** High-contrast slate blues (`#0F172A`), clean whites (`#FFFFFF`), forest greens (`#15803D`), and crimson alerts (`#DC2626`) engineered for clear visibility under supermarket and outdoor mandi lighting.
+- **Zero Screen Overflows:** Scalable `FittedBox`, `Expanded`, and responsive scroll view architectures tested across standard and compact mobile screens.
+- **Enterprise Touch Ergonomics:** Minimum 48px touch targets tailored for fast thumb operation on mobile and tablet counters.
+- **Clean English UI:** Professional, unified English interface throughout the application.
 
 ---
 
 ## 📄 License & Ownership
 
 Developed with pride by the **KhataSmart Core Team**.  
-All rights reserved. Designed for Pakistani retail empowerment.
+All rights reserved. Dedicated to Pakistani retail, wholesale, and mandi commerce empowerment.
