@@ -42,6 +42,7 @@ class DefaultFirebaseOptions {
     appId: '1:711388054106:web:6f620663503adea0230e63',
     messagingSenderId: '711388054106',
     projectId: 'smartkhata-19806',
+    authDomain: 'smartkhata-19806.firebaseapp.com',
     storageBucket: 'smartkhata-19806.firebasestorage.app',
   );
 }

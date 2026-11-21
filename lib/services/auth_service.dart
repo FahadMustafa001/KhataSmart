@@ -86,7 +86,9 @@ class AuthService extends ChangeNotifier {
         clientId: kIsWeb
             ? '711388054106-7bk5k86vbl1c4vp8jqqei6eciek1tlsr.apps.googleusercontent.com'
             : null,
-        serverClientId: '711388054106-7bk5k86vbl1c4vp8jqqei6eciek1tlsr.apps.googleusercontent.com',
+        serverClientId: kIsWeb
+            ? null
+            : '711388054106-7bk5k86vbl1c4vp8jqqei6eciek1tlsr.apps.googleusercontent.com',
         scopes: ['email', 'profile'],
       );
 
