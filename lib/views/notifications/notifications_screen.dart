@@ -102,6 +102,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final unread = _notifService.unreadCount;
     final activeShop = ShopState.instance.activeShop;
+    final notifications = _filteredList;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -306,12 +307,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
           _buildFilterTabs(),
           Expanded(
-            child: _filteredList.isEmpty
+            child: notifications.isEmpty
                 ? _buildEmptyState()
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(14, 6, 14, 20),
-                    itemCount: _filteredList.length,
-                    itemBuilder: (ctx, i) => _buildNotificationCard(_filteredList[i]),
+                    itemCount: notifications.length,
+                    itemBuilder: (ctx, i) =>
+                        _buildNotificationCard(notifications[i]),
                   ),
           ),
         ],
