@@ -43,14 +43,14 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       if (showMenu) {
         leadingWidget = Builder(
           builder: (ctx) => IconButton(
-            icon: Icon(Icons.menu_rounded, color: iconColor),
+            icon: const Icon(Icons.menu_rounded, color: iconColor),
             tooltip: 'Menu',
             onPressed: () => Scaffold.of(ctx).openDrawer(),
           ),
         );
       } else if (showBack) {
         leadingWidget = IconButton(
-          icon: Icon(Icons.arrow_back, color: iconColor),
+          icon: const Icon(Icons.arrow_back, color: iconColor),
           tooltip: 'Back',
           onPressed: onBack ??
               () {
@@ -96,7 +96,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                   children: [
                     Text(
                       title,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: titleColor,
                         fontSize: 15.5,
                         fontWeight: FontWeight.bold,
@@ -107,7 +107,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     if (subtitle != null && subtitle!.isNotEmpty)
                       Text(
                         subtitle!,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: subtitleColor,
                           fontSize: 10.5,
                           fontWeight: FontWeight.w500,

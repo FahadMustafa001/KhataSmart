@@ -95,7 +95,7 @@ class ReceiptPreviewScreen extends StatelessWidget {
       }
 
       final sub = sampleItems.fold(0.0, (s, i) => s + (i.product.salePrice * i.quantity));
-      final disc = 40.0;
+      const disc = 40.0;
       actualOrder = OrderModel(
         invoiceNo: 'SK-519',
         date: DateTime.now(),

@@ -707,9 +707,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  Align(
+                  const Align(
                     alignment: Alignment.centerLeft,
-                    child: const Text(
+                    child: Text(
                       'Switch Active Store:',
                       style: TextStyle(
                         fontSize: 12,

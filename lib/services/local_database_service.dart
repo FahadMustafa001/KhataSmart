@@ -13,6 +13,7 @@ import '../models/shop_model.dart';
 import '../state/inventory_state.dart';
 import '../state/khata_state.dart';
 import '../state/shop_state.dart';
+import 'cloud_sync_service.dart';
 import 'google_drive_service.dart';
 import 'notification_service.dart';
 import 'security_service.dart';
@@ -328,6 +329,9 @@ class LocalDatabaseService {
         }
         await tmpFile.rename(file.path);
       }
+
+      // Schedule background auto-sync to Cloud Firestore if user is authenticated
+      CloudSyncService.instance.scheduleAutoSync();
     } catch (e) {
       debugPrint('LocalDatabaseService _performWrite error: $e');
     }

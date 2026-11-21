@@ -7,9 +7,12 @@ import '../../core/constants/app_assets.dart';
 import '../../firebase_options.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
+import '../../services/cloud_sync_service.dart';
 import '../../services/local_database_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/security_service.dart';
+import '../../state/inventory_state.dart';
+import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -37,6 +40,22 @@ class _SplashScreenState extends State<SplashScreen> {
         options: DefaultFirebaseOptions.currentPlatform,
       );
       AuthService.instance.markInitialized();
+
+      // If user is already authenticated with Firebase, but the local store is completely fresh/empty
+      // (for example after app was uninstalled & reinstalled), automatically fetch & restore their Cloud snapshot!
+      if (AuthService.instance.isSignedIn) {
+        final isLocalEmpty = InventoryState.instance.products.isEmpty &&
+            KhataState.instance.allPartiesForDatabase.isEmpty &&
+            ShopState.instance.activeShop.name == 'My Store' &&
+            ShopState.instance.shops.length <= 1;
+        if (isLocalEmpty) {
+          try {
+            await CloudSyncService.instance.restoreFromCloud();
+          } catch (e) {
+            debugPrint('Splash auto-restore notice: $e');
+          }
+        }
+      }
     } catch (e) {
       debugPrint('Firebase init note: $e');
     }

@@ -660,8 +660,8 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
           // ── Bottom Section: Lock & Local Storage Status ────────────────────
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              border: const Border(
+            decoration: const BoxDecoration(
+              border: Border(
                 top: BorderSide(
                   color: Color(0xFFF1F5F9),
                 ),

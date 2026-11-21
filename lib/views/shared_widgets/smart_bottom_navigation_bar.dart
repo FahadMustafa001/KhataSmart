@@ -35,7 +35,7 @@ class SmartBottomNavigationBar extends StatelessWidget {
     const navBorder = Color(0xFFE2E8F0);
 
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: navBg,
         border: Border(
           top: BorderSide(color: navBorder, width: 1),

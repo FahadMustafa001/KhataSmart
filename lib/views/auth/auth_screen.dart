@@ -3,6 +3,10 @@ import '../../core/constants/app_assets.dart';
 import '../../core/utils/app_toast.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
+import '../../services/cloud_sync_service.dart';
+import '../../services/google_drive_service.dart';
+import '../../state/inventory_state.dart';
+import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -41,7 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
         password: password,
       );
       if (!mounted) return;
-      _proceedAfterAuth();
+      await _proceedAfterAuth();
     } catch (e) {
       if (!mounted) return;
       setState(() => _isLoading = false);
@@ -55,7 +59,7 @@ class _AuthScreenState extends State<AuthScreen> {
       final cred = await AuthService.instance.signInWithGoogle();
       if (!mounted) return;
       if (cred != null) {
-        _proceedAfterAuth();
+        await _proceedAfterAuth();
       } else {
         setState(() => _isLoading = false);
       }
@@ -66,11 +70,50 @@ class _AuthScreenState extends State<AuthScreen> {
     }
   }
 
-  void _proceedAfterAuth() {
+  Future<void> _proceedAfterAuth() async {
+    setState(() => _isLoading = true);
+
+    bool restored = false;
+
+    // 1. Automatically restore latest cloud snapshot from Firebase Cloud Firestore
+    try {
+      final res = await CloudSyncService.instance.restoreFromCloud();
+      if (res['success'] == true) {
+        restored = true;
+        if (mounted) {
+          final pCount = res['products'] ?? 0;
+          final kCount = res['parties'] ?? 0;
+          AppToast.showSuccess(
+            context,
+            'Store data restored successfully from Cloud ($pCount products, $kCount accounts)!',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Cloud restore on login notice: $e');
+    }
+
+    // 2. If no Firestore backup, check if Google Drive backup exists
+    if (!restored) {
+      try {
+        final driveRes = await GoogleDriveService.instance.restoreFromDrive();
+        if (driveRes['success'] == true && mounted) {
+          restored = true;
+          AppToast.showSuccess(context, 'Store data restored from your Google Drive backup!');
+        }
+      } catch (e) {
+        debugPrint('Google Drive restore on login notice: $e');
+      }
+    }
+
+    if (!mounted) return;
+
     final hasCompletedOnboarding = ShopState.instance.hasCompletedOnboarding ||
         ShopState.instance.shops.length > 1 ||
         ShopState.instance.activeShop.phone.isNotEmpty ||
-        ShopState.instance.activeShop.name != 'My Store';
+        ShopState.instance.activeShop.name != 'My Store' ||
+        InventoryState.instance.products.isNotEmpty ||
+        KhataState.instance.allPartiesForDatabase.isNotEmpty;
 
     Navigator.pushReplacementNamed(
       context,
@@ -189,24 +232,24 @@ class _AuthScreenState extends State<AuthScreen> {
                 const SizedBox(height: 16),
 
                 RichText(
-                  text: TextSpan(
-                    style: const TextStyle(
+                  text: const TextSpan(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
                       letterSpacing: -0.5,
                     ),
                     children: [
-                      const TextSpan(
+                      TextSpan(
                         text: 'Smart',
                         style: TextStyle(color: Color(0xFF1A365D)),
                       ),
-                      const TextSpan(
+                      TextSpan(
                         text: 'Khata',
                         style: TextStyle(
                           color: Color(0xFF1E293B),
                         ),
                       ),
-                      const TextSpan(
+                      TextSpan(
                         text: ' •',
                         style: TextStyle(color: Color(0xFF16A34A)),
                       ),
@@ -308,10 +351,10 @@ class _AuthScreenState extends State<AuthScreen> {
 
                 const SizedBox(height: 18),
 
-                Row(
+                const Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
+                    Text(
                       'Store ID or Email',
                       style: TextStyle(
                         fontSize: 12,
@@ -319,7 +362,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         color: Color(0xFF1E293B),
                       ),
                     ),
-                    const Row(
+                    Row(
                       children: [
                         Icon(Icons.sync_alt,
                             size: 12, color: Color(0xFF0D9488)),

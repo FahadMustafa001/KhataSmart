@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -20,9 +21,32 @@ class CloudSyncService extends ChangeNotifier {
   bool _autoSyncEnabled = true;
   bool get autoSyncEnabled => _autoSyncEnabled;
 
+  Timer? _autoUploadDebounce;
+
   void setAutoSync(bool enabled) {
     _autoSyncEnabled = enabled;
     notifyListeners();
+  }
+
+  /// Triggered automatically whenever local database changes.
+  /// Debounces by 2.5 seconds to avoid flooding Firestore during fast entry.
+  void scheduleAutoSync() {
+    if (!_autoSyncEnabled) return;
+    final user = AuthService.instance.currentUser;
+    if (user == null) return;
+
+    _autoUploadDebounce?.cancel();
+    _autoUploadDebounce = Timer(const Duration(milliseconds: 2500), () {
+      uploadToCloud().then((res) {
+        if (res['success'] == true) {
+          debugPrint('KhataSmart Live Cloud Sync: Snapshot updated in Firestore');
+        } else {
+          debugPrint('KhataSmart Live Cloud Sync notice: ${res['error']}');
+        }
+      }).catchError((e) {
+        debugPrint('KhataSmart Live Cloud Sync error: $e');
+      });
+    });
   }
 
   String get formattedLastSync {
@@ -32,6 +56,23 @@ class CloudSyncService extends ChangeNotifier {
     final ampm = dt.hour >= 12 ? 'PM' : 'AM';
     final min = dt.minute.toString().padLeft(2, '0');
     return '${dt.day}/${dt.month}/${dt.year} at $hour:$min $ampm';
+  }
+
+  /// Checks if current signed-in user has an existing cloud backup
+  Future<bool> hasCloudBackup() async {
+    final user = AuthService.instance.currentUser;
+    if (user == null) return false;
+    try {
+      final docRef = FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('backups')
+          .doc('latest');
+      final doc = await docRef.get();
+      return doc.exists && doc.data() != null && doc.data()!['data'] != null;
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Uploads current store database to Cloud Firestore
@@ -54,13 +95,19 @@ class CloudSyncService extends ChangeNotifier {
           .collection('backups')
           .doc('latest');
 
+      final shopsCount = (data['shops'] as List?)?.length ?? 1;
+      final productsCount = (data['products'] as List?)?.length ?? 0;
+      final partiesCount = (data['parties'] as List?)?.length ?? 0;
+      final ordersCount = (data['orders'] as List?)?.length ?? 0;
+      final purchasesCount = (data['purchases'] as List?)?.length ?? 0;
+
       await docRef.set({
         'data': jsonContent,
-        'shopsCount': (data['shops'] as List?)?.length ?? 1,
-        'productsCount': (data['products'] as List?)?.length ?? 0,
-        'partiesCount': (data['parties'] as List?)?.length ?? 0,
-        'ordersCount': (data['orders'] as List?)?.length ?? 0,
-        'purchasesCount': (data['purchases'] as List?)?.length ?? 0,
+        'shopsCount': shopsCount,
+        'productsCount': productsCount,
+        'partiesCount': partiesCount,
+        'ordersCount': ordersCount,
+        'purchasesCount': purchasesCount,
         'updatedAt': FieldValue.serverTimestamp(),
         'userEmail': user.email,
         'sizeBytes': utf8.encode(jsonContent).length,
@@ -71,7 +118,14 @@ class CloudSyncService extends ChangeNotifier {
       notifyListeners();
 
       final sizeKb = (utf8.encode(jsonContent).length / 1024).toStringAsFixed(1);
-      return {'success': true, 'size': '$sizeKb KB'};
+      return {
+        'success': true,
+        'size': '$sizeKb KB',
+        'shops': shopsCount,
+        'products': productsCount,
+        'parties': partiesCount,
+        'orders': ordersCount,
+      };
     } catch (e) {
       _isSyncing = false;
       notifyListeners();
@@ -111,7 +165,14 @@ class CloudSyncService extends ChangeNotifier {
       if (ok) {
         _lastSyncTime = DateTime.now();
         notifyListeners();
-        return {'success': true};
+        final docData = doc.data()!;
+        return {
+          'success': true,
+          'shops': docData['shopsCount'] ?? 1,
+          'products': docData['productsCount'] ?? 0,
+          'parties': docData['partiesCount'] ?? 0,
+          'orders': docData['ordersCount'] ?? 0,
+        };
       } else {
         notifyListeners();
         return {'success': false, 'error': 'Failed to parse cloud backup data'};
