@@ -106,7 +106,7 @@ class NotificationService extends ChangeNotifier {
             0,
             NotificationModel(
               id: 'notif_limit_${c.id}_${DateTime.now().millisecondsSinceEpoch}',
-              title: '⚠️ Credit Limit Exceeded: ${c.name}',
+              title: 'Credit Limit Exceeded: ${c.name}',
               message:
                   'Warning: ${c.name}\'s credit balance (PKR ${c.balance.toStringAsFixed(0)}) has exceeded their approved limit (PKR ${c.creditLimit!.toStringAsFixed(0)})!',
               type: NotificationType.creditLimitBreach,
@@ -168,7 +168,7 @@ class NotificationService extends ChangeNotifier {
           0,
           NotificationModel(
             id: 'notif_sales_$todayDateStr',
-            title: '📊 Daily Sales & Profit Closing',
+            title: 'Daily Sales & Profit Closing',
             message: message,
             type: NotificationType.saleSummary,
             timestamp: DateTime.now(),
@@ -180,7 +180,7 @@ class NotificationService extends ChangeNotifier {
         final old = _notifications[existingIndex];
         _notifications[existingIndex] = NotificationModel(
           id: old.id,
-          title: '📊 Daily Sales & Profit Closing',
+          title: 'Daily Sales & Profit Closing',
           message: message,
           type: NotificationType.saleSummary,
           timestamp: DateTime.now(),
@@ -207,7 +207,7 @@ class NotificationService extends ChangeNotifier {
           0,
           NotificationModel(
             id: 'notif_backup_due_${DateTime.now().millisecondsSinceEpoch}',
-            title: '☁️ Cloud Backup Due Alert',
+            title: 'Cloud Backup Due Alert',
             message: '$daysMsg Sync now to keep your shop ledger safe and secure.',
             type: NotificationType.cloudBackup,
             timestamp: DateTime.now().subtract(const Duration(hours: 2)),
@@ -250,7 +250,7 @@ class NotificationService extends ChangeNotifier {
     _notifications.add(
       NotificationModel(
         id: 'seed_system_${activeShop.id}',
-        title: '🏪 Store System Ready: ${activeShop.name}',
+        title: 'Store System Ready: ${activeShop.name}',
         message: 'KhataSmart offline-first engine is running smoothly. Local database and encryption active.',
         type: NotificationType.security,
         timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
@@ -280,7 +280,7 @@ class NotificationService extends ChangeNotifier {
       _notifications.add(
         NotificationModel(
           id: 'seed_stock_health',
-          title: '📦 Inventory Tracking Active',
+          title: 'Inventory Tracking Active',
           message: products.isEmpty
               ? 'No products added yet. Tap to add your first product to catalog.'
               : '${products.length} product(s) tracked with safety stock thresholds.',
@@ -324,7 +324,7 @@ class NotificationService extends ChangeNotifier {
       _notifications.add(
         NotificationModel(
           id: 'seed_khata_guide',
-          title: '📖 Udhaar Register Active',
+          title: 'Udhaar Register Active',
           message: 'Customer & Supplier Ledgers ready. Send automated WhatsApp bills and payment reminders.',
           type: NotificationType.paymentDue,
           timestamp: DateTime.now().subtract(const Duration(hours: 2)),
@@ -337,7 +337,7 @@ class NotificationService extends ChangeNotifier {
     _notifications.add(
       NotificationModel(
         id: 'seed_sales_pos',
-        title: '📊 Daily Sales & Profit Closing',
+        title: 'Daily Sales & Profit Closing',
         message: 'POS Counter is open. Tap to view today\'s revenue, gross margins, and settlement split.',
         type: NotificationType.saleSummary,
         timestamp: DateTime.now().subtract(const Duration(hours: 3)),
@@ -349,7 +349,7 @@ class NotificationService extends ChangeNotifier {
     _notifications.add(
       NotificationModel(
         id: 'seed_cloud_backup',
-        title: '☁️ Google Drive Cloud Backup',
+        title: 'Google Drive Cloud Backup',
         message: 'Protect your ledger data against device loss with 1-tap Google Drive cloud backup.',
         type: NotificationType.cloudBackup,
         timestamp: DateTime.now().subtract(const Duration(hours: 4)),
@@ -381,7 +381,7 @@ class NotificationService extends ChangeNotifier {
         break;
       case NotificationType.creditLimitBreach:
         addNotification(
-          title: '⚠️ Credit Limit Exceeded: Ali Khan',
+          title: 'Credit Limit Exceeded: Ali Khan',
           message: 'Current balance PKR 15,200 exceeds approved limit PKR 10,000.',
           type: NotificationType.creditLimitBreach,
           route: AppRoutes.khataDirectory,
@@ -389,7 +389,7 @@ class NotificationService extends ChangeNotifier {
         break;
       case NotificationType.saleSummary:
         addNotification(
-          title: '📈 POS Sale Completed: Bill #SK-520',
+          title: 'POS Sale Completed: Bill #SK-520',
           message: 'Gross amount PKR 1,450 settled via Cash. 3 items billed.',
           type: NotificationType.saleSummary,
           route: AppRoutes.reports,
@@ -397,7 +397,7 @@ class NotificationService extends ChangeNotifier {
         break;
       case NotificationType.cloudBackup:
         addNotification(
-          title: '☁️ Cloud Backup Successful',
+          title: 'Cloud Backup Successful',
           message: 'All shop ledger accounts safely encrypted and backed up to Google Drive.',
           type: NotificationType.cloudBackup,
           route: AppRoutes.settings,
@@ -423,7 +423,7 @@ class NotificationService extends ChangeNotifier {
         0,
         NotificationModel(
           id: 'notif_limit_${party.id}_${DateTime.now().millisecondsSinceEpoch}',
-          title: '⚠️ Credit Limit Exceeded: ${party.name}',
+          title: 'Credit Limit Exceeded: ${party.name}',
           message:
               'Warning: ${party.name}\'s credit balance (PKR ${party.balance.toStringAsFixed(0)}) has exceeded their approved limit (PKR ${party.creditLimit?.toStringAsFixed(0) ?? "0"})!',
           type: NotificationType.creditLimitBreach,

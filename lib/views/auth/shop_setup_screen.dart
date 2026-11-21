@@ -378,11 +378,6 @@ class _ShopSetupScreenState extends State<ShopSetupScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Text(
-                                '🇵🇰',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                              const SizedBox(width: 6),
-                              const Text(
                                 '+92',
                                 style: TextStyle(
                                   fontSize: 13.5,

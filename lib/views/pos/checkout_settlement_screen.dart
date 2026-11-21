@@ -654,7 +654,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                                         ),
                                         if (_newTotalBalance > _customer!.creditLimit!)
                                           TextSpan(
-                                            text: ' ⚠️ (Exceeds by PKR ${(_newTotalBalance - _customer!.creditLimit!).toStringAsFixed(0)})',
+                                            text: ' (Exceeds by PKR ${(_newTotalBalance - _customer!.creditLimit!).toStringAsFixed(0)})',
                                             style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               color: Color(0xFFDC2626),

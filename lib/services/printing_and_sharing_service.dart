@@ -57,7 +57,7 @@ class PrintingAndSharingService {
     }
 
     final message = '''
-🧾 *${shop.name.toUpperCase()}*
+*${shop.name.toUpperCase()}*
 ${shop.address.isNotEmpty ? '${shop.address}\n' : ''}${shop.phone.isNotEmpty ? 'Helpline: ${shop.phone}\n' : ''}
 *INVOICE / CASH MEMO*
 ----------------------------------------

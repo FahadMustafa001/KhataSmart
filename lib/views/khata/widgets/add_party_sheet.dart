@@ -504,7 +504,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
           width: 55,
           alignment: Alignment.center,
           child: const Text(
-            '🇵🇰 +92',
+            '+92',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
