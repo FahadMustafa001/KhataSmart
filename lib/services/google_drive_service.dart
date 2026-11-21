@@ -34,6 +34,7 @@ class GoogleDriveService extends ChangeNotifier {
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb ? '711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn.apps.googleusercontent.com' : null,
+    serverClientId: '711388054106-3qlij7rn5u7s9fgj2k4clvrvtnnho9qn.apps.googleusercontent.com',
     scopes: [
       drive.DriveApi.driveFileScope,
       'email',

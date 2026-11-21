@@ -9,6 +9,7 @@ class ProductModel {
   final String unit;
   final String urduName;
   String shopId;
+  final int minStockAlert;
 
   ProductModel({
     required this.id,
@@ -21,19 +22,19 @@ class ProductModel {
     this.unit = 'Pack',
     this.urduName = '',
     this.shopId = 'shop_1',
+    this.minStockAlert = 5,
   });
 
   String get name => title;
   int get stock => stockQty;
   set stock(int val) => stockQty = val;
-  int get minStockAlert => 5;
 
   double get marginPercentage {
     if (costPrice == 0) return 0.0;
     return ((salePrice - costPrice) / costPrice) * 100;
   }
 
-  bool get isLowStock => stockQty <= 5;
+  bool get isLowStock => stockQty <= minStockAlert;
 
   Map<String, dynamic> toMap() {
     return {
@@ -47,6 +48,7 @@ class ProductModel {
       'unit': unit,
       'urduName': urduName,
       'shopId': shopId,
+      'minStockAlert': minStockAlert,
     };
   }
 
@@ -62,6 +64,7 @@ class ProductModel {
       unit: map['unit'] ?? 'Pack',
       urduName: map['urduName'] ?? '',
       shopId: map['shopId'] ?? 'shop_1',
+      minStockAlert: (map['minStockAlert'] as num?)?.toInt() ?? 5,
     );
   }
 }
