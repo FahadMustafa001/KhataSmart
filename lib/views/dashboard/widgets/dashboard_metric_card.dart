@@ -130,6 +130,8 @@ class DashboardMetricCard extends StatelessWidget {
                   ),
                   child: Text(
                     badgeText!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
@@ -142,6 +144,8 @@ class DashboardMetricCard extends StatelessWidget {
               else
                 Text(
                   subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 11,
                     color:

@@ -342,7 +342,10 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     borderRadius: BorderRadius.circular(8),
                     onTap: () async {
                       final scanned = await Navigator.pushNamed(
-                          context, AppRoutes.posScanner);
+                        context,
+                        AppRoutes.posScanner,
+                        arguments: {'mode': 'barcode_capture'},
+                      );
                       if (scanned != null && scanned is String) {
                         setState(() => _barcodeController.text = scanned);
                       }

@@ -8,6 +8,7 @@ import '../../firebase_options.dart';
 import '../../routes/app_routes.dart';
 import '../../services/auth_service.dart';
 import '../../services/local_database_service.dart';
+import '../../services/notification_service.dart';
 import '../../services/security_service.dart';
 import '../../state/shop_state.dart';
 
@@ -26,8 +27,9 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _initializeApp() async {
-    // 1. Initialize local database while splash screen is visible
+    // 1. Initialize local database and notification services while splash screen is visible
     await LocalDatabaseService.instance.init();
+    NotificationService.instance.init();
 
     // 2. Initialize Firebase Core safely
     try {

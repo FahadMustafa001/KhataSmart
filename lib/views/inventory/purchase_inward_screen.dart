@@ -94,7 +94,59 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  const Text('Select Product', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Select Product',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF475569))),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(Icons.qr_code_scanner,
+                            size: 14, color: Color(0xFF2563EB)),
+                        label: const Text('Scan Barcode',
+                            style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2563EB))),
+                        onPressed: () async {
+                          final code = await Navigator.pushNamed(
+                            context,
+                            AppRoutes.posScanner,
+                            arguments: {'mode': 'barcode_capture'},
+                          );
+                          if (code != null && code is String) {
+                            final found = products
+                                .where((p) =>
+                                    p.barcode.trim().toLowerCase() ==
+                                    code.trim().toLowerCase())
+                                .firstOrNull;
+                            if (found != null) {
+                              setSheetState(() {
+                                selectedProduct = found;
+                                cost = found.costPrice;
+                                costController.text = cost % 1 == 0
+                                    ? cost.toInt().toString()
+                                    : cost.toString();
+                              });
+                              AppToast.showSuccess(
+                                  context, 'Matched: ${found.name}');
+                            } else {
+                              AppToast.showWarning(context,
+                                  'No product with barcode "$code" in store');
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12),

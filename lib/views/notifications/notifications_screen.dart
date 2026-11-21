@@ -19,18 +19,22 @@ class NotificationsScreen extends StatefulWidget {
 class _NotificationsScreenState extends State<NotificationsScreen> {
   final _notifService = NotificationService.instance;
   String _selectedFilter = 'All';
+  String _notifSearchQuery = '';
+  final TextEditingController _notifSearchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _notifService.addListener(_rebuild);
-    // Refresh alerts to ensure live items are up to date
+    // Ensure notification engine is initialized and refresh live alerts
+    _notifService.init();
     _notifService.refreshContextualNotifications();
   }
 
   @override
   void dispose() {
     _notifService.removeListener(_rebuild);
+    _notifSearchController.dispose();
     super.dispose();
   }
 
@@ -40,24 +44,35 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   List<NotificationModel> get _filteredList {
     final list = _notifService.notifications;
+    List<NotificationModel> typeFiltered;
     if (_selectedFilter == 'Stock') {
-      return list.where((n) => n.type == NotificationType.stockAlert).toList();
+      typeFiltered =
+          list.where((n) => n.type == NotificationType.stockAlert).toList();
     } else if (_selectedFilter == 'Ledger') {
-      return list
+      typeFiltered = list
           .where((n) =>
               n.type == NotificationType.paymentDue ||
               n.type == NotificationType.creditLimitBreach)
           .toList();
     } else if (_selectedFilter == 'Sales') {
-      return list.where((n) => n.type == NotificationType.saleSummary).toList();
+      typeFiltered =
+          list.where((n) => n.type == NotificationType.saleSummary).toList();
     } else if (_selectedFilter == 'System') {
-      return list
+      typeFiltered = list
           .where((n) =>
               n.type == NotificationType.cloudBackup ||
               n.type == NotificationType.security)
           .toList();
+    } else {
+      typeFiltered = list;
     }
-    return list;
+
+    if (_notifSearchQuery.trim().isEmpty) return typeFiltered;
+    final q = _notifSearchQuery.trim().toLowerCase();
+    return typeFiltered.where((n) {
+      return n.title.toLowerCase().contains(q) ||
+          n.message.toLowerCase().contains(q);
+    }).toList();
   }
 
   String _formatTime(DateTime dt) {
@@ -246,6 +261,49 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       body: Column(
         children: [
           _buildPermissionBanner(),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 6, 14, 4),
+            child: TextField(
+              controller: _notifSearchController,
+              style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
+              decoration: InputDecoration(
+                isDense: true,
+                hintText: 'Search notification alerts...',
+                hintStyle:
+                    const TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                prefixIcon:
+                    const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+                suffixIcon: _notifSearchController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear,
+                            size: 16, color: Color(0xFF64748B)),
+                        onPressed: () {
+                          _notifSearchController.clear();
+                          setState(() => _notifSearchQuery = '');
+                        },
+                      )
+                    : null,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide:
+                      const BorderSide(color: Color(0xFF16A34A), width: 1.5),
+                ),
+              ),
+              onChanged: (val) => setState(() => _notifSearchQuery = val),
+            ),
+          ),
           _buildFilterTabs(),
           Expanded(
             child: _filteredList.isEmpty

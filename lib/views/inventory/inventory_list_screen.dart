@@ -135,18 +135,23 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
   List<InventoryProductItem> get _filteredList {
     final all = _inventoryState.products.map(_toItem).toList();
     var filtered = all.where((item) {
-      final matchesSearch =
-          item.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-              item.barcode.contains(_searchQuery);
+      final q = _searchQuery.trim().toLowerCase();
+      final matchesSearch = q.isEmpty ||
+          item.title.toLowerCase().contains(q) ||
+          item.barcode.contains(q) ||
+          item.category.toLowerCase().contains(q) ||
+          item.sale.toString().contains(q);
       if (!matchesSearch) return false;
 
       if (_selectedCategory == 'Low Stock (<5)') {
         return item.isLowStock || item.isOutOfStock;
       }
+      if (_selectedCategory == 'Out of Stock (0)') {
+        return item.isOutOfStock;
+      }
       if (_selectedCategory != 'All Items') {
         return item.category
-            .toLowerCase()
-            .contains(_selectedCategory.toLowerCase());
+            .toLowerCase() == _selectedCategory.toLowerCase();
       }
       return true;
     }).toList();
@@ -155,8 +160,12 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
       filtered.sort((a, b) => a.stock.compareTo(b.stock));
     } else if (_sortBy == 'Name (A to Z)') {
       filtered.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+    } else if (_sortBy == 'Name (Z to A)') {
+      filtered.sort((a, b) => b.title.toLowerCase().compareTo(a.title.toLowerCase()));
     } else if (_sortBy == 'Price: High to Low') {
       filtered.sort((a, b) => b.sale.compareTo(a.sale));
+    } else if (_sortBy == 'Price: Low to High') {
+      filtered.sort((a, b) => a.sale.compareTo(b.sale));
     } else if (_sortBy == 'Stock: High to Low') {
       filtered.sort((a, b) => b.stock.compareTo(a.stock));
     }
@@ -198,7 +207,9 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
               ...[
                 'Restock Priority',
                 'Name (A to Z)',
+                'Name (Z to A)',
                 'Price: High to Low',
+                'Price: Low to High',
                 'Stock: High to Low',
               ].map((s) {
                 final isSelected = _sortBy == s;
@@ -935,14 +946,27 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
 
   // ── Filter Chips ────────────────────────────────────────────────────────────
   Widget _buildFilterChips() {
-    final categories = [
-      {'name': 'All Items', 'badge': '${_inventoryState.products.length}'},
+    final products = _inventoryState.products;
+    final dynamicCategories = products
+        .map((p) => p.category.trim())
+        .where((c) => c.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+
+    final List<Map<String, String?>> categories = [
+      {'name': 'All Items', 'badge': '${products.length}'},
       {'name': 'Low Stock (<5)', 'badge': '${_inventoryState.lowStockCount}'},
-      {'name': 'Snacks', 'badge': null},
-      {'name': 'Dairy', 'badge': null},
-      {'name': 'Beverages', 'badge': null},
-      {'name': 'Cooking Oil', 'badge': null},
-      {'name': 'Condiments', 'badge': null},
+      if (products.any((p) => p.stockQty == 0))
+        {
+          'name': 'Out of Stock (0)',
+          'badge': '${products.where((p) => p.stockQty == 0).length}'
+        },
+      ...dynamicCategories.map((c) => {
+            'name': c,
+            'badge':
+                '${products.where((p) => p.category.trim().toLowerCase() == c.toLowerCase()).length}',
+          }),
     ];
 
     return SingleChildScrollView(

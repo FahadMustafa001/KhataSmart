@@ -18,12 +18,12 @@ class CartState extends ChangeNotifier {
   int get totalItemCount => _items.fold(0, (sum, item) => sum + item.quantity);
   bool get isEmpty => _items.isEmpty;
 
-  void addItem(ProductModel product) {
+  void addItem(ProductModel product, {int quantity = 1}) {
     final existingIndex = _items.indexWhere((item) => item.product.id == product.id);
     if (existingIndex != -1) {
-      _items[existingIndex].quantity += 1;
+      _items[existingIndex].quantity += quantity;
     } else {
-      _items.add(CartItemModel(product: product, quantity: 1));
+      _items.add(CartItemModel(product: product, quantity: quantity));
     }
     notifyListeners();
   }

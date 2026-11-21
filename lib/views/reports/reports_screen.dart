@@ -24,6 +24,9 @@ class ReportsScreen extends StatefulWidget {
 class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserver {
   ReportPeriod _selectedPeriod = ReportPeriod.today;
   int _selectedActivityTab = 0; // 0: Sales Bills, 1: Purchase Bills
+  String _paymentFilter = 'All'; // All, Cash, Online / Digital, Udhar / Credit
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
   Timer? _dateRefreshTimer;
 
   @override
@@ -41,6 +44,7 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
   @override
   void dispose() {
     _dateRefreshTimer?.cancel();
+    _searchController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     KhataState.instance.removeListener(_refresh);
     ShopState.instance.removeListener(_refresh);
@@ -873,188 +877,373 @@ class _ReportsScreenState extends State<ReportsScreen> with WidgetsBindingObserv
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
-        if (_selectedActivityTab == 0) ...[
-          // Sales Invoices List
-          if (orders.isEmpty)
-            _buildEmptyState('No sales bills generated yet for this period', Icons.receipt_long_outlined)
-          else
-            ...orders.map((o) {
-              final isUdhar = o.paymentMode == PaymentMode.udhaar || o.creditAmount > 0;
-              final customerTitle = o.customer?.name ?? 'Walk-in Customer';
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => Navigator.pushNamed(context, AppRoutes.receiptPreview, arguments: o),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: isUdhar ? const Color(0xFFFEE2E2) : const Color(0xFFEFF6FF),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              isUdhar ? Icons.assignment_late_outlined : Icons.check_circle_outline,
-                              color: isUdhar ? const Color(0xFFDC2626) : const Color(0xFF2563EB),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Invoice #${o.invoiceNo}',
-                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                      decoration: BoxDecoration(
-                                        color: isUdhar ? const Color(0xFFFFE4E6) : const Color(0xFFDCFCE7),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        o.creditAmount > 0 && o.paidAmount > 0
-                                            ? 'SPLIT'
-                                            : o.paymentMode.name.toUpperCase(),
-                                        style: TextStyle(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.bold,
-                                          color: isUdhar ? const Color(0xFFBE123C) : const Color(0xFF15803D),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '$customerTitle • ${o.items.length} items',
-                                  style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                                ),
-                                if (o.creditAmount > 0)
-                                  Text(
-                                    'Paid: PKR ${o.paidAmount.toStringAsFixed(0)} • Udhar: PKR ${o.creditAmount.toStringAsFixed(0)}',
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFFDC2626)),
-                                  ),
-                              ],
-                            ),
-                          ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                CurrencyFormatter.format(o.total),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
-                              ),
-                              const SizedBox(height: 2),
-                              const Icon(Icons.arrow_forward_ios_rounded, size: 11, color: Color(0xFF94A3B8)),
-                            ],
-                          ),
-                        ],
-                      ),
+        // Search Bar for Bills & Transactions
+        TextField(
+          controller: _searchController,
+          style: const TextStyle(fontSize: 12.5, color: Color(0xFF0F172A)),
+          decoration: InputDecoration(
+            isDense: true,
+            hintText: _selectedActivityTab == 0
+                ? 'Search sales by invoice #, customer, item...'
+                : 'Search inward by invoice #, supplier, item...',
+            hintStyle: const TextStyle(fontSize: 11.5, color: Color(0xFF94A3B8)),
+            prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 16, color: Color(0xFF64748B)),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                  )
+                : null,
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: const BorderSide(color: Color(0xFF16A34A), width: 1.5),
+            ),
+          ),
+          onChanged: (val) => setState(() => _searchQuery = val),
+        ),
+        const SizedBox(height: 8),
+
+        // Payment Mode Filter Chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: ['All', 'Cash', 'Online / Digital', 'Udhar / Credit'].map((chip) {
+              final isSelected = _paymentFilter == chip;
+              return GestureDetector(
+                onTap: () => setState(() => _paymentFilter = chip),
+                child: Container(
+                  margin: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isSelected ? const Color(0xFF0F172A) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isSelected ? const Color(0xFF0F172A) : const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  child: Text(
+                    chip,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected ? Colors.white : const Color(0xFF475569),
                     ),
                   ),
                 ),
               );
-            }),
+            }).toList(),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        if (_selectedActivityTab == 0) ...[
+          // Sales Invoices List
+          () {
+            final filteredOrders = orders.where((o) {
+              final q = _searchQuery.trim().toLowerCase();
+              final matchesSearch = q.isEmpty ||
+                  o.invoiceNo.toLowerCase().contains(q) ||
+                  (o.customer?.name.toLowerCase().contains(q) ?? false) ||
+                  o.total.toString().contains(q) ||
+                  o.items.any((i) => i.product.title.toLowerCase().contains(q));
+              if (!matchesSearch) return false;
+
+              if (_paymentFilter == 'Cash') {
+                return o.paymentMode == PaymentMode.cash && o.creditAmount == 0;
+              }
+              if (_paymentFilter == 'Online / Digital') {
+                return (o.paymentMode == PaymentMode.online ||
+                        o.paymentMode == PaymentMode.raast ||
+                        o.paymentMode == PaymentMode.digital) &&
+                    o.creditAmount == 0;
+              }
+              if (_paymentFilter == 'Udhar / Credit') {
+                return o.paymentMode == PaymentMode.udhaar || o.creditAmount > 0;
+              }
+              return true;
+            }).toList();
+
+            if (filteredOrders.isEmpty) {
+              return _buildEmptyState(
+                _searchQuery.isNotEmpty || _paymentFilter != 'All'
+                    ? 'No sales match "$_searchQuery" / $_paymentFilter'
+                    : 'No sales bills generated yet for this period',
+                Icons.receipt_long_outlined,
+              );
+            }
+
+            return Column(
+              children: filteredOrders.map((o) {
+                final isUdhar =
+                    o.paymentMode == PaymentMode.udhaar || o.creditAmount > 0;
+                final customerTitle = o.customer?.name ?? 'Walk-in Customer';
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => Navigator.pushNamed(
+                          context, AppRoutes.receiptPreview,
+                          arguments: o),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: isUdhar
+                                    ? const Color(0xFFFEE2E2)
+                                    : const Color(0xFFEFF6FF),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(
+                                isUdhar
+                                    ? Icons.assignment_late_outlined
+                                    : Icons.check_circle_outline,
+                                color: isUdhar
+                                    ? const Color(0xFFDC2626)
+                                    : const Color(0xFF2563EB),
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Invoice #${o.invoiceNo}',
+                                        style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                            color: Color(0xFF0F172A)),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 1.5),
+                                        decoration: BoxDecoration(
+                                          color: isUdhar
+                                              ? const Color(0xFFFFE4E6)
+                                              : const Color(0xFFDCFCE7),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          o.creditAmount > 0 && o.paidAmount > 0
+                                              ? 'SPLIT'
+                                              : o.paymentMode.name.toUpperCase(),
+                                          style: TextStyle(
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                            color: isUdhar
+                                                ? const Color(0xFFBE123C)
+                                                : const Color(0xFF15803D),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '$customerTitle • ${o.items.length} items',
+                                    style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF64748B)),
+                                  ),
+                                  if (o.creditAmount > 0)
+                                    Text(
+                                      'Paid: PKR ${o.paidAmount.toStringAsFixed(0)} • Udhar: PKR ${o.creditAmount.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFFDC2626)),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  CurrencyFormatter.format(o.total),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Color(0xFF0F172A)),
+                                ),
+                                const SizedBox(height: 2),
+                                const Icon(Icons.arrow_forward_ios_rounded,
+                                    size: 11, color: Color(0xFF94A3B8)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          }(),
         ] else ...[
           // Purchases List
-          if (purchases.isEmpty)
-            _buildEmptyState('No purchase bills recorded yet for this period', Icons.local_shipping_outlined)
-          else
-            ...purchases.map((p) {
-              final isPending = p.creditBalanceAdded > 0;
-              return Container(
-                margin: const EdgeInsets.only(bottom: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 38,
-                      height: 38,
-                      decoration: BoxDecoration(
-                        color: isPending ? const Color(0xFFF3E8FF) : const Color(0xFFECFDF5),
-                        borderRadius: BorderRadius.circular(10),
+          () {
+            final filteredPurchases = purchases.where((p) {
+              final q = _searchQuery.trim().toLowerCase();
+              final matchesSearch = q.isEmpty ||
+                  p.invoiceNo.toLowerCase().contains(q) ||
+                  p.supplierName.toLowerCase().contains(q) ||
+                  p.totalAmount.toString().contains(q) ||
+                  p.items.any((i) => i.productName.toLowerCase().contains(q));
+              if (!matchesSearch) return false;
+
+              if (_paymentFilter == 'Cash') {
+                return p.paidAmount > 0 && p.creditBalanceAdded == 0;
+              }
+              if (_paymentFilter == 'Udhar / Credit') {
+                return p.creditBalanceAdded > 0;
+              }
+              return true;
+            }).toList();
+
+            if (filteredPurchases.isEmpty) {
+              return _buildEmptyState(
+                _searchQuery.isNotEmpty || _paymentFilter != 'All'
+                    ? 'No purchases match "$_searchQuery" / $_paymentFilter'
+                    : 'No purchase bills recorded yet for this period',
+                Icons.local_shipping_outlined,
+              );
+            }
+
+            return Column(
+              children: filteredPurchases.map((p) {
+                final isPending = p.creditBalanceAdded > 0;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: isPending
+                              ? const Color(0xFFF3E8FF)
+                              : const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          isPending
+                              ? Icons.pending_actions_rounded
+                              : Icons.inventory_rounded,
+                          color: isPending
+                              ? const Color(0xFF7C3AED)
+                              : const Color(0xFF059669),
+                          size: 20,
+                        ),
                       ),
-                      child: Icon(
-                        isPending ? Icons.pending_actions_rounded : Icons.inventory_rounded,
-                        color: isPending ? const Color(0xFF7C3AED) : const Color(0xFF059669),
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                p.invoiceNo,
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF0F172A)),
-                              ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                decoration: BoxDecoration(
-                                  color: isPending ? const Color(0xFFF3E8FF) : const Color(0xFFDCFCE7),
-                                  borderRadius: BorderRadius.circular(4),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  p.invoiceNo,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                      color: Color(0xFF0F172A)),
                                 ),
-                                child: Text(
-                                  isPending ? 'UDHAR' : 'PAID',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.bold,
-                                    color: isPending ? const Color(0xFF6D28D9) : const Color(0xFF15803D),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 6, vertical: 1.5),
+                                  decoration: BoxDecoration(
+                                    color: isPending
+                                        ? const Color(0xFFF3E8FF)
+                                        : const Color(0xFFDCFCE7),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    isPending ? 'UDHAR' : 'PAID',
+                                    style: TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      color: isPending
+                                          ? const Color(0xFF6D28D9)
+                                          : const Color(0xFF15803D),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${p.supplierName} • ${p.items.length} items',
-                            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-                          ),
-                          if (isPending)
-                            Text(
-                              'Paid: PKR ${p.paidAmount.toStringAsFixed(0)} • Payable: PKR ${p.creditBalanceAdded.toStringAsFixed(0)}',
-                              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF7C3AED)),
+                              ],
                             ),
-                        ],
+                            const SizedBox(height: 2),
+                            Text(
+                              '${p.supplierName} • ${p.items.length} items',
+                              style: const TextStyle(
+                                  fontSize: 11, color: Color(0xFF64748B)),
+                            ),
+                            if (isPending)
+                              Text(
+                                'Paid: PKR ${p.paidAmount.toStringAsFixed(0)} • Payable: PKR ${p.creditBalanceAdded.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF7C3AED)),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Text(
-                      CurrencyFormatter.format(p.totalAmount),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
-                    ),
-                  ],
-                ),
-              );
-            }),
+                      Text(
+                        CurrencyFormatter.format(p.totalAmount),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF0F172A)),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          }(),
         ],
       ],
     );

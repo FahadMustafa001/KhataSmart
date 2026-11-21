@@ -73,7 +73,8 @@ class KhataDirectoryScreen extends StatefulWidget {
 class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
   final _khataState = KhataState.instance;
   int _selectedTabIndex = 0; // 0: Customers, 1: Suppliers
-  String _selectedFilter = 'All Pending';
+  String _selectedFilter = 'All Accounts';
+  String _sortBy = 'Balance: High to Low';
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
@@ -125,27 +126,40 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
     final parties =
         _selectedTabIndex == 0 ? _khataState.customers : _khataState.suppliers;
     final list = parties.map(_partyToCustomerItem).toList();
-    return list.where((item) {
+    var filtered = list.where((item) {
       final q = _searchQuery.trim().toLowerCase();
       final matchesSearch = q.isEmpty ||
           item.name.toLowerCase().contains(q) ||
           item.phone.contains(q) ||
           item.city.toLowerCase().contains(q) ||
           item.area.toLowerCase().contains(q) ||
-          item.address.toLowerCase().contains(q);
+          item.address.toLowerCase().contains(q) ||
+          item.balance.toString().contains(q);
       if (!matchesSearch) return false;
 
-      if (_selectedFilter == '> 30 Days Due') {
-        return item.balance > 5000;
+      if (_selectedFilter == 'Pending (Udhar)') {
+        return item.balance > 0 && item.isReceivable;
       }
-      if (_selectedFilter == 'Highest Balance') {
-        return item.balance > 10000;
+      if (_selectedFilter == 'Advance / Payable') {
+        return item.balance > 0 && !item.isReceivable;
       }
-      if (_selectedFilter == 'Zero Bal') {
+      if (_selectedFilter == 'Settled (Nill)') {
         return item.balance == 0;
       }
       return true;
     }).toList();
+
+    if (_sortBy == 'Balance: High to Low') {
+      filtered.sort((a, b) => b.balance.compareTo(a.balance));
+    } else if (_sortBy == 'Balance: Low to High') {
+      filtered.sort((a, b) => a.balance.compareTo(b.balance));
+    } else if (_sortBy == 'Name (A to Z)') {
+      filtered.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    } else if (_sortBy == 'Name (Z to A)') {
+      filtered.sort((a, b) => b.name.toLowerCase().compareTo(a.name.toLowerCase()));
+    }
+
+    return filtered;
   }
 
   void _showAddNewAccountDialog() {
@@ -187,10 +201,14 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                 ],
               ),
               const Divider(),
-              ...['All Pending', 'Highest Balance', '> 30 Days Due', 'Zero Bal']
+              const Text('Filter Status',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+              const SizedBox(height: 6),
+              ...['All Accounts', 'Pending (Udhar)', 'Advance / Payable', 'Settled (Nill)']
                   .map((filterName) {
                 final isSelected = _selectedFilter == filterName;
                 return ListTile(
+                  dense: true,
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(
                     isSelected
@@ -199,7 +217,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                     color: isSelected
                         ? const Color(0xFF2563EB)
                         : const Color(0xFF94A3B8),
-                    size: 20,
+                    size: 18,
                   ),
                   title: Text(
                     filterName,
@@ -213,6 +231,45 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                   ),
                   onTap: () {
                     setState(() => _selectedFilter = filterName);
+                    Navigator.pop(ctx);
+                  },
+                );
+              }),
+              const SizedBox(height: 10),
+              const Text('Sort By',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+              const SizedBox(height: 6),
+              ...[
+                'Balance: High to Low',
+                'Balance: Low to High',
+                'Name (A to Z)',
+                'Name (Z to A)',
+              ].map((sortName) {
+                final isSelected = _sortBy == sortName;
+                return ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    isSelected
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_off,
+                    color: isSelected
+                        ? const Color(0xFF16A34A)
+                        : const Color(0xFF94A3B8),
+                    size: 18,
+                  ),
+                  title: Text(
+                    sortName,
+                    style: TextStyle(
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? const Color(0xFF16A34A)
+                          : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() => _sortBy = sortName);
                     Navigator.pop(ctx);
                   },
                 );
@@ -650,13 +707,20 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
             style: const TextStyle(fontSize: 12, color: Color(0xFF0F172A)),
             decoration: InputDecoration(
               isDense: true,
-              hintText: 'Search by name or mobile number...',
+              hintText: 'Search by name, phone, city, or balance...',
               hintStyle:
                   const TextStyle(fontSize: 11, color: Color(0xFF94A3B8)),
               prefixIcon:
                   const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
-              suffixIcon:
-                  const Icon(Icons.mic_none, size: 18, color: Color(0xFF64748B)),
+              suffixIcon: _searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(Icons.clear, size: 16, color: Color(0xFF64748B)),
+                      onPressed: () {
+                        _searchController.clear();
+                        setState(() => _searchQuery = '');
+                      },
+                    )
+                  : const Icon(Icons.mic_none, size: 18, color: Color(0xFF64748B)),
               filled: true,
               fillColor: Colors.white,
               contentPadding:
@@ -681,25 +745,32 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
         const SizedBox(width: 8),
 
         // Sort Button
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-          decoration: BoxDecoration(
-            color: Colors.white,
+        Material(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            onTap: _showFilterBottomSheet,
             borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.sort, size: 16, color: Color(0xFF1E293B)),
-              SizedBox(width: 4),
-              Text(
-                'Sort',
-                style: TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B)),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
-            ],
+              child: Row(
+                children: [
+                  const Icon(Icons.sort, size: 16, color: Color(0xFF1E293B)),
+                  const SizedBox(width: 4),
+                  Text(
+                    _sortBy.contains('Balance') ? 'Balance' : 'Name',
+                    style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E293B)),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -708,41 +779,78 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
 
   // 5. Horizontal Filter Chips Row
   Widget _buildFilterChipsRow() {
+    final currentParties = _selectedTabIndex == 0 ? _khataState.customers : _khataState.suppliers;
+    final totalCount = currentParties.length;
+    final pendingCount = currentParties.where((p) => p.balance > 0).length;
+    final advanceCount = currentParties.where((p) => p.balance < 0).length;
+    final settledCount = currentParties.where((p) => p.balance == 0).length;
+
     final filters = [
-      'All Pending',
-      '> 30 Days Due',
-      'Highest Balance',
-      'Zero Bal'
+      {'label': 'All Accounts', 'count': '$totalCount'},
+      {'label': 'Pending (Udhar)', 'count': '$pendingCount'},
+      {'label': 'Advance / Payable', 'count': '$advanceCount'},
+      {'label': 'Settled (Nill)', 'count': '$settledCount'},
     ];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
-        children: filters.map((chip) {
+        children: filters.map((f) {
+          final chip = f['label']!;
+          final count = f['count']!;
           final isSelected = _selectedFilter == chip;
+          final isPendingAlert = chip == 'Pending (Udhar)' && pendingCount > 0;
+
           return GestureDetector(
             onTap: () => setState(() => _selectedFilter = chip),
             child: Container(
               margin: const EdgeInsets.only(right: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: isSelected ? const Color(0xFFEFF6FF) : Colors.white,
+                color: isSelected
+                    ? const Color(0xFF0F172A)
+                    : (isPendingAlert ? const Color(0xFFFEF2F2) : Colors.white),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected
-                      ? const Color(0xFF2563EB)
-                      : const Color(0xFFE2E8F0),
+                      ? const Color(0xFF0F172A)
+                      : (isPendingAlert ? const Color(0xFFFECACA) : const Color(0xFFE2E8F0)),
                 ),
               ),
-              child: Text(
-                chip,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  color: isSelected
-                      ? const Color(0xFF1D4ED8)
-                      : const Color(0xFF475569),
-                ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    chip,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      color: isSelected
+                          ? Colors.white
+                          : (isPendingAlert ? const Color(0xFFDC2626) : const Color(0xFF334155)),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? const Color(0xFF334155)
+                          : (isPendingAlert ? const Color(0xFFDC2626) : const Color(0xFFF1F5F9)),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      count,
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.bold,
+                        color: (isSelected || isPendingAlert)
+                            ? Colors.white
+                            : const Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );

@@ -229,37 +229,14 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.asset(
-                            AppAssets.appLogo,
-                            width: 44,
-                            height: 44,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          right: -1,
-                          bottom: -1,
-                          child: Container(
-                            width: 13,
-                            height: 13,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF16A34A),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFF0F172A),
-                                width: 2,
-                              ),
-                            ),
-                            child: const Center(
-                              child: Icon(Icons.check, size: 7, color: Colors.white),
-                            ),
-                          ),
-                        ),
-                      ],
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        AppAssets.appLogo,
+                        width: 44,
+                        height: 44,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(

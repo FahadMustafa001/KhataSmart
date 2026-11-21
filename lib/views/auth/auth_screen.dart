@@ -161,66 +161,29 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Stack(
-                  alignment: Alignment.bottomRight,
-                  clipBehavior: Clip.none,
-                  children: [
-                    Container(
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            const Color(0xFF1E3A5F).withValues(alpha: 0.15),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Image.asset(
+                      AppAssets.appLogo,
                       width: 76,
                       height: 76,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(22),
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                const Color(0xFF1E3A5F).withValues(alpha: 0.15),
-                            blurRadius: 18,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(22),
-                        child: Image.asset(
-                          AppAssets.appLogo,
-                          width: 76,
-                          height: 76,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
+                      fit: BoxFit.cover,
                     ),
-                    Positioned(
-                      bottom: 0,
-                      right: 0,
-                      child: Container(
-                        width: 18,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                              color: const Color(0xFF16A34A), width: 2),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.08),
-                              blurRadius: 4,
-                              offset: const Offset(0, 1),
-                            ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 6,
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF16A34A),
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
 
                 const SizedBox(height: 16),

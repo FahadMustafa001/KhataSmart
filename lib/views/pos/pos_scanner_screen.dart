@@ -30,14 +30,22 @@ class _PosScannerScreenState extends State<PosScannerScreen>
   String? _lastScannedBarcode;
   DateTime? _lastScanTime;
   int _scannedQty = 1;
-  bool _isLookupMode = false;
+  bool _isCaptureMode = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final args = ModalRoute.of(context)?.settings.arguments;
-    if (args is Map && args['mode'] == 'lookup') {
-      _isLookupMode = true;
+    if (args is Map &&
+        (args['mode'] == 'lookup' ||
+            args['mode'] == 'barcode_capture' ||
+            args['mode'] == 'entry')) {
+      _isCaptureMode = true;
+    } else if (args is String &&
+        (args == 'barcode_capture' ||
+            args == 'entry' ||
+            args == 'lookup')) {
+      _isCaptureMode = true;
     }
   }
 
@@ -111,9 +119,20 @@ class _PosScannerScreenState extends State<PosScannerScreen>
     // Haptic feedback
     HapticFeedback.mediumImpact();
 
-    // In lookup mode, do not call _cartState.addItem; return code directly and close screen
-    if (_isLookupMode) {
-      _navigateBackWithResult(code);
+    // In barcode capture / new product mode, return code directly to form or show create button
+    if (_isCaptureMode) {
+      _showNotification(
+        title: 'Barcode Captured!',
+        subtitle: code,
+        isSuccess: true,
+      );
+      if (Navigator.canPop(context)) {
+        _navigateBackWithResult(code);
+      } else {
+        setState(() {
+          _lastScannedBarcode = code;
+        });
+      }
       return;
     }
 
@@ -459,14 +478,16 @@ class _PosScannerScreenState extends State<PosScannerScreen>
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.white24),
             ),
-            child: const Row(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.qr_code_scanner, size: 14, color: Color(0xFF4ADE80)),
-                SizedBox(width: 6),
+                const Icon(Icons.qr_code_scanner, size: 14, color: Color(0xFF4ADE80)),
+                const SizedBox(width: 6),
                 Text(
-                  'Point camera at barcode or QR code inside the box',
-                  style: TextStyle(
+                  _isCaptureMode
+                      ? 'Point camera at barcode to capture for new product'
+                      : 'Point camera at product barcode to add to bill',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
@@ -503,6 +524,77 @@ class _PosScannerScreenState extends State<PosScannerScreen>
                 ),
                 child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
               ),
+            ),
+          ),
+
+          // Mode Switcher: Bill Scan vs Product Entry
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: const Color(0xB3000000),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white24),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _isCaptureMode = false);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: !_isCaptureMode ? const Color(0xFF16A34A) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.shopping_cart_outlined, size: 13, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Bill Scan',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: !_isCaptureMode ? FontWeight.bold : FontWeight.normal,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _isCaptureMode = true);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: _isCaptureMode ? const Color(0xFF2563EB) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.qr_code, size: 13, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Product Entry',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: _isCaptureMode ? FontWeight.bold : FontWeight.normal,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -585,6 +677,104 @@ class _PosScannerScreenState extends State<PosScannerScreen>
 
   // ── Bottom Detected Product Card / Cart Bar ────────────────────────────────
   Widget _buildBottomProductCard(BuildContext context) {
+    if (_isCaptureMode) {
+      return Container(
+        margin: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withAlpha(70),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.qr_code,
+                      color: Color(0xFF2563EB), size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Product Barcode Entry Mode',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0F172A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        _lastScannedBarcode != null
+                            ? 'Code: $_lastScannedBarcode'
+                            : 'Scan any product to capture its barcode',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontFamily:
+                              _lastScannedBarcode != null ? 'monospace' : null,
+                          fontWeight: _lastScannedBarcode != null
+                              ? FontWeight.bold
+                              : FontWeight.w500,
+                          color: _lastScannedBarcode != null
+                              ? const Color(0xFF16A34A)
+                              : const Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(23)),
+                  elevation: 0,
+                ),
+                icon: const Icon(Icons.check_circle_outline, size: 18),
+                label: Text(
+                  _lastScannedBarcode != null
+                      ? 'Use Barcode ($_lastScannedBarcode)'
+                      : 'Scan or Enter Manually',
+                  style: const TextStyle(
+                      fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                onPressed: () {
+                  if (_lastScannedBarcode != null) {
+                    _navigateBackWithResult(_lastScannedBarcode);
+                  } else {
+                    _showManualInputDialog();
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final product = _lastScannedProduct;
 
     return Container(

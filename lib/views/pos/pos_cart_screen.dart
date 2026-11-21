@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_assets.dart';
+import '../../core/utils/app_toast.dart';
 import '../../models/cart_item_model.dart';
+import '../../models/product_model.dart';
 import '../../routes/app_routes.dart';
 import '../../state/cart_state.dart';
 import '../../state/inventory_state.dart';
@@ -46,6 +48,8 @@ class _PosCartItem {
 class _PosCartScreenState extends State<PosCartScreen> {
   final _cartState = CartState.instance;
   String _selectedPaymentMode = 'Cash';
+  final _itemSearchController = TextEditingController();
+  String _itemSearchQuery = '';
 
   @override
   void initState() {
@@ -56,11 +60,264 @@ class _PosCartScreenState extends State<PosCartScreen> {
   @override
   void dispose() {
     _cartState.removeListener(_rebuild);
+    _itemSearchController.dispose();
     super.dispose();
   }
 
   void _rebuild() {
     if (mounted) setState(() {});
+  }
+
+  List<ProductModel> get _matchingProducts {
+    final q = _itemSearchQuery.trim().toLowerCase();
+    if (q.isEmpty) return [];
+    return InventoryState.instance.products.where((p) {
+      return p.title.toLowerCase().contains(q) ||
+          p.barcode.toLowerCase().contains(q) ||
+          p.category.toLowerCase().contains(q);
+    }).take(6).toList();
+  }
+
+  void _handleItemSearchSubmit(String query) {
+    final q = query.trim();
+    if (q.isEmpty) return;
+    final products = InventoryState.instance.products;
+    ProductModel? match;
+    try {
+      match = products.firstWhere(
+        (p) => p.barcode == q || p.title.toLowerCase() == q.toLowerCase(),
+      );
+    } catch (_) {
+      try {
+        match = products.firstWhere(
+          (p) =>
+              p.title.toLowerCase().contains(q.toLowerCase()) ||
+              p.barcode.contains(q),
+        );
+      } catch (_) {}
+    }
+
+    if (match != null) {
+      _cartState.addItem(match);
+      AppToast.showSuccess(context, 'Added "${match.title}" to bill');
+      _itemSearchController.clear();
+      setState(() => _itemSearchQuery = '');
+    } else {
+      AppToast.showWarning(context, 'No product found matching "$q"');
+    }
+  }
+
+  void _showLooseWeightModal() {
+    final nameCtrl = TextEditingController(text: 'Atta / Flour');
+    final weightCtrl = TextEditingController(text: '1.0');
+    final rateCtrl = TextEditingController(text: '140');
+    String selectedUnit = 'kg';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final double weight = double.tryParse(weightCtrl.text.trim()) ?? 1.0;
+          final double rate = double.tryParse(rateCtrl.text.trim()) ?? 0.0;
+          final double totalAmount =
+              (selectedUnit == 'kg' ? weight : weight / 1000.0) * rate;
+
+          return Padding(
+            padding: EdgeInsets.only(
+              left: 20,
+              right: 20,
+              top: 20,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.scale_outlined,
+                              color: Color(0xFF1D4ED8), size: 22),
+                          SizedBox(width: 8),
+                          Text(
+                            'Loose / Weight Item Billing',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close, size: 20),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      'Atta / Flour',
+                      'Super Basmati Rice',
+                      'Sugar / Cheeni',
+                      'Daal Chana',
+                      'Cooking Oil (Loose)'
+                    ].map((preset) {
+                      return ActionChip(
+                        label: Text(preset,
+                            style: const TextStyle(fontSize: 11)),
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        onPressed: () {
+                          setModalState(() {
+                            nameCtrl.text = preset;
+                            if (preset.contains('Rice')) rateCtrl.text = '320';
+                            if (preset.contains('Sugar')) rateCtrl.text = '160';
+                            if (preset.contains('Atta')) rateCtrl.text = '140';
+                            if (preset.contains('Daal')) rateCtrl.text = '280';
+                          });
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Commodity / Item Name',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: TextField(
+                          controller: weightCtrl,
+                          keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true),
+                          decoration: InputDecoration(
+                            labelText: 'Weight / Qty',
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                          onChanged: (_) => setModalState(() {}),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        flex: 2,
+                        child: DropdownButtonFormField<String>(
+                          initialValue: selectedUnit,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                          ),
+                          items: const [
+                            DropdownMenuItem(value: 'kg', child: Text('kg')),
+                            DropdownMenuItem(
+                                value: 'grams', child: Text('grams')),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) {
+                              setModalState(() => selectedUnit = val);
+                            }
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: rateCtrl,
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Rate per kg (PKR)',
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                    onChanged: (_) => setModalState(() {}),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFBBF7D0)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Calculated Total:',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF15803D))),
+                        Text('PKR ${totalAmount.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF15803D))),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF15803D),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: const Icon(Icons.add_shopping_cart,
+                          color: Colors.white),
+                      label: const Text('Add Loose Item to Bill',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        final title = nameCtrl.text.trim();
+                        if (title.isEmpty) return;
+                        final customProd = ProductModel(
+                          id: 'loose_${DateTime.now().millisecondsSinceEpoch}',
+                          barcode:
+                              'LOOSE-${DateTime.now().millisecondsSinceEpoch % 10000}',
+                          title: '$title ($weight $selectedUnit)',
+                          salePrice: totalAmount,
+                          costPrice: totalAmount * 0.9,
+                          stockQty: 999,
+                          category: 'Loose Grocery',
+                          shopId: ShopState.instance.activeShop.id,
+                        );
+                        _cartState.addItem(customProd);
+                        Navigator.pop(ctx);
+                        AppToast.showSuccess(
+                            context, 'Added $title to bill!');
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   _PosCartItem _cartModelToPosItem(CartItemModel m) {
@@ -260,15 +517,26 @@ class _PosCartScreenState extends State<PosCartScreen> {
                     children: [
                       Expanded(
                         child: TextField(
+                          controller: _itemSearchController,
                           style: const TextStyle(
                               fontSize: 13, color: Color(0xFF0F172A)),
                           decoration: InputDecoration(
                             isDense: true,
-                            hintText: 'Search item name or code',
+                            hintText: 'Search product or barcode (Press Enter)',
                             hintStyle: const TextStyle(
-                                fontSize: 12.5, color: Color(0xFF94A3B8)),
+                                fontSize: 12, color: Color(0xFF94A3B8)),
                             prefixIcon: const Icon(Icons.search,
                                 size: 18, color: Color(0xFF94A3B8)),
+                            suffixIcon: _itemSearchController.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear,
+                                        size: 16, color: Color(0xFF64748B)),
+                                    onPressed: () {
+                                      _itemSearchController.clear();
+                                      setState(() => _itemSearchQuery = '');
+                                    },
+                                  )
+                                : null,
                             filled: true,
                             fillColor: Colors.white,
                             contentPadding: const EdgeInsets.symmetric(
@@ -289,36 +557,127 @@ class _PosCartScreenState extends State<PosCartScreen> {
                                   color: Color(0xFF16A34A), width: 1.5),
                             ),
                           ),
+                          onChanged: (val) =>
+                              setState(() => _itemSearchQuery = val),
+                          onSubmitted: _handleItemSearchSubmit,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 9),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
+                      Material(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          onTap: _showLooseWeightModal,
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: const Color(0xFFBFDBFE)),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.scale_outlined,
-                                size: 15, color: Color(0xFF1D4ED8)),
-                            SizedBox(width: 4),
-                            Text(
-                              'Loose / Weight',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1D4ED8),
-                              ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 9),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
+                              border:
+                                  Border.all(color: const Color(0xFFBFDBFE)),
                             ),
-                          ],
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.scale_outlined,
+                                    size: 15, color: Color(0xFF1D4ED8)),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Loose / Weight',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1D4ED8),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
+
+                  // Live Matched Search Results
+                  if (_itemSearchQuery.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFCBD5E1)),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x0C000000),
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: _matchingProducts.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.all(14),
+                              child: Center(
+                                child: Text(
+                                  'No products found matching "$_itemSearchQuery"',
+                                  style: const TextStyle(
+                                      fontSize: 12, color: Color(0xFF64748B)),
+                                ),
+                              ),
+                            )
+                          : Column(
+                              children: _matchingProducts.map((p) {
+                                return ListTile(
+                                  dense: true,
+                                  title: Text(
+                                    p.title,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${p.category} • Barcode: ${p.barcode} • Stock: ${p.stockQty}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                  ),
+                                  trailing: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor:
+                                          const Color(0xFF16A34A),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      minimumSize: const Size(54, 30),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(8),
+                                      ),
+                                    ),
+                                    onPressed: () {
+                                      _cartState.addItem(p);
+                                      AppToast.showSuccess(
+                                          context, 'Added ${p.title} to bill');
+                                      _itemSearchController.clear();
+                                      setState(() => _itemSearchQuery = '');
+                                    },
+                                    child: const Text(
+                                      '+ Add',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                    ),
+                  ],
 
                   const SizedBox(height: 16),
 
