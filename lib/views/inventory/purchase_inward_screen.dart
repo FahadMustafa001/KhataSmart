@@ -232,10 +232,10 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
     );
   }
 
-  void _showAddProductSheet() {
+  void _showAddProductSheet({ProductModel? preselectedProduct}) {
     final products = _inventoryState.products;
 
-    if (products.isEmpty) {
+    if (products.isEmpty && preselectedProduct == null) {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
@@ -259,7 +259,10 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2563EB)),
               onPressed: () async {
                 Navigator.pop(ctx);
-                await Navigator.pushNamed(context, AppRoutes.addEditProduct);
+                final created = await Navigator.pushNamed(context, AppRoutes.addEditProduct);
+                if (created is ProductModel && mounted) {
+                  _showAddProductSheet(preselectedProduct: created);
+                }
               },
               child: const Text('Create New Product', style: TextStyle(color: Colors.white)),
             ),
@@ -269,7 +272,7 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
       return;
     }
 
-    ProductModel currentProduct = products.first;
+    ProductModel currentProduct = preselectedProduct ?? products.first;
     double cost = currentProduct.costPrice > 0 ? currentProduct.costPrice : currentProduct.salePrice * 0.7;
     final qtyController = TextEditingController(text: '10');
     final costController = TextEditingController(
@@ -871,22 +874,56 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
 
               // Items List
               if (_items.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(28),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: const Column(
-                    children: [
-                      Icon(Icons.inventory_2_outlined, size: 36, color: Color(0xFF94A3B8)),
-                      SizedBox(height: 8),
-                      Text('No products added yet', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF475569))),
-                      SizedBox(height: 2),
-                      Text('Tap "+ Add Product" to record inward items from vendor bill', style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
-                    ],
+                InkWell(
+                  onTap: () => _showAddProductSheet(),
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFBFDBFE), width: 1.2),
+                      boxShadow: const [
+                        BoxShadow(color: Color(0x06000000), blurRadius: 6, offset: Offset(0, 2)),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFEFF6FF),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.inventory_2_outlined, size: 36, color: Color(0xFF2563EB)),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'No products added yet',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Tap below to select or create products received on this invoice',
+                          style: TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 14),
+                        ElevatedButton.icon(
+                          onPressed: () => _showAddProductSheet(),
+                          icon: const Icon(Icons.add, size: 16),
+                          label: const Text('+ Add Product to Bill', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF2563EB),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            elevation: 0,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 )
               else

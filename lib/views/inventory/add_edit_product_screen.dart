@@ -157,7 +157,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     }
 
     AppToast.showSuccess(context, '$title saved to inventory!');
-    Navigator.pop(context);
+    Navigator.pop(context, newProd);
   }
 
   void _onDeleteProduct() async {
