@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../core/constants/app_assets.dart';
 import '../../core/utils/app_toast.dart';
@@ -659,62 +660,107 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
   // ── CARD 3: INITIAL STOCK & ALERTS ──────────────────────────────────────────
   Widget _buildInitialStockAlertsCard() {
+    final unitLabel = _selectedUnit.toUpperCase();
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x06000000),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header Row
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
                 'INITIAL STOCK & ALERTS',
                 style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
                   color: Color(0xFF0F172A),
-                  letterSpacing: 0.5,
+                  letterSpacing: 0.6,
                 ),
               ),
               Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                 decoration: BoxDecoration(
                   color: const Color(0xFFEFF6FF),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFDBEAFE)),
                 ),
-                child: const Text(
-                  'Primary Warehouse',
-                  style: TextStyle(
-                    fontSize: 9.5,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2563EB),
-                  ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.storefront_outlined,
+                        size: 11, color: Color(0xFF2563EB)),
+                    SizedBox(width: 4),
+                    Text(
+                      'Primary Warehouse',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2563EB),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
-          _fieldLabel('Opening Stock Quantity (Tap number to type custom qty)'),
-          const SizedBox(height: 8),
+          const SizedBox(height: 14),
 
-          // Stepper & Direct Editable Field
+          // Label
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              // Minus Button
+              const Text(
+                'Opening Stock Quantity',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              Text(
+                'Tap number to edit',
+                style: TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.blueGrey.shade400,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Modern Stepper & Centered Large Number
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Large Minus Button
               Material(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(10),
+                color: const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(14),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                   onTap: () {
-                    final curr = int.tryParse(_stockController.text.trim()) ?? _stockQuantity;
+                    HapticFeedback.selectionClick();
+                    final curr = int.tryParse(_stockController.text.trim()) ??
+                        _stockQuantity;
                     if (curr > 0) {
                       final newVal = curr - 1;
                       setState(() {
@@ -724,73 +770,89 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     }
                   },
                   child: Container(
-                    width: 50,
-                    height: 48,
+                    width: 52,
+                    height: 54,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: const Color(0xFFDBEAFE)),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: const Center(
-                      child: Icon(Icons.remove, size: 22, color: Color(0xFF1E40AF)),
+                      child: Icon(Icons.remove,
+                          size: 22, color: Color(0xFF334155)),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
 
-              // Direct editable text input with unit
+              const SizedBox(width: 12),
+
+              // Centered Number Display & Editable Field
               Expanded(
                 child: Container(
-                  height: 52,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  height: 64,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
+                    borderRadius: BorderRadius.circular(14),
+                    border:
+                        Border.all(color: const Color(0xFFCBD5E1), width: 1.2),
                   ),
-                  child: Center(
-                    child: TextField(
-                      controller: _stockController,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFF0F172A),
-                        letterSpacing: -0.5,
-                      ),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                        border: InputBorder.none,
-                        hintText: '0',
-                        suffixText: _selectedUnit.toUpperCase(),
-                        suffixStyle: const TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF64748B),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _stockController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFF0F172A),
+                            letterSpacing: -0.5,
+                            height: 1.1,
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: '0',
+                          ),
+                          onChanged: (val) {
+                            final parsed = int.tryParse(val.trim());
+                            if (parsed != null) {
+                              _stockQuantity = parsed;
+                            }
+                          },
                         ),
                       ),
-                      onChanged: (val) {
-                        final parsed = int.tryParse(val.trim());
-                        if (parsed != null) {
-                          _stockQuantity = parsed;
-                        }
-                      },
-                    ),
+                      Text(
+                        unitLabel,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: Color(0xFF64748B),
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
 
-              // Plus Button
+              const SizedBox(width: 12),
+
+              // Large Plus Button
               Material(
                 color: const Color(0xFF0F172A),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(14),
                   onTap: () {
-                    final curr = int.tryParse(_stockController.text.trim()) ?? _stockQuantity;
+                    HapticFeedback.selectionClick();
+                    final curr = int.tryParse(_stockController.text.trim()) ??
+                        _stockQuantity;
                     final newVal = curr + 1;
                     setState(() {
                       _stockQuantity = newVal;
@@ -798,13 +860,13 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     });
                   },
                   child: Container(
-                    width: 50,
-                    height: 48,
+                    width: 52,
+                    height: 54,
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Center(
-                      child: Icon(Icons.add, size: 22, color: Colors.white),
+                      child: Icon(Icons.add, size: 24, color: Colors.white),
                     ),
                   ),
                 ),
@@ -812,16 +874,19 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
             ],
           ),
 
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
 
-          // Quick increment & decrement chips
+          // Quick Action Increment & Decrement Pills
           Row(
             children: [
-              // Minus 10 chip
+              // Decrement pill -10
               Expanded(
-                child: GestureDetector(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
                   onTap: () {
-                    final curr = int.tryParse(_stockController.text.trim()) ?? _stockQuantity;
+                    HapticFeedback.selectionClick();
+                    final curr = int.tryParse(_stockController.text.trim()) ??
+                        _stockQuantity;
                     final newVal = (curr - 10).clamp(0, 999999);
                     setState(() {
                       _stockQuantity = newVal;
@@ -830,19 +895,19 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                   },
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 2),
-                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEF2F2),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFFECACA)),
+                      color: const Color(0xFFFFF1F2),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: const Color(0xFFFECDD3)),
                     ),
                     child: const Center(
                       child: Text(
                         '-10',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFFDC2626),
+                          color: Color(0xFFE11D48),
                         ),
                       ),
                     ),
@@ -851,9 +916,12 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
               ),
               ...[10, 25, 50, 100].map((val) {
                 return Expanded(
-                  child: GestureDetector(
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(10),
                     onTap: () {
-                      final curr = int.tryParse(_stockController.text.trim()) ?? _stockQuantity;
+                      HapticFeedback.selectionClick();
+                      final curr = int.tryParse(_stockController.text.trim()) ??
+                          _stockQuantity;
                       final newVal = curr + val;
                       setState(() {
                         _stockQuantity = newVal;
@@ -862,19 +930,19 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                     },
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 2),
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF6FF),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: const Color(0xFFDBEAFE)),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
                       ),
                       child: Center(
                         child: Text(
                           '+$val',
                           style: const TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF2563EB),
+                            color: Color(0xFF1D4ED8),
                           ),
                         ),
                       ),
@@ -887,19 +955,29 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
 
           const SizedBox(height: 14),
 
-          // Low stock threshold card with editable input and quick buttons
+          // Low stock threshold card with unified stepper pill
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
             decoration: BoxDecoration(
               color: const Color(0xFFFEF2F2),
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: const Color(0xFFFEE2E2)),
             ),
             child: Row(
               children: [
-                const Icon(Icons.warning_amber_rounded,
-                    size: 18, color: Color(0xFFC2410C)),
-                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 18,
+                    color: Color(0xFFDC2626),
+                  ),
+                ),
+                const SizedBox(width: 10),
                 const Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -907,110 +985,115 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
                       Text(
                         'Low Stock Threshold',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF0F172A),
                         ),
                       ),
+                      SizedBox(height: 1),
                       Text(
                         'Alert when stock falls below this',
-                        style: TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: Color(0xFF64748B),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                // Minus for threshold
-                Material(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(6),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: () {
-                      final curr = int.tryParse(_lowStockController.text.trim()) ?? _lowStockThreshold;
-                      if (curr > 0) {
-                        final newVal = curr - 1;
-                        setState(() {
-                          _lowStockThreshold = newVal;
-                          _lowStockController.text = '$newVal';
-                        });
-                      }
-                    },
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: const Center(
-                        child: Icon(Icons.remove, size: 14, color: Color(0xFF0F172A)),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-
-                // Editable threshold input box
+                // Unified Stepper Pill: [-] 5 [+]
                 Container(
-                  width: 54,
-                  height: 36,
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFDC2626), width: 1.2),
-                  ),
-                  child: Center(
-                    child: TextField(
-                      controller: _lowStockController,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                        color: Color(0xFFC2410C),
+                    borderRadius: BorderRadius.circular(20),
+                    border:
+                        Border.all(color: const Color(0xFFFECACA), width: 1.2),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Color(0x0A000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
                       ),
-                      decoration: const InputDecoration(
-                        isDense: true,
-                        contentPadding: EdgeInsets.zero,
-                        border: InputBorder.none,
-                        hintText: '5',
-                      ),
-                      onChanged: (val) {
-                        final parsed = int.tryParse(val.trim());
-                        setState(() {
-                          _lowStockThreshold = parsed ?? 5;
-                        });
-                      },
-                    ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Minus
+                      InkWell(
+                        borderRadius: const BorderRadius.horizontal(
+                            left: Radius.circular(20)),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          final curr =
+                              int.tryParse(_lowStockController.text.trim()) ??
+                                  _lowStockThreshold;
+                          if (curr > 0) {
+                            final newVal = curr - 1;
+                            setState(() {
+                              _lowStockThreshold = newVal;
+                              _lowStockController.text = '$newVal';
+                            });
+                          }
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 9, vertical: 7),
+                          child: Icon(Icons.remove,
+                              size: 15, color: Color(0xFF0F172A)),
+                        ),
+                      ),
 
-                // Plus for threshold
-                Material(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(6),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(6),
-                    onTap: () {
-                      final curr = int.tryParse(_lowStockController.text.trim()) ?? _lowStockThreshold;
-                      final newVal = curr + 1;
-                      setState(() {
-                        _lowStockThreshold = newVal;
-                        _lowStockController.text = '$newVal';
-                      });
-                    },
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color(0xFFCBD5E1)),
-                        borderRadius: BorderRadius.circular(6),
+                      // Editable threshold input box inside pill
+                      SizedBox(
+                        width: 38,
+                        child: TextField(
+                          controller: _lowStockController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w900,
+                            color: Color(0xFFDC2626),
+                          ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            contentPadding: EdgeInsets.zero,
+                            border: InputBorder.none,
+                            hintText: '5',
+                          ),
+                          onChanged: (val) {
+                            final parsed = int.tryParse(val.trim());
+                            setState(() {
+                              _lowStockThreshold = parsed ?? 5;
+                            });
+                          },
+                        ),
                       ),
-                      child: const Center(
-                        child: Icon(Icons.add, size: 14, color: Color(0xFF0F172A)),
+
+                      // Plus
+                      InkWell(
+                        borderRadius: const BorderRadius.horizontal(
+                            right: Radius.circular(20)),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          final curr =
+                              int.tryParse(_lowStockController.text.trim()) ??
+                                  _lowStockThreshold;
+                          final newVal = curr + 1;
+                          setState(() {
+                            _lowStockThreshold = newVal;
+                            _lowStockController.text = '$newVal';
+                          });
+                        },
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 9, vertical: 7),
+                          child:
+                              Icon(Icons.add, size: 15, color: Color(0xFF0F172A)),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
               ],
@@ -1020,7 +1103,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           const SizedBox(height: 6),
           Text(
             'SmartKhata will alert for reordering at $_lowStockThreshold units.',
-            style: const TextStyle(fontSize: 10, color: Color(0xFF64748B)),
+            style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
           ),
         ],
       ),
