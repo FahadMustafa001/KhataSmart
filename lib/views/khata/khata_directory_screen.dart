@@ -137,13 +137,13 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
           item.balance.toString().contains(q);
       if (!matchesSearch) return false;
 
-      if (_selectedFilter == 'Pending (Udhar)') {
+      if (_selectedFilter == 'Pending Due') {
         return item.balance > 0 && item.isReceivable;
       }
       if (_selectedFilter == 'Advance / Payable') {
         return item.balance > 0 && !item.isReceivable;
       }
-      if (_selectedFilter == 'Settled (Nill)') {
+      if (_selectedFilter == 'Settled') {
         return item.balance == 0;
       }
       return true;
@@ -211,7 +211,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
               const Text('Filter Status',
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
               const SizedBox(height: 6),
-              ...['All Accounts', 'Pending (Udhar)', 'Advance / Payable', 'Settled (Nill)']
+              ...['All Accounts', 'Pending Due', 'Advance / Payable', 'Settled']
                   .map((filterName) {
                 final isSelected = _selectedFilter == filterName;
                 return ListTile(
@@ -454,7 +454,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                           ),
                         ),
                         Text(
-                          '(To Collect / Lena)',
+                          '(To Collect)',
                           style: TextStyle(
                               fontSize: 8.5, color: Color(0xFF15803D)),
                         ),
@@ -525,7 +525,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                           ),
                         ),
                         Text(
-                          '(To Pay / Dena)',
+                          '(To Pay)',
                           style: TextStyle(
                               fontSize: 8.5, color: Color(0xFFDC2626)),
                         ),
@@ -796,9 +796,9 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
 
     final filters = [
       {'label': 'All Accounts', 'count': '$totalCount'},
-      {'label': 'Pending (Udhar)', 'count': '$pendingCount'},
+      {'label': 'Pending Due', 'count': '$pendingCount'},
       {'label': 'Advance / Payable', 'count': '$advanceCount'},
-      {'label': 'Settled (Nill)', 'count': '$settledCount'},
+      {'label': 'Settled', 'count': '$settledCount'},
     ];
 
     return SingleChildScrollView(
@@ -808,7 +808,7 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
           final chip = f['label']!;
           final count = f['count']!;
           final isSelected = _selectedFilter == chip;
-          final isPendingAlert = chip == 'Pending (Udhar)' && pendingCount > 0;
+          final isPendingAlert = chip == 'Pending Due' && pendingCount > 0;
 
           return GestureDetector(
             onTap: () => setState(() => _selectedFilter = chip),
@@ -1060,10 +1060,10 @@ class _KhataDirectoryScreenState extends State<KhataDirectoryScreen> {
                   ),
                   child: Text(
                     item.balance == 0
-                        ? 'Chukta (Settled)'
+                        ? 'Settled'
                         : (item.type == PartyType.customer
-                            ? (item.isReceivable ? 'Receivable (Lena)' : 'Advance (Dena)')
-                            : (item.isReceivable ? 'Payable (Dena)' : 'Advance (Lena)')),
+                            ? (item.isReceivable ? 'Receivable' : 'Advance Paid')
+                            : (item.isReceivable ? 'Payable' : 'Advance Received')),
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.bold,

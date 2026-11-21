@@ -1004,22 +1004,22 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     IconData statusIcon;
 
     if (isSettled) {
-      titleText = 'ACCOUNT SETTLED (HISAB NILL)';
-      badgeText = 'Settled (Nill)';
+      titleText = 'ACCOUNT SETTLED';
+      badgeText = 'Settled';
       cardBg = const Color(0xFFF8FAFC);
       borderColor = const Color(0xFFE2E8F0);
       primaryColor = const Color(0xFF475569);
       statusIcon = Icons.check_circle_outline_rounded;
     } else if (isReceivable) {
-      titleText = !isSupplier ? 'NET RECEIVABLE (AAP NE LENE HAIN)' : 'ADVANCE PAID (AAP NE LENE HAIN)';
-      badgeText = !isSupplier ? 'Receivable (Lena Hai)' : 'Advance (Lena Hai)';
+      titleText = !isSupplier ? 'NET RECEIVABLE (TO COLLECT)' : 'ADVANCE PAID';
+      badgeText = !isSupplier ? 'Receivable' : 'Advance Paid';
       cardBg = const Color(0xFFF0FDF4);
       borderColor = const Color(0xFFBBF7D0);
       primaryColor = const Color(0xFF15803D);
       statusIcon = Icons.arrow_downward_rounded;
     } else {
-      titleText = !isSupplier ? 'ADVANCE RECEIVED (AAP NE DENE HAIN)' : 'NET PAYABLE (AAP NE DENE HAIN)';
-      badgeText = !isSupplier ? 'Advance (Dena Hai)' : 'Payable (Dena Hai)';
+      titleText = !isSupplier ? 'ADVANCE RECEIVED' : 'NET PAYABLE (TO PAY)';
+      badgeText = !isSupplier ? 'Advance Received' : 'Payable';
       cardBg = const Color(0xFFFEF2F2);
       borderColor = const Color(0xFFFECACA);
       primaryColor = const Color(0xFFDC2626);
@@ -1754,7 +1754,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Udhaar Diya (-)',
+                      'Give Credit (-)',
                       style: TextStyle(
                         fontSize: 9.5,
                         color: Color(0xFFFECACA),
@@ -1801,7 +1801,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Raqam Wasool Ki (+)',
+                      'Receive Payment (+)',
                       style: TextStyle(
                         fontSize: 9.5,
                         color: Color(0xFFBBF7D0),

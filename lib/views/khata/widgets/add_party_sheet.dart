@@ -225,7 +225,7 @@ class _AddPartySheetState extends State<AddPartySheet> {
                     const SizedBox(height: 16),
 
                     // Section: Name & Contact
-                    _buildSectionTitle('Bunyadi Maloomat (Basic Info)', Icons.person_outline),
+                    _buildSectionTitle('Basic Information', Icons.person_outline),
                     const SizedBox(height: 8),
                     _buildNameField(isCustomer),
                     const SizedBox(height: 10),
@@ -848,8 +848,8 @@ class _AddPartySheetState extends State<AddPartySheet> {
                   Expanded(
                     child: Text(
                       _showAdvancedDetails
-                          ? 'Mazeed Maloomat Chupayein'
-                          : 'Mazeed Maloomat (Credit Limit, CNIC, Notes)',
+                          ? 'Hide Additional Details'
+                          : 'Additional Details (Credit Limit, CNIC, Notes)',
                       style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,

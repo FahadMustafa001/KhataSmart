@@ -666,7 +666,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
             // Stock Inward (Purchase Bill / مال کی خریداری)
             _actionIconBtn(
               icon: Icons.post_add_rounded,
-              tooltip: 'Stock Inward / Purchase Bill (مال خریداری)',
+              tooltip: 'Stock Inward / Purchase Bill',
               iconColor: const Color(0xFF2563EB),
               bgColor: const Color(0xFFEFF6FF),
               borderColor: const Color(0xFFBFDBFE),

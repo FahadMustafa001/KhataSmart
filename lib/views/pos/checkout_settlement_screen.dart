@@ -74,7 +74,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
     if (isCreditOrPartialUdhar && _customer == null) {
       AppToast.showWarning(
         context,
-        'Please select a customer for Udhar / Credit sale (ادھار کے لیے گاہک منتخب کریں)',
+        'Please select a customer for credit sale',
       );
       _showCustomerPicker();
       return;
@@ -795,7 +795,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                                     SizedBox(width: 6),
                                     Expanded(
                                       child: Text(
-                                        'Full Bill on Udhaar (ادھار)',
+                                        'Full Bill on Credit',
                                         style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.bold,
@@ -1019,7 +1019,7 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                                     SizedBox(width: 5),
                                     Expanded(
                                       child: Text(
-                                        'Cash Received (Naqd)',
+                                        'Cash Received',
                                         style: TextStyle(
                                           fontSize: 12.5,
                                           fontWeight: FontWeight.bold,
