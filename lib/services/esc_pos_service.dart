@@ -179,7 +179,7 @@ class EscPosService {
                       textAlign: pw.TextAlign.center,
                     ),
                   ),
-                pw.Text('KhataSmart POS', style: const pw.TextStyle(fontSize: 6.5)),
+                pw.Text('SmartKhata POS', style: const pw.TextStyle(fontSize: 6.5)),
               ],
             );
           },

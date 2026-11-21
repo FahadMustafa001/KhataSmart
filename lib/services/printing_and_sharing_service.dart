@@ -73,7 +73,7 @@ Subtotal: PKR ${order.subtotal.toStringAsFixed(0)}
 ${order.discount > 0 ? 'Discount: PKR ${order.discount.toStringAsFixed(0)}\n' : ''}*TOTAL AMOUNT: PKR ${order.total.toStringAsFixed(0)}*
 ----------------------------------------
 ${shop.receiptFooter}
-_Powered by KhataSmart Retail POS_
+_Powered by SmartKhata Retail POS_
 ''';
 
     if (phone.isNotEmpty) {
@@ -327,8 +327,8 @@ _Powered by KhataSmart Retail POS_
                 textAlign: pw.TextAlign.center,
               ),
               pw.Text(
-                'KhataSmart POS Software',
-                style: pw.TextStyle(fontSize: is80mm ? 7.5 : 6.5, color: PdfColors.grey600),
+                'SmartKhata POS Software',
+                style: pw.TextStyle(fontSize: is80mm ? 8.5 : 7.5, color: PdfColors.grey600),
                 textAlign: pw.TextAlign.center,
               ),
             ],
@@ -993,7 +993,7 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
 
               pw.SizedBox(height: 30),
               pw.Text(
-                'Generated automatically by KhataSmart Retail POS.',
+                'Generated automatically by SmartKhata Retail POS.',
                 style: const pw.TextStyle(fontSize: 9, color: PdfColors.grey600, fontStyle: pw.FontStyle.italic),
               ),
             ],
@@ -1205,7 +1205,7 @@ Total Bill: PKR ${invoice.totalAmount.toStringAsFixed(0)}
 Paid Amount: PKR ${invoice.paidAmount.toStringAsFixed(0)}
 Remaining Balance Due: PKR ${invoice.creditBalanceAdded.toStringAsFixed(0)}
 ----------------------------------------
-${invoice.note.isNotEmpty ? 'Note: ${invoice.note}\n----------------------------------------\n' : ''}_Powered by KhataSmart Retail POS_
+${invoice.note.isNotEmpty ? 'Note: ${invoice.note}\n----------------------------------------\n' : ''}_Powered by SmartKhata Retail POS_
 ''';
 
     final cleanPhone = phone != null ? formatPhoneForWhatsApp(phone) : '';

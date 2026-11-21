@@ -1,6 +1,6 @@
 {
-    "name": "smartkhata",
-    "short_name": "smartkhata",
+    "name": "SmartKhata",
+    "short_name": "SmartKhata",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

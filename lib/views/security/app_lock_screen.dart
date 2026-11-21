@@ -301,7 +301,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
                         ),
                         const SizedBox(height: 14),
                         const Text(
-                          'KhataSmart Lock',
+                          'SmartKhata Lock',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.bold,

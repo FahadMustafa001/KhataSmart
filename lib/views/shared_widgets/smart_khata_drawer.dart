@@ -430,7 +430,7 @@ class _SmartKhataDrawerState extends State<SmartKhataDrawer> {
                           Icon(Icons.person_add_alt_1, size: 14, color: Color(0xFF2563EB)),
                           SizedBox(width: 4),
                           Text(
-                            '+ Naya Khata',
+                            '+ New Account',
                             style: TextStyle(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,

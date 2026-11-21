@@ -1,7 +1,7 @@
-# KhataSmart (کھاتہ سمارٹ)
+# SmartKhata (سمارٹ کھاتہ)
 
 <p align="center">
-  <img src="assets/icons/app_logo.png" alt="KhataSmart Logo" width="120" onerror="this.style.display='none'"/>
+  <img src="assets/icons/app_logo.png" alt="SmartKhata Logo" width="120" onerror="this.style.display='none'"/>
 </p>
 
 <p align="center">
@@ -23,9 +23,9 @@
 
 ## 📌 Executive Summary
 
-**KhataSmart** is a production-grade, offline-first Point of Sale (POS), Inventory Management, and Digital Ledger (Khata / Udhaar) platform engineered for the dynamic commercial ecosystem of Pakistan and emerging markets.
+**SmartKhata** is a production-grade, offline-first Point of Sale (POS), Inventory Management, and Digital Ledger (Khata / Udhaar) platform engineered for the dynamic commercial ecosystem of Pakistan and emerging markets.
 
-From neighborhood Kiryana stores to high-volume Auto Spare Parts dealers, and from Multi-branch Wholesalers to **Dana Mandi (Grain Market)** and **Fruit & Sabzi Mandi** commission houses, KhataSmart replaces cumbersome paper ledgers with an agile, reliable, and fault-tolerant digital system:
+From neighborhood Kiryana stores to high-volume Auto Spare Parts dealers, and from Multi-branch Wholesalers to **Dana Mandi (Grain Market)** and **Fruit & Sabzi Mandi** commission houses, SmartKhata replaces cumbersome paper ledgers with an agile, reliable, and fault-tolerant digital system:
 - **100% Offline-First Operation:** Instant SQLite engine ensures uninterrupted checkout and ledger posting even without internet connectivity.
 - **Real-Time Live Cloud Auto-Sync:** Automated background mirroring to Firebase Cloud Firestore within seconds of any transaction.
 - **Instant Cloud Auto-Restore:** Seamless data recovery on new device login or app re-installation.

@@ -251,7 +251,7 @@ class NotificationService extends ChangeNotifier {
       NotificationModel(
         id: 'seed_system_${activeShop.id}',
         title: 'Store System Ready: ${activeShop.name}',
-        message: 'KhataSmart offline-first engine is running smoothly. Local database and encryption active.',
+        message: 'SmartKhata offline-first engine is running smoothly. Local database and encryption active.',
         type: NotificationType.security,
         timestamp: DateTime.now().subtract(const Duration(minutes: 15)),
         route: AppRoutes.settings,

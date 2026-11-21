@@ -30,7 +30,7 @@ class GoogleDriveService extends ChangeNotifier {
   static final GoogleDriveService instance = GoogleDriveService._();
   GoogleDriveService._();
 
-  static const String _backupFileName = 'KhataSmart_Backup.json';
+  static const String _backupFileName = 'SmartKhata_Backup.json';
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: kIsWeb
@@ -168,7 +168,7 @@ class GoogleDriveService extends ChangeNotifier {
 
       // Search for existing file in user's Drive
       final fileList = await driveApi.files.list(
-        q: "name = '$_backupFileName' and trashed = false",
+        q: "(name = '$_backupFileName' or name = 'KhataSmart_Backup.json') and trashed = false",
         spaces: 'drive',
         $fields: 'files(id, name, modifiedTime, size)',
       );
@@ -186,7 +186,7 @@ class GoogleDriveService extends ChangeNotifier {
         // Create new backup file in Google Drive
         final newFile = drive.File()
           ..name = _backupFileName
-          ..description = 'KhataSmart Store Ledger & Inventory Database Backup'
+          ..description = 'SmartKhata Store Ledger & Inventory Database Backup'
           ..mimeType = 'application/json';
 
         await driveApi.files.create(
@@ -240,7 +240,7 @@ class GoogleDriveService extends ChangeNotifier {
       final driveApi = drive.DriveApi(authClient);
 
       final fileList = await driveApi.files.list(
-        q: "name = '$_backupFileName' and trashed = false",
+        q: "(name = '$_backupFileName' or name = 'KhataSmart_Backup.json') and trashed = false",
         spaces: 'drive',
         $fields: 'files(id, name, modifiedTime, size)',
       );

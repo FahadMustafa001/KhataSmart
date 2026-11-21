@@ -1,5 +1,5 @@
 class AppStrings {
-  static const String appName = 'Khata Smart';
+  static const String appName = 'SmartKhata';
   static const String appTagline = 'Smart Business, Digital Ledger & POS';
 
   // Auth & Setup
