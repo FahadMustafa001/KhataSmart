@@ -76,7 +76,13 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const InventoryListScreen());
 
       case purchaseInward:
-        final supplierId = settings.arguments is String ? settings.arguments as String : null;
+        String? supplierId;
+        if (settings.arguments is String) {
+          supplierId = settings.arguments as String;
+        } else if (settings.arguments is Map) {
+          final map = settings.arguments as Map;
+          supplierId = (map['supplierId'] ?? map['initialSupplierId']) as String?;
+        }
         return MaterialPageRoute(builder: (_) => PurchaseInwardScreen(initialSupplierId: supplierId));
 
       case addEditProduct:

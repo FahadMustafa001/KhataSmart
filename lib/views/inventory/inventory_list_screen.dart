@@ -663,13 +663,13 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Stock Inward (Purchase Bill / مال کی خریداری)
+            // Stock Inward (Purchase Bill / Vendor Inward)
             _actionIconBtn(
-              icon: Icons.post_add_rounded,
+              icon: Icons.local_shipping_outlined,
               tooltip: 'Stock Inward / Purchase Bill',
-              iconColor: const Color(0xFF2563EB),
-              bgColor: const Color(0xFFEFF6FF),
-              borderColor: const Color(0xFFBFDBFE),
+              iconColor: const Color(0xFFEA580C),
+              bgColor: const Color(0xFFFFF7ED),
+              borderColor: const Color(0xFFFFEDD5),
               onTap: () => Navigator.pushNamed(context, AppRoutes.purchaseInward),
             ),
             const SizedBox(width: 6),

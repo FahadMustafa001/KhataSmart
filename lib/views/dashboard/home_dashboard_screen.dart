@@ -191,6 +191,36 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 ],
               ),
 
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: QuickActionButton(
+                      label: 'Stock Inward',
+                      subtitle: 'Receive vendor stock',
+                      icon: Icons.local_shipping_outlined,
+                      color: const Color(0xFFEA580C),
+                      iconBg: const Color(0xFFFFF7ED),
+                      onTap: () => Navigator.pushNamed(
+                          context, AppRoutes.purchaseInward),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: QuickActionButton(
+                      label: 'Reports & P&L',
+                      subtitle: 'Profit, sales & loss',
+                      icon: Icons.insights_rounded,
+                      color: const Color(0xFF6366F1),
+                      iconBg: const Color(0xFFEEF2FF),
+                      onTap: () =>
+                          Navigator.pushNamed(context, AppRoutes.reports),
+                    ),
+                  ),
+                ],
+              ),
+
               if (lowStockCount > 0) ...[
                 const SizedBox(height: 16),
                 _buildLowStockBanner(context, lowStockCount),

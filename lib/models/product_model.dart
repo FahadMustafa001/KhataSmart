@@ -67,4 +67,12 @@ class ProductModel {
       minStockAlert: (map['minStockAlert'] as num?)?.toInt() ?? 5,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ProductModel && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
