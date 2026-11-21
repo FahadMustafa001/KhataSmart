@@ -1540,7 +1540,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Google Drive API is disabled in your Google Cloud Project (711388054106).',
+              'Google Drive API is not enabled for Smart Khata.',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
             ),
             SizedBox(height: 10),
@@ -1550,7 +1550,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             SizedBox(height: 8),
             Text(
-              'Option 2:\nOpen Google Cloud Console for project 711388054106 and click "ENABLE" on Google Drive API.',
+              'Option 2:\nEnable Google Drive API in Google Cloud Console for Smart Khata.',
               style: TextStyle(fontSize: 12, color: Color(0xFF475569)),
             ),
           ],

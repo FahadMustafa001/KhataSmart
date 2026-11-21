@@ -12,7 +12,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     <application
-        android:label="Khata Smart"
+        android:label="Smart Khata"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
