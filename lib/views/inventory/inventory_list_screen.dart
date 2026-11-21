@@ -24,6 +24,7 @@ class InventoryProductItem {
   final int stock;
   final double cost;
   final double sale;
+  final String unit;
   final bool isLowStock;
   final bool isOutOfStock;
   final IconData icon;
@@ -38,6 +39,7 @@ class InventoryProductItem {
     required this.stock,
     required this.cost,
     required this.sale,
+    this.unit = 'units',
     this.isLowStock = false,
     this.isOutOfStock = false,
     required this.icon,
@@ -93,6 +95,7 @@ InventoryProductItem _toItem(ProductModel p) {
     stock: p.stockQty,
     cost: p.costPrice,
     sale: p.salePrice,
+    unit: p.unit.isNotEmpty ? p.unit : 'units',
     isLowStock: p.stockQty > 0 && p.stockQty <= 5,
     isOutOfStock: p.stockQty == 0,
     icon: icon,
@@ -1139,7 +1142,7 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                               ),
                             ),
                             // Status badge
-                            StockBadge(qty: item.stock),
+                            StockBadge(qty: item.stock, unit: item.unit),
                           ],
                         ),
                         const SizedBox(height: 4),
@@ -1159,23 +1162,27 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 1.5),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEEF2FF),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                item.category,
-                                style: const TextStyle(
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF4F46E5),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 1.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEEF2FF),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  item.category,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 8.5,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF4F46E5),
+                                  ),
                                 ),
                               ),
                             ),
-                            const Spacer(),
+                            const SizedBox(width: 4),
                             if (item.isOutOfStock)
                               _restockBtn(
                                   item,
@@ -1211,71 +1218,81 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
               ),
               child: Row(
                 children: [
-                  Text(
-                    'Cost: Rs. ${item.cost.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 6),
-                    child:
-                        Text('•', style: TextStyle(color: Color(0xFFCBD5E1))),
-                  ),
-                  Text(
-                    'Sale: Rs. ${item.sale.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const Spacer(),
-                  if (item.isOutOfStock)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFEF2F2),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'Missed Revenue',
-                        style: TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFDC2626),
+                  Expanded(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 6,
+                      runSpacing: 4,
+                      children: [
+                        Text(
+                          'Cost: Rs. ${item.cost.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF64748B),
+                          ),
                         ),
-                      ),
-                    )
-                  else
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFDCFCE7),
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        '+Rs. ${item.margin.toStringAsFixed(0)} (${item.marginPercent.toStringAsFixed(1)}%)',
-                        style: const TextStyle(
-                          fontSize: 9.5,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF15803D),
+                        const Text(
+                          '•',
+                          style: TextStyle(color: Color(0xFFCBD5E1)),
                         ),
-                      ),
+                        Text(
+                          'Sale: Rs. ${item.sale.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        if (item.isOutOfStock)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text(
+                              'Missed Revenue',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFDC2626),
+                              ),
+                            ),
+                          )
+                        else
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCFCE7),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              '+Rs. ${item.margin.toStringAsFixed(0)} (${item.marginPercent.toStringAsFixed(1)}%)',
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF15803D),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
+                  ),
                   const SizedBox(width: 8),
                   InkWell(
                     onTap: () {
-                      final p = _inventoryState.products.where((prod) => prod.id == item.id).firstOrNull;
+                      final p = _inventoryState.products
+                          .where((prod) => prod.id == item.id)
+                          .firstOrNull;
                       if (p != null) _showBarcodeStickerDialog(p);
                     },
                     borderRadius: BorderRadius.circular(4),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 3),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(4),
@@ -1284,9 +1301,14 @@ class _InventoryListScreenState extends State<InventoryListScreen> {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.qr_code_2, size: 13, color: Color(0xFF2563EB)),
+                          Icon(Icons.qr_code_2,
+                              size: 13, color: Color(0xFF2563EB)),
                           SizedBox(width: 3),
-                          Text('Sticker', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF1D4ED8))),
+                          Text('Sticker',
+                              style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1D4ED8))),
                         ],
                       ),
                     ),
