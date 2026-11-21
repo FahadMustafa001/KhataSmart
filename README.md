@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>Modern Offline-First POS, Inventory & Digital Ledger System</b><br>
-  <i>Tailored for Retailers, Wholesalers, Auto Parts, Garments, Pharmacies, and Mandi Commission Agents.</i>
+  <i>Tailored for Retailers, Wholesalers, Auto Parts, Garments, Pharmacies, Mandi Commission Agents, and Investors.</i>
 </p>
 
 <p align="center">
@@ -21,23 +21,53 @@
 
 ---
 
-## 📌 Executive Summary
+## 📌 Table of Contents
+1. [Executive Summary & Problem Statement](#-executive-summary--problem-statement)
+2. [Supported Business Verticals & Use-Cases](#-supported-business-verticals--use-cases)
+3. [Core System Modules](#-core-system-modules)
+4. [Step-by-Step User Guides & Operations](#-step-by-step-user-guides--operations)
+   - [How to Add & Manage Products](#1-how-to-add--manage-products)
+   - [How Stock Inward (Purchases) Works](#2-how-stock-inward-purchases-works)
+   - [Investor, Partner & Multi-Device Sync](#3-investor-partner--multi-device-sync)
+   - [POS Checkout & Split Payment Settlement](#4-pos-checkout--split-payment-settlement)
+   - [Customer & Supplier Khata (Ledgers)](#5-customer--supplier-khata-ledgers)
+5. [Dual-Engine Cloud Architecture](#-dual-engine-cloud-architecture)
+6. [Google Cloud & Firebase OAuth Setup Guide (Fixing Project ID Labels)](#-google-cloud--firebase-oauth-setup-guide)
+7. [System Architecture & File Organization](#-system-architecture--file-organization)
+8. [Tech Stack & Libraries](#-tech-stack--libraries)
+9. [Getting Started & Development Setup](#-getting-started--development-setup)
+10. [Production Build & Deployment](#-production-build--deployment)
+11. [Recent Quality Improvements & Bug Fixes](#-recent-quality-improvements--bug-fixes)
+12. [UI/UX Design Standards](#-uiux-design-standards)
 
-**SmartKhata** is a production-grade, offline-first Point of Sale (POS), Inventory Management, and Digital Ledger (Khata / Udhaar) platform engineered for the dynamic commercial ecosystem of Pakistan and emerging markets.
+---
 
-From neighborhood Kiryana stores to high-volume Auto Spare Parts dealers, and from Multi-branch Wholesalers to **Dana Mandi (Grain Market)** and **Fruit & Sabzi Mandi** commission houses, SmartKhata replaces cumbersome paper ledgers with an agile, reliable, and fault-tolerant digital system:
-- **100% Offline-First Operation:** Instant SQLite engine ensures uninterrupted checkout and ledger posting even without internet connectivity.
-- **Real-Time Live Cloud Auto-Sync:** Automated background mirroring to Firebase Cloud Firestore within seconds of any transaction.
-- **Instant Cloud Auto-Restore:** Seamless data recovery on new device login or app re-installation.
-- **Fast 1-Tap POS Checkout:** High-speed barcode scanning, custom units pricing (Mann, Bori, Kg, Meter, Pcs), and multi-mode payment settlement (Cash, Udhaar, Raast QR).
-- **Automated Double-Entry Ledger:** Comprehensive Customer (Receivable) and Supplier (Payable) tracking with one-click WhatsApp statement sharing.
-- **Hardware-Level Security:** Biometric (Fingerprint / Face ID) and 4-digit PIN terminal lock.
+## 📌 Executive Summary & Problem Statement
+
+### The Problem in Traditional Commerce
+In Pakistan and developing South Asian retail markets, small and medium enterprises (MSMEs) run on complex physical networks:
+- **Fragile Paper Ledgers (*Bahi Khata*):** Handwritten khata notebooks get physically damaged, lost, or forged, leading to disputed customer balances and severe bad debts (40% to 70% of transactions in Pakistani retail are conducted on *Udhaar* / credit).
+- **Internet Instability:** Cloud-only POS solutions fail when load shedding or mobile network outages hit. A shopkeeper cannot stop their billing counter during peak customer rush.
+- **Complex Units of Measurement (UOM):** Modern global POS apps only recognize generic "Pieces" or decimal "Kg". Pakistani grain markets (*Ghalla Mandi*), cloth markets, and hardware stores trade in specialized local units like `Mann (40kg)`, `Bori / Bag`, `Carton / Box`, `Roll / Than`, and `Meter`.
+- **Manual Supplier Inward Bills:** Store owners purchase inventory on credit from distributors, but lose track of payable liabilities versus current shop stock valuations.
+- **Investor & Partner Blindspots:** Absentee shop investors or multi-partner businesses struggle to audit real-time stock levels, purchase costs, and gross margins without manual evening tallying.
+
+### How SmartKhata Solves It
+**SmartKhata** is an offline-first, dual-synchronized digital ERP and POS engineered specifically for these realities:
+1. **Zero-Latency Offline Autonomy:** Powered by local SQLite. POS billing, stock deductions, and ledger entries work with 100% functionality without any internet connection.
+2. **Automated Dual Cloud Mirroring:**
+   - **Cloud Firestore:** Automatically streams changes to the cloud within 2.5 seconds of local activity.
+   - **Google Drive Backup:** Allows shop owners to create encrypted snapshots in their own free 15 GB Google Drive.
+3. **Universal Unit System:** Native handling of non-standard Pakistani trade units (`Mann`, `Bori`, `Carton`, `Meter`, `Roll`, `Pair`, `Dozen`, `Kg`, `Pcs`).
+4. **Supplier Inward & Cost Auto-Update:** Entering a purchase bill simultaneously adds stock, updates inventory cost prices, and records payable credit in the vendor's ledger.
+5. **Investor & Multi-Device Visibility:** Authorized partners and investors can log in on their personal smartphones or tablets to inspect real-time sales, inventory valuation, and net cash positions.
+6. **Instant WhatsApp Statements:** Send itemized PDF receipts and payment reminders directly to customer or supplier WhatsApp numbers with a single tap.
 
 ---
 
 ## 🏢 Supported Business Verticals & Use-Cases
 
-KhataSmart has been architected with adaptable Units of Measurement (UOM) and flexible workflows to fit diverse business models:
+SmartKhata adapts to diverse commercial sectors across Pakistan:
 
 | # | Business Type | Key App Capabilities | Primary Units (UOM) |
 |---|---|---|---|
@@ -57,7 +87,7 @@ KhataSmart has been architected with adaptable Units of Measurement (UOM) and fl
 
 ### 🛒 1. Point of Sale (POS) Billing Engine
 - **Hardware & Camera Barcode Scanning:** Powered by `mobile_scanner` with continuous scanning, auto-flash/torch, and duplicate-prevention debounce.
-- **Dynamic Units of Measurement (UOM):** Native support for `Mann (40kg)`, `Bori / Bag`, `Carton / Box`, `Kg`, `Gram`, `Meter`, `Roll / Than`, `Pair`, `Pcs`, `Pack`, and `Dozen`.
+- **Dynamic Units of Measurement (UOM):** Native support for `Mann (40kg)`, `Bori / Bag`, `Carton / Box`, `Kg`, `Gram`, `Meter`, `Roll / Than`, `Pair`, `Pcs`, `Pack`, `Dozen`, and `Liter`.
 - **Flexible Settlement Options:**
   - 💵 **Cash:** Built-in change return calculator with rapid denomination helpers (`+10`, `+50`, `+100`, `+500`, `+1000`).
   - 📖 **Udhaar / Khata (Credit Ledger):** 1-tap customer ledger posting with credit limit verification and overdue warnings.
@@ -98,14 +128,171 @@ KhataSmart has been architected with adaptable Units of Measurement (UOM) and fl
 
 ---
 
-## 🏛️ System Architecture
+## 📖 Step-by-Step User Guides & Operations
 
-KhataSmart follows clean architecture principles with a decoupled, reactive MVVM (Model-View-ViewModel / Service-State-View) pattern:
+### 1. How to Add & Manage Products
+
+Adding products to SmartKhata can be done in two ways:
+
+#### Option A: Direct Catalog Entry (Inventory Screen)
+1. Open the **Inventory** tab from the bottom navigation bar.
+2. Tap the floating **`+ Add Product`** button.
+3. Fill in the product details:
+   - **Product Name:** e.g., `Super Basmati Rice` or `Makki Grains`.
+   - **Barcode / SKU:** Tap the camera icon to scan a manufacturer barcode, or tap the dice icon to auto-generate a unique barcode.
+   - **Business Category:** Select your industry sector (e.g., *Grains & Mandi*, *Kiryana*, *Auto Parts*, *Garments*, *Hardware*).
+   - **Unit of Measurement (UOM):** Choose from `Mann (40kg)`, `Bori / Bag`, `Carton / Box`, `Kg`, `Gram`, `Meter`, `Roll / Than`, `Pair`, `Pcs`, `Pack`, `Dozen`, or `Liter`.
+   - **Wholesale Cost Price (PKR):** What you paid to acquire the product.
+   - **Retail Sale Price (PKR):** The selling price charged at checkout.
+   - **Opening Stock Quantity:** Current physical quantity on your shelves.
+   - **Low Stock Warning Level:** The minimum quantity that triggers a restock badge (default: 5).
+4. Tap **Save Product**. The item is instantly saved to local SQLite and queued for Cloud Firestore sync.
+
+#### Option B: On-the-Fly Entry During Stock Inward
+When receiving a vendor delivery containing brand new items:
+1. In the **Stock Inward & Purchases** screen, tap **`+ Add Product to Bill`**.
+2. Tap the **`+ Create New Product`** button inside the product picker.
+3. Enter the product details and save. The new product is created and **immediately selected** in your current purchase bill.
+
+---
+
+### 2. How Stock Inward (Purchases) Works
+
+Stock Inward handles restocking, vendor bills, and supplier payables:
+1. Navigate to **Inventory** -> Tap **Stock Inward** (or click the Restock icon on the dashboard).
+2. **Header Details:**
+   - **Invoice / Bill #:** Auto-generated unique reference (e.g., `PUR-202611-1120`), or type the distributor's printed bill number.
+   - **Inward Date:** Defaults to today's date (tap to select a past date if recording backlogged bills).
+3. **Select Supplier:**
+   - Choose the vendor from your directory, or tap **`+ Add New Supplier`** to register a new distributor.
+4. **Add Items to the Bill:**
+   - Tap the prominent **`+ Add Product to Bill`** card.
+   - Select the product, enter the quantity received, and enter the purchase cost per unit.
+   - Tap **Add to Bill**. Repeat for all items on the invoice.
+5. **Payment Settlement:**
+   - **Paid Full (Cash/Online):** If paid immediately, cash is deducted from drawer balance and supplier balance remains 0.
+   - **Full Udhaar (Payable):** If purchased on credit, the full bill total is automatically credited to the supplier's payable ledger (*آپ نے دینے ہیں*).
+   - **Partial Payment:** Enter the exact amount paid now; the remaining balance automatically posts to the supplier's credit ledger.
+6. **Auto-Cost Price Updating:** Check **Update inventory cost prices to bill rates** to automatically adjust your catalog's cost price to the latest invoice rate.
+7. Tap **Save Inward & Update Stock**. Physical quantities are updated across the inventory in real-time.
+
+---
+
+### 3. Investor, Partner & Multi-Device Sync
+
+For businesses with silent investors, non-active partners, or owners monitoring multiple shops from home:
+- **Instant Cloud Mirroring:** Every purchase inward, sales transaction, and customer payment syncs to Firebase Cloud Firestore within seconds.
+- **How an Investor Views the Business:**
+  1. The investor installs SmartKhata on their Android, iOS, or Web device.
+  2. The investor logs in using the business owner's Google account or registered credentials.
+  3. SmartKhata performs a zero-click **Cloud Auto-Restore**, pulling all products, current stock values, customer receivables, supplier payables, and profit/loss reports.
+  4. Real-time updates push automatically, allowing investors to monitor daily cash flow and stock depletion live from anywhere in the world.
+
+---
+
+### 4. POS Checkout & Split Payment Settlement
+
+1. Navigate to the **POS Billing** tab.
+2. Add items to the cart via:
+   - High-speed camera barcode scanner (top bar button).
+   - Tap-to-add from the catalog product grid.
+3. Review cart quantities, discounts, and custom weight adjustments.
+4. Tap **Proceed to Checkout**:
+   - **Cash Sale:** Enter cash received. Change return is calculated automatically.
+   - **Udhaar / Credit Sale:** Select a registered customer. The invoice total posts to their ledger. If the customer's credit limit is exceeded, a visual warning alert is displayed.
+   - **Split Payment:** Collect partial cash (e.g., Rs. 5,000 cash out of a Rs. 15,000 bill) and post the remaining Rs. 10,000 to customer Udhaar in a single click.
+   - **Raast QR:** Present instant Raast bank transfer QR for cashless digital settlement.
+5. Tap **Complete Sale**. Print thermal receipt (58mm/80mm) or send an itemized PDF directly via WhatsApp.
+
+---
+
+### 5. Customer & Supplier Khata (Ledgers)
+
+- **Party Directory:** Switch between **Customers** (*Receivables / لینے ہیں*) and **Suppliers** (*Payables / دینے ہیں*).
+- **Party Profile:** Displays current net balance, credit limit, phone number, and address.
+- **Transaction Timeline:** Chronological list of all sales, payments, purchases, and return entries.
+- **1-Tap WhatsApp Reminder:** Generate a formal Urdu/English payment request with full ledger statement attached as a PDF.
+
+---
+
+## ☁️ Dual-Engine Cloud Architecture
+
+SmartKhata protects business records against device theft, accidental deletion, water damage, and hardware failure using a dual-redundant cloud strategy:
+
+```mermaid
+graph TD
+    UI[SmartKhata Mobile / Tablet UI] --> LocalDB[(SQLite Local Database)]
+    LocalDB -->|Offline First Instant Reads & Writes| UI
+    
+    LocalDB -->|Background Debounce 2.5s| CloudSyncService[Cloud Sync Engine]
+    CloudSyncService -->|TLS Encrypted Stream| Firestore[(Firebase Cloud Firestore)]
+    
+    LocalDB -.->|Manual / Scheduled Snapshot| DriveService[Google Drive Engine]
+    DriveService -.->|REST API v3| GoogleDrive[(Shop Owner's Personal 15GB Drive)]
+    
+    Firestore -->|Auto Restore on Reinstall / Multi-Device| LocalDB
+    GoogleDrive -.->|Manual JSON Restore| LocalDB
+```
+
+---
+
+## ⚙️ Google Cloud & Firebase OAuth Setup Guide
+
+### Why Did `project-711388054106` Appear on the Phone?
+When signing in with Google or authorizing Google Drive backups, Google's Android consent dialog displays the project name registered on the **Google Cloud Console > OAuth Consent Screen**. If the consent screen has not been configured with an App Name, Google defaults to displaying the raw project number (e.g., `project-711388054106`).
+
+### Fixing Google Cloud Permissions & Branding (Step-by-Step)
+
+#### Step 1: Resolve the "You need additional access" Permission Error
+If opening Google Cloud Console shows:
+> *"You need additional access to the project: 711388054106... Missing or blocked permissions"*
+
+This occurs because your browser is logged into a secondary Google account rather than the primary Firebase Project Owner.
+
+**To resolve:**
+- **Option A (Account Switch):** In the top-right corner of Google Cloud Console, click your profile avatar and switch to the Google account that created the Firebase project (e.g., `ghulam2229mustafa@gmail.com`).
+- **Option B (Grant Access via Firebase):**
+  1. Open [Firebase Console](https://console.firebase.google.com) -> Select **SmartKhata**.
+  2. Click the gear icon ⚙️ -> **Project settings**.
+  3. Click the **Users and permissions** tab.
+  4. Click **Add member**, enter your secondary email (e.g., `mustafafahhad29@gmail.com`), assign the role **Owner** or **Editor**, and save.
+  5. Refresh Google Cloud Console. Access will be granted immediately.
+
+#### Step 2: Configure the OAuth Consent Screen
+1. Navigate to: [Google Cloud Console > APIs & Services > OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent).
+2. Select User Type: **External** -> Click **Create** (or **Edit App**).
+3. Under **App information**:
+   - **App name:** `SmartKhata`
+   - **User support email:** Select your email address.
+   - **App logo (optional):** Upload `assets/icons/app_logo.png`.
+4. Under **Developer contact information**:
+   - **Email addresses:** Enter your email address.
+5. Click **Save and Continue** through the Scopes and Test Users screens.
+6. Under **Publishing status**, click **Publish App** (or leave in Testing mode and add your email to Test Users).
+7. **Result:** All Google sign-in and Google Drive consent dialogs on Android and iOS will now display **SmartKhata** with your official branding instead of the raw project number.
+
+#### Step 3: Enable the Google Drive API (For Drive Backups)
+1. Visit: [Google Cloud API Library > Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com).
+2. Ensure project `SmartKhata` (`smartkhata-19806`) is selected in the top bar.
+3. Click **Enable**.
+
+---
+
+## 🏛️ System Architecture & File Organization
+
+SmartKhata implements a clean, reactive MVVM (Model-View-ViewModel / Service-State-View) architecture:
 
 ```
 lib/
 ├── main.dart                          # App bootstrap, Firebase & database init
 ├── firebase_options.dart              # Multi-platform Firebase credentials
+│
+├── core/                              # App-wide constants, strings, theme & navigation
+│   ├── app_colors.dart                # 100% Light theme palette (slate blue, forest green, alerts)
+│   ├── app_strings.dart               # Unified string constants (English & Urdu context)
+│   ├── app_theme.dart                 # Material 3 light theme definition & component styles
+│   ├── app_routes.dart                # Named routing table
+│   └── responsive_utils.dart          # Breakpoint calculations and device scaling
 │
 ├── models/                            # Domain Data Models (Immutable)
 │   ├── product_model.dart             # Inventory items, barcode, UOM units, pricing & stock
@@ -121,6 +308,7 @@ lib/
 │   ├── google_drive_service.dart      # Google Drive REST API v3 backup engine
 │   ├── printing_and_sharing_service.dart # ESC/POS printer adapter, PDF builder & WhatsApp
 │   ├── security_service.dart          # Local authentication (Biometrics & PIN hash)
+│   ├── notification_service.dart      # In-app and system push notifications
 │   └── auth_service.dart              # Firebase Auth & Google Identity Provider
 │
 ├── state/                             # Reactive State Management (Provider)
@@ -131,6 +319,7 @@ lib/
 │
 └── views/                             # User Interface (100% Light Theme)
     ├── auth/                          # Login, PIN setup & auto-restore onboarding
+    ├── dashboard/                     # Executive dashboard, revenue cards & quick actions
     ├── inventory/                     # Catalog, Add/Edit product (UOM units), Purchase Inward
     ├── khata/                         # Party directory, Ledger details, Statement sheet
     ├── pos/                           # Barcode scanner, Cart, Checkout settlement
@@ -142,7 +331,7 @@ lib/
 
 ---
 
-## 💻 Tech Stack & Open-Source Libraries
+## 💻 Tech Stack & Libraries
 
 | Category | Technology | Purpose |
 | :--- | :--- | :--- |
@@ -160,7 +349,7 @@ lib/
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started & Development Setup
 
 ### Prerequisites
 1. **Flutter SDK:** Version `3.22.0` or higher ([Install Flutter](https://docs.flutter.dev/get-started/install)).
@@ -199,30 +388,19 @@ flutter run -d chrome --web-port=5000
 
 ---
 
-## ⚙️ Cloud Configuration & Setup
-
-### Firebase Authentication & Firestore Setup
-1. Place your `google-services.json` inside `android/app/google-services.json`.
-2. Place your `GoogleService-Info.plist` inside `ios/Runner/GoogleService-Info.plist`.
-3. In the Firebase Console:
-   - Enable **Authentication** (Email/Password & Google Sign-In).
-   - Enable **Cloud Firestore** in Production or Test mode.
-
-### Google Drive API Configuration (Optional Drive Backup)
-If enabling manual Google Drive backups in addition to Cloud Firestore:
-1. Open the [Google Cloud Console API Library](https://console.cloud.google.com/apis/library/drive.googleapis.com).
-2. Select your Firebase project and click **ENABLE** for the **Google Drive API**.
-
----
-
-## 📦 Building Production Releases
+## 📦 Production Build & Deployment
 
 ### Generate Optimized Android APK (Direct Sideloading)
 ```bash
+flutter build apk --release
+```
+The resulting universal APK will be located in:
+`build/app/outputs/flutter-apk/app-release.apk`
+
+For smaller, architecture-specific APKs:
+```bash
 flutter build apk --release --split-per-abi
 ```
-The resulting APKs will be located in:
-`build/app/outputs/flutter-apk/app-arm64-v8a-release.apk`
 
 ### Generate Android App Bundle (Google Play Store)
 ```bash
@@ -233,16 +411,27 @@ The release bundle will be located in:
 
 ---
 
-## 🔒 UI/UX Design System
+## 🛠️ Recent Quality Improvements & Bug Fixes
+
+- **Catalog Item 12px Overflow Resolved:** Resolved a horizontal layout overflow in [inventory_list_screen.dart](file:///c:/Users/fahad/StudioProjects/KhataSmart/lib/views/inventory/inventory_list_screen.dart) when large item prices caused badge rows to exceed device width. Replaced rigid `Row` + `Spacer` layouts with flexible `Expanded` + `Wrap` containers.
+- **Stock Inward Screen Blank Screen Eliminated:** Migrated [purchase_inward_screen.dart](file:///c:/Users/fahad/StudioProjects/KhataSmart/lib/views/inventory/purchase_inward_screen.dart) to robust `CustomAppBar` architecture and modal sheets, preventing layout crashes when opening the inward restock portal.
+- **Interactive Inward Empty State:** Replaced static "No products added yet" containers with an interactive `InkWell` containing a prominent **`+ Add Product to Bill`** button.
+- **On-the-Fly Product Auto-Selection:** Products created on-the-fly from the purchase bill sheet now automatically return via `Navigator.pop(context, newProd)` and are immediately selected in the active inward invoice.
+- **Universal Units of Measurement (UOM):** Added native support for agricultural and wholesale units (`Mann`, `Bori`, `Carton`, `Roll`, `Meter`, `Pair`, `Pcs`, `Pack`, `Dozen`, `Liter`).
+- **Branding Uniformity:** Harmonized brand naming across Android manifests, iOS plists, web titles, and app-lock screens to **SmartKhata**.
+
+---
+
+## 🎨 UI/UX Design Standards
 
 - **100% Light Theme Guarantee:** High-contrast slate blues (`#0F172A`), clean whites (`#FFFFFF`), forest greens (`#15803D`), and crimson alerts (`#DC2626`) engineered for clear visibility under supermarket and outdoor mandi lighting.
 - **Zero Screen Overflows:** Scalable `FittedBox`, `Expanded`, and responsive scroll view architectures tested across standard and compact mobile screens.
 - **Enterprise Touch Ergonomics:** Minimum 48px touch targets tailored for fast thumb operation on mobile and tablet counters.
-- **Clean English UI:** Professional, unified English interface throughout the application.
+- **Clean English UI:** Professional, unified English interface throughout the application with bilingual context support for Pakistani markets.
 
 ---
 
 ## 📄 License & Ownership
 
-Developed with pride by the **KhataSmart Core Team**.  
+Developed with pride by the **SmartKhata Core Team**.  
 All rights reserved. Dedicated to Pakistani retail, wholesale, and mandi commerce empowerment.
