@@ -3,10 +3,13 @@ import '../../core/constants/app_assets.dart';
 import '../../core/utils/app_toast.dart';
 import '../../models/ledger_entry_model.dart';
 import '../../models/party_model.dart';
+import '../../models/purchase_invoice_model.dart';
 import '../../routes/app_routes.dart';
 import '../../services/printing_and_sharing_service.dart';
+import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
 import '../../state/shop_state.dart';
+import '../inventory/purchase_inward_screen.dart';
 import 'widgets/add_transaction_modal.dart';
 
 class LedgerDetailItem {
@@ -53,6 +56,7 @@ class PartyLedgerDetailScreen extends StatefulWidget {
 
 class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   final _khataState = KhataState.instance;
+  final _inventoryState = InventoryState.instance;
 
   late String _partyId;
   bool _isSearching = false;
@@ -61,6 +65,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   String _selectedDateFilter = 'All Dates';
   String _selectedTypeFilter = 'All';
   final bool _isAutoReminderActive = true;
+  int _supplierActiveTab = 0; // 0: Ledger Timeline, 1: Stock Inward Bills
 
   PartyModel? get _currentParty {
     try {
@@ -204,12 +209,14 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     super.initState();
     _partyId = widget.party?.id ?? '';
     _khataState.addListener(_rebuild);
+    _inventoryState.addListener(_rebuild);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     _khataState.removeListener(_rebuild);
+    _inventoryState.removeListener(_rebuild);
     super.dispose();
   }
 
@@ -382,6 +389,15 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
   }
 
   void _showTransactionOptionsModal(LedgerDetailItem tx) {
+    final purchases = _inventoryState.getPurchasesForSupplier(_partyId);
+    PurchaseInvoiceModel? matchedInvoice;
+    for (final p in purchases) {
+      if (tx.title.contains(p.invoiceNo) || tx.tag.contains(p.invoiceNo) || p.id == tx.id) {
+        matchedInvoice = p;
+        break;
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
@@ -436,6 +452,28 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              if (matchedInvoice != null) ...[
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const CircleAvatar(
+                    backgroundColor: Color(0xFFFFF7ED),
+                    child: Icon(Icons.receipt_long_outlined, color: Color(0xFFEA580C), size: 20),
+                  ),
+                  title: Text(
+                    'View Purchased Products (${matchedInvoice.items.length} Items)',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFFEA580C)),
+                  ),
+                  subtitle: Text(
+                    'Itemized quantities, rates & bill ${matchedInvoice.invoiceNo}',
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                  ),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showPurchaseInvoiceDetailSheet(matchedInvoice!);
+                  },
+                ),
+                const Divider(height: 1),
+              ],
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const CircleAvatar(
@@ -443,7 +481,7 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                   child: Icon(Icons.share, color: Color(0xFF16A34A), size: 20),
                 ),
                 title: const Text('Share Transaction on WhatsApp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                subtitle: const Text('Send this entry directly to customer', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                subtitle: const Text('Send this entry directly to customer or supplier', style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
                 onTap: () {
                   Navigator.pop(ctx);
                   final p = _currentParty;
@@ -724,48 +762,57 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                     // 4. Totals Row
                     _buildTotalsRow(),
 
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 12),
 
-                    // 5. Transaction Statement Header & Filters
-                    _buildTransactionStatementHeader(),
+                    // Supplier Tab Selector (Khata Ledger vs Purchased Stock Inward Bills)
+                    if (party?.type == PartyType.supplier) ...[
+                      _buildSupplierTabSelector(_inventoryState.getPurchasesForSupplier(party!.id).length),
+                    ],
 
-                    const SizedBox(height: 8),
+                    if (party?.type == PartyType.supplier && _supplierActiveTab == 1) ...[
+                      _buildSupplierPurchasesView(party!),
+                    ] else ...[
+                      // 5. Transaction Statement Header & Filters
+                      _buildTransactionStatementHeader(),
 
-                    // Filter chips row
-                    _buildFilterChipsRow(),
+                      const SizedBox(height: 8),
 
-                    const SizedBox(height: 8),
+                      // Filter chips row
+                      _buildFilterChipsRow(),
 
-                    // 6. Subheader Table Column Names
-                    _buildTableColumnHeader(),
+                      const SizedBox(height: 8),
 
-                    const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                      // 6. Subheader Table Column Names
+                      _buildTableColumnHeader(),
 
-                    // 7. Transaction Feed
-                    if (_partyTransactions.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 16.0),
-                        child: Center(
-                          child: Column(
-                            children: [
-                              Icon(Icons.receipt_long_outlined, size: 42, color: Colors.grey.shade400),
-                              const SizedBox(height: 8),
-                              const Text(
-                                'No transactions match current filters.\nUse buttons below to record "You Gave" or "You Received".',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: Color(0xFF64748B),
-                                  height: 1.4,
+                      const Divider(height: 1, color: Color(0xFFE2E8F0)),
+
+                      // 7. Transaction Feed
+                      if (_partyTransactions.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 36.0, horizontal: 16.0),
+                          child: Center(
+                            child: Column(
+                              children: [
+                                Icon(Icons.receipt_long_outlined, size: 42, color: Colors.grey.shade400),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'No transactions match current filters.\nUse buttons below to record "You Gave" or "You Received".',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: Color(0xFF64748B),
+                                    height: 1.4,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      )
-                    else ...[
-                      ..._partyTransactions.map((tx) => _buildTransactionRow(tx)),
-                      const SizedBox(height: 10),
+                        )
+                      else ...[
+                        ..._partyTransactions.map((tx) => _buildTransactionRow(tx)),
+                        const SizedBox(height: 10),
+                      ],
                     ],
 
                     const SizedBox(height: 8),
@@ -1124,12 +1171,54 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
     );
   }
 
-  // 3. Quick Action Buttons Row: WhatsApp, Direct Call, Statement
+  // 3. Quick Action Buttons Row: WhatsApp, Direct Call, Statement (+ Stock In for Supplier)
   Widget _buildActionButtonsRow() {
     final party = _currentParty;
+    final isSupplier = party?.type == PartyType.supplier;
 
     return Row(
       children: [
+        if (isSupplier) ...[
+          // Quick Stock Inward Action for Supplier
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PurchaseInwardScreen(initialSupplierId: party?.id),
+                  ),
+                );
+                if (mounted) setState(() {});
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF7ED),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFFFEDD5)),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(Icons.inventory_2_outlined, size: 20, color: Color(0xFFEA580C)),
+                    SizedBox(height: 4),
+                    Text(
+                      '+ Stock In',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFC2410C)),
+                    ),
+                    Text(
+                      'Receive Items',
+                      style: TextStyle(fontSize: 9, color: Color(0xFFEA580C)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
+
         // WhatsApp Action
         Expanded(
           child: InkWell(
@@ -1157,9 +1246,9 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
                     'WhatsApp',
                     style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF166534)),
                   ),
-                  const Text(
-                    'Send Bill',
-                    style: TextStyle(fontSize: 9, color: Color(0xFF15803D)),
+                  Text(
+                    isSupplier ? 'Statement' : 'Send Bill',
+                    style: const TextStyle(fontSize: 9, color: Color(0xFF15803D)),
                   ),
                 ],
               ),
@@ -1813,6 +1902,732 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // ── Supplier Inward Inventory & Purchased Products Helpers ──────────────
+
+  Widget _buildSupplierTabSelector(int purchasesCount) {
+    return Container(
+      margin: const EdgeInsets.only(top: 2, bottom: 12),
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _supplierActiveTab = 0),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _supplierActiveTab == 0 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: _supplierActiveTab == 0
+                      ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.account_balance_wallet_outlined,
+                      size: 14,
+                      color: _supplierActiveTab == 0 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Khata Ledger',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: _supplierActiveTab == 0 ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: _supplierActiveTab == 0 ? const Color(0xFF0F172A) : const Color(0xFF94A3B8),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${_partyTransactions.length}',
+                        style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: InkWell(
+              onTap: () => setState(() => _supplierActiveTab = 1),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _supplierActiveTab == 1 ? Colors.white : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: _supplierActiveTab == 1
+                      ? const [BoxShadow(color: Color(0x0A000000), blurRadius: 4, offset: Offset(0, 1))]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      size: 14,
+                      color: _supplierActiveTab == 1 ? const Color(0xFFEA580C) : const Color(0xFF64748B),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Purchased Items',
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                        color: _supplierActiveTab == 1 ? const Color(0xFFEA580C) : const Color(0xFF64748B),
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                      decoration: BoxDecoration(
+                        color: _supplierActiveTab == 1 ? const Color(0xFFEA580C) : const Color(0xFF94A3B8),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '$purchasesCount',
+                        style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSupplierPurchasesView(PartyModel party) {
+    final purchases = _inventoryState.getPurchasesForSupplier(party.id);
+
+    if (purchases.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 16),
+        margin: const EdgeInsets.only(top: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFFF7ED),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.inventory_2_outlined, size: 36, color: Color(0xFFEA580C)),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'No Stock Inward Bills Yet',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Record stock received from this supplier to inspect which products, quantities, rates, and cash/credit payments were made.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEA580C),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(Icons.add, color: Colors.white, size: 18),
+              label: const Text(
+                'Record First Stock Inward',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+              ),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PurchaseInwardScreen(initialSupplierId: party.id),
+                  ),
+                );
+                if (mounted) setState(() {});
+              },
+            ),
+          ],
+        ),
+      );
+    }
+
+    final double totalPurchasedAmount = purchases.fold(0.0, (sum, p) => sum + p.totalAmount);
+    final double totalPaidAmount = purchases.fold(0.0, (sum, p) => sum + p.paidAmount);
+    final double totalCreditAmount = purchases.fold(0.0, (sum, p) => sum + p.creditBalanceAdded);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Summary Metrics Card
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'TOTAL STOCK VALUE INWARD',
+                    style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                  ),
+                  Text(
+                    '${purchases.length} Inward Bills',
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFEA580C)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  Text(
+                    'PKR ${totalPurchasedAmount.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                  ),
+                ],
+              ),
+              const Divider(height: 16, color: Color(0xFFF1F5F9)),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Cash / Bank Paid', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                        const SizedBox(height: 2),
+                        Text(
+                          'PKR ${totalPaidAmount.toStringAsFixed(0)}',
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Added to Khata Due', style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                        const SizedBox(height: 2),
+                        Text(
+                          'PKR ${totalCreditAmount.toStringAsFixed(0)}',
+                          style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'INWARD BILLS & PRODUCTS LIST',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: 0.5),
+            ),
+            Text(
+              'Tap bill for item details',
+              style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        // List of purchases
+        ...purchases.map((inv) => _buildPurchaseInvoiceCard(inv)),
+      ],
+    );
+  }
+
+  Widget _buildPurchaseInvoiceCard(PurchaseInvoiceModel inv) {
+    final dateStr = '${inv.date.day} ${_monthName(inv.date.month)} ${inv.date.year}';
+    final hour = inv.date.hour % 12 == 0 ? 12 : inv.date.hour % 12;
+    final timeStr = '${hour.toString().padLeft(2, '0')}:${inv.date.minute.toString().padLeft(2, '0')} ${inv.date.hour >= 12 ? 'PM' : 'AM'}';
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: const [
+          BoxShadow(color: Color(0x03000000), blurRadius: 6, offset: Offset(0, 2)),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _showPurchaseInvoiceDetailSheet(inv),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header Row: Invoice No, Date & Status
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFFFEDD5)),
+                        ),
+                        child: Text(
+                          inv.invoiceNo,
+                          style: const TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFC2410C),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$dateStr • $timeStr',
+                        style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: inv.creditBalanceAdded > 0 ? const Color(0xFFFEE2E2) : const Color(0xFFDCFCE7),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      inv.creditBalanceAdded > 0 ? 'Due: PKR ${inv.creditBalanceAdded.toStringAsFixed(0)}' : 'Fully Paid',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: inv.creditBalanceAdded > 0 ? const Color(0xFFDC2626) : const Color(0xFF15803D),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+
+              // Products summary list
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...inv.items.take(3).map((item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2.5),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              '• ${item.productName} (x${item.quantity.toInt()} ${item.unit})',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Text(
+                            '@ PKR ${item.costPrice.toStringAsFixed(0)} = PKR ${item.subtotal.toStringAsFixed(0)}',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF475569)),
+                          ),
+                        ],
+                      ),
+                    )),
+                    if (inv.items.length > 3) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '+ ${inv.items.length - 3} more product items... Tap to view all',
+                        style: const TextStyle(fontSize: 10, color: Color(0xFF2563EB), fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Financial Summary Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.payments_outlined, size: 14, color: Color(0xFF64748B)),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Bill: PKR ${inv.totalAmount.toStringAsFixed(0)}',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '• Paid: PKR ${inv.paidAmount.toStringAsFixed(0)}',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF16A34A), fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                  const Row(
+                    children: [
+                      Text(
+                        'Details',
+                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF2563EB)),
+                      ),
+                      Icon(Icons.chevron_right, size: 16, color: Color(0xFF2563EB)),
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showPurchaseInvoiceDetailSheet(PurchaseInvoiceModel invoice) {
+    final dateStr = '${invoice.date.day} ${_monthName(invoice.date.month)} ${invoice.date.year}';
+    final hour = invoice.date.hour % 12 == 0 ? 12 : invoice.date.hour % 12;
+    final timeStr = '${hour.toString().padLeft(2, '0')}:${invoice.date.minute.toString().padLeft(2, '0')} ${invoice.date.hour >= 12 ? 'PM' : 'AM'}';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.75,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, scrollController) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Header Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.receipt_long_rounded, color: Color(0xFFEA580C), size: 20),
+                          const SizedBox(width: 6),
+                          Text(
+                            invoice.invoiceNo,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '$dateStr at $timeStr',
+                        style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () => Navigator.pop(ctx),
+                  ),
+                ],
+              ),
+              const Divider(height: 18, color: Color(0xFFE2E8F0)),
+
+              Expanded(
+                child: ListView(
+                  controller: scrollController,
+                  children: [
+                    // Supplier Info Badge
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Supplier Name', style: TextStyle(fontSize: 10, color: Color(0xFF64748B))),
+                              Text(
+                                invoice.supplierName,
+                                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFFF7ED),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: const Color(0xFFFFEDD5)),
+                            ),
+                            child: Text(
+                              '${invoice.items.length} Product Types',
+                              style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFFC2410C)),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Itemized Table Header
+                    const Text(
+                      'PURCHASED PRODUCTS & QUANTITIES',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A), letterSpacing: 0.5),
+                    ),
+                    const SizedBox(height: 6),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        children: [
+                          // Header
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(9)),
+                            ),
+                            child: const Row(
+                              children: [
+                                Expanded(flex: 5, child: Text('Product Item', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                                Expanded(flex: 2, child: Text('Qty', textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                                Expanded(flex: 3, child: Text('Rate (PKR)', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                                Expanded(flex: 3, child: Text('Subtotal', textAlign: TextAlign.right, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF475569)))),
+                              ],
+                            ),
+                          ),
+                          // Items rows
+                          ...invoice.items.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final item = entry.value;
+                            final isEven = idx % 2 == 0;
+
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              color: isEven ? Colors.white : const Color(0xFFFAFAFA),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    flex: 5,
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          item.productName,
+                                          style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                                        ),
+                                        Text(
+                                          'Unit: ${item.unit}',
+                                          style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text(
+                                      '${item.quantity.toInt()} ${item.unit}',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      item.costPrice.toStringAsFixed(0),
+                                      textAlign: TextAlign.right,
+                                      style: const TextStyle(fontSize: 11, color: Color(0xFF334155)),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    flex: 3,
+                                    child: Text(
+                                      item.subtotal.toStringAsFixed(0),
+                                      textAlign: TextAlign.right,
+                                      style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Financial Breakdown
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Total Bill Amount', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: Color(0xFF475569))),
+                              Text(
+                                'PKR ${invoice.totalAmount.toStringAsFixed(0)}',
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Cash / Bank Paid Now', style: TextStyle(fontSize: 11.5, color: Color(0xFF16A34A), fontWeight: FontWeight.w600)),
+                              Text(
+                                'PKR ${invoice.paidAmount.toStringAsFixed(0)}',
+                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF16A34A)),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('Added to Supplier Khata (Credit)', style: TextStyle(fontSize: 11.5, color: Color(0xFFDC2626), fontWeight: FontWeight.w600)),
+                              Text(
+                                'PKR ${invoice.creditBalanceAdded.toStringAsFixed(0)}',
+                                style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFFDC2626)),
+                              ),
+                            ],
+                          ),
+                          if (invoice.note.isNotEmpty) ...[
+                            const Divider(height: 14, color: Color(0xFFE2E8F0)),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text('Note: ', style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+                                Expanded(
+                                  child: Text(invoice.note, style: const TextStyle(fontSize: 10.5, color: Color(0xFF334155))),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
+              ),
+
+              // Bottom Actions: Share via WhatsApp & Close
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: const Color(0xFF16A34A),
+                        side: const BorderSide(color: Color(0xFFBBF7D0)),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      icon: Image.asset(AppAssets.whatsappIcon, width: 20, height: 20),
+                      label: const Text('Share WhatsApp', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                      onPressed: () {
+                        final party = _currentParty;
+                        PrintingAndSharingService.instance.sharePurchaseInvoiceViaWhatsApp(
+                          invoice: invoice,
+                          shop: ShopState.instance.activeShop,
+                          phone: party?.phone,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF0F172A),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Close', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

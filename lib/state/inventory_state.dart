@@ -26,6 +26,13 @@ class InventoryState extends ChangeNotifier {
     return _purchases.where((p) => p.shopId == currentShopId).toList();
   }
 
+  List<PurchaseInvoiceModel> getPurchasesForSupplier(String supplierId) {
+    final currentShopId = ShopState.instance.activeShopId;
+    return _purchases
+        .where((p) => p.shopId == currentShopId && p.supplierId == supplierId)
+        .toList();
+  }
+
   List<ProductModel> get allProductsForDatabase => List.unmodifiable(_products);
   List<PurchaseInvoiceModel> get allPurchasesForDatabase => List.unmodifiable(_purchases);
 
@@ -76,15 +83,27 @@ class InventoryState extends ChangeNotifier {
       }
     }
 
-    // 2. Add ledger entry to supplier's khata if there is a remaining credit balance
+    // 2. Add ledger entry to supplier's khata
     // LedgerType.got subtracts balance (p.balance -= amount), correctly establishing a payable balance
-    if (invoice.creditBalanceAdded > 0 && invoice.supplierId.isNotEmpty) {
-      KhataState.instance.addTransaction(
-        partyId: invoice.supplierId,
-        type: LedgerType.got, // We owe supplier (Payable / Inflow of inventory)
-        amount: invoice.creditBalanceAdded,
-        note: 'Stock Inward Bill #${invoice.invoiceNo} (Total: ${invoice.totalAmount.toStringAsFixed(0)}, Paid: ${invoice.paidAmount.toStringAsFixed(0)})',
-      );
+    if (invoice.supplierId.isNotEmpty) {
+      if (invoice.creditBalanceAdded > 0) {
+        KhataState.instance.addTransaction(
+          partyId: invoice.supplierId,
+          type: LedgerType.got, // We owe supplier (Payable / Inflow of inventory)
+          amount: invoice.creditBalanceAdded,
+          note: invoice.paidAmount > 0
+              ? 'Stock Inward Bill #${invoice.invoiceNo} (Split: Paid ${invoice.paidAmount.toStringAsFixed(0)}, Due ${invoice.creditBalanceAdded.toStringAsFixed(0)})'
+              : 'Stock Inward Bill #${invoice.invoiceNo} (Full Credit Purchase)',
+        );
+      } else {
+        // Fully paid purchase at time of inward: record transaction with amount 0 so it appears in ledger timeline
+        KhataState.instance.addTransaction(
+          partyId: invoice.supplierId,
+          type: LedgerType.got,
+          amount: 0.0,
+          note: 'Stock Inward Bill #${invoice.invoiceNo} (Paid in Full: PKR ${invoice.totalAmount.toStringAsFixed(0)})',
+        );
+      }
     }
 
     // 3. Store invoice

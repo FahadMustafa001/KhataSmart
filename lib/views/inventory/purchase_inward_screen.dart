@@ -6,6 +6,7 @@ import '../../models/party_model.dart';
 import '../../models/product_model.dart';
 import '../../models/purchase_invoice_model.dart';
 import '../../routes/app_routes.dart';
+import '../../services/local_database_service.dart';
 import '../../services/notification_service.dart';
 import '../../state/inventory_state.dart';
 import '../../state/khata_state.dart';
@@ -13,7 +14,8 @@ import '../../state/shop_state.dart';
 import '../khata/widgets/add_party_sheet.dart';
 
 class PurchaseInwardScreen extends StatefulWidget {
-  const PurchaseInwardScreen({super.key});
+  final String? initialSupplierId;
+  const PurchaseInwardScreen({super.key, this.initialSupplierId});
 
   @override
   State<PurchaseInwardScreen> createState() => _PurchaseInwardScreenState();
@@ -33,6 +35,11 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
     super.initState();
     final now = DateTime.now();
     _invoiceNoController.text = 'PUR-${now.year}${now.month.toString().padLeft(2, '0')}-${(now.millisecondsSinceEpoch % 10000).toString().padLeft(4, '0')}';
+    if (widget.initialSupplierId != null) {
+      _selectedSupplier = KhataState.instance.suppliers
+          .where((s) => s.id == widget.initialSupplierId)
+          .firstOrNull;
+    }
   }
 
   @override
@@ -310,6 +317,7 @@ class _PurchaseInwardScreenState extends State<PurchaseInwardScreen> {
     );
 
     InventoryState.instance.processPurchaseInvoice(invoice, updateCostPrice: _updateCostPrice);
+    LocalDatabaseService.instance.persistToDisk();
 
     // Dispatch live stock notification
     NotificationService.instance.addNotification(

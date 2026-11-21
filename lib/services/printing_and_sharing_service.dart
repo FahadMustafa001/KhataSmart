@@ -8,6 +8,7 @@ import '../models/ledger_entry_model.dart';
 import '../models/order_model.dart';
 import '../models/party_model.dart';
 import '../models/product_model.dart';
+import '../models/purchase_invoice_model.dart';
 import '../models/shop_model.dart';
 
 class PrintingAndSharingService {
@@ -1174,5 +1175,52 @@ ${shop.phone.isNotEmpty ? 'Contact: ${shop.phone}' : ''}
       onLayout: (PdfPageFormat format) async => bytes,
       name: 'Barcode_Stickers_${product.name.replaceAll(RegExp(r'[^a-zA-Z0-9]'), '_')}.pdf',
     );
+  }
+
+  /// Share Itemized Purchase Inward Bill with Supplier via WhatsApp
+  Future<void> sharePurchaseInvoiceViaWhatsApp({
+    required PurchaseInvoiceModel invoice,
+    required ShopModel shop,
+    String? phone,
+  }) async {
+    final itemsBuffer = StringBuffer();
+    for (final item in invoice.items) {
+      itemsBuffer.writeln(
+        '• ${item.productName} (x${item.quantity.toInt()} ${item.unit}) @ PKR ${item.costPrice.toStringAsFixed(0)} = PKR ${item.subtotal.toStringAsFixed(0)}',
+      );
+    }
+
+    final message = '''
+*${shop.name.toUpperCase()}*
+${shop.address.isNotEmpty ? '${shop.address}\n' : ''}*STOCK INWARD / PURCHASE INVOICE*
+----------------------------------------
+Invoice #: ${invoice.invoiceNo}
+Date: ${invoice.date.day}/${invoice.date.month}/${invoice.date.year}
+Supplier: ${invoice.supplierName}
+----------------------------------------
+*ITEMS RECEIVED:*
+${itemsBuffer.toString().trim()}
+----------------------------------------
+Total Bill: PKR ${invoice.totalAmount.toStringAsFixed(0)}
+Paid Amount: PKR ${invoice.paidAmount.toStringAsFixed(0)}
+Remaining Balance Due: PKR ${invoice.creditBalanceAdded.toStringAsFixed(0)}
+----------------------------------------
+${invoice.note.isNotEmpty ? 'Note: ${invoice.note}\n----------------------------------------\n' : ''}_Powered by KhataSmart Retail POS_
+''';
+
+    final cleanPhone = phone != null ? formatPhoneForWhatsApp(phone) : '';
+    if (cleanPhone.isNotEmpty) {
+      final url = Uri.parse('https://wa.me/$cleanPhone?text=${Uri.encodeComponent(message)}');
+      try {
+        final launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+        if (!launched) {
+          await Share.share(message, subject: 'Purchase Invoice #${invoice.invoiceNo}');
+        }
+      } catch (_) {
+        await Share.share(message, subject: 'Purchase Invoice #${invoice.invoiceNo}');
+      }
+    } else {
+      await Share.share(message, subject: 'Purchase Invoice #${invoice.invoiceNo}');
+    }
   }
 }

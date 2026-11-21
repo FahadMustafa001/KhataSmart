@@ -76,7 +76,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const InventoryListScreen());
 
       case purchaseInward:
-        return MaterialPageRoute(builder: (_) => const PurchaseInwardScreen());
+        final supplierId = settings.arguments is String ? settings.arguments as String : null;
+        return MaterialPageRoute(builder: (_) => PurchaseInwardScreen(initialSupplierId: supplierId));
 
       case addEditProduct:
         if (settings.arguments is ProductModel) {
