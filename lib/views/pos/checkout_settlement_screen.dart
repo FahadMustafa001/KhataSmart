@@ -465,18 +465,29 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                   subtitle: 'Direct Box',
                   icon: Icons.payments_outlined,
                   isSelected: _selectedPaymentMethod == 'Cash',
-                  onTap: () => setState(() => _selectedPaymentMethod = 'Cash'),
+                  onTap: () => setState(() {
+                    _selectedPaymentMethod = 'Cash';
+                    _cashReceivedController.text =
+                        _billAmount.toStringAsFixed(0);
+                  }),
                 ),
                 const SizedBox(width: 10),
 
                 _buildMethodCard(
-                  title: 'Store Credit',
+                  title: 'Udhaar / Khata',
                   subtitle: 'Credit Ledger',
                   icon: Icons.menu_book,
                   isSelected: _selectedPaymentMethod == 'Store Credit',
                   isFeaturedDark: true,
-                  onTap: () =>
-                      setState(() => _selectedPaymentMethod = 'Store Credit'),
+                  onTap: () {
+                    setState(() {
+                      _selectedPaymentMethod = 'Store Credit';
+                      _cashReceivedController.text = '0';
+                    });
+                    if (_customer == null) {
+                      _showCustomerPicker();
+                    }
+                  },
                 ),
                 const SizedBox(width: 10),
 
@@ -485,8 +496,11 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                   subtitle: '0% Fee',
                   icon: Icons.qr_code_2,
                   isSelected: _selectedPaymentMethod == 'Raast QR',
-                  onTap: () =>
-                      setState(() => _selectedPaymentMethod = 'Raast QR'),
+                  onTap: () => setState(() {
+                    _selectedPaymentMethod = 'Raast QR';
+                    _cashReceivedController.text =
+                        _billAmount.toStringAsFixed(0);
+                  }),
                 ),
               ],
             ),
@@ -751,199 +765,451 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
 
                   const SizedBox(height: 12),
 
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEFF6FF),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFDBEAFE)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Row(
-                              children: [
-                                Icon(Icons.payments_outlined,
-                                    size: 15, color: Color(0xFF15803D)),
-                                SizedBox(width: 5),
-                                Text(
-                                  'Cash Received (Partial)',
-                                  style: TextStyle(
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'Bill: PKR ${_billAmount.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                  fontSize: 11, color: Color(0xFF64748B)),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFCBD5E1)),
-                          ),
-                          child: Row(
+                  if (_selectedPaymentMethod == 'Store Credit')
+                    // ── STORE CREDIT / FULL UDHAAR SECTION ──
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF2F2),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFECACA)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              const Text(
-                                'PKR',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF64748B),
-                                ),
-                              ),
-                              SizedBox(
-                                width: 120,
-                                child: TextField(
-                                  controller: _cashReceivedController,
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.right,
-                                  style: const TextStyle(
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF0F172A),
-                                  ),
-                                  decoration: const InputDecoration(
-                                    border: InputBorder.none,
-                                    isDense: true,
-                                    contentPadding:
-                                        EdgeInsets.symmetric(vertical: 10),
-                                  ),
-                                  onChanged: (_) => setState(() {}),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            _buildQuickAmountPill(
-                                'Exact (${_billAmount.toStringAsFixed(0)})',
-                                _billAmount),
-                            _buildQuickAmountPill('500', 500),
-                            _buildQuickAmountPill('1,000', 1000),
-                            _buildQuickAmountPill('2,000', 2000),
-                          ],
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFFFF1F2),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: const Color(0xFFFECDD3)),
-                          ),
-                          child: Row(
-                            children: [
-                              const Icon(Icons.notifications_active_outlined,
-                                  color: Color(0xFFDC2626), size: 18),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'New Credit (To Post in Ledger)',
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF991B1B),
-                                      ),
-                                    ),
-                                    Text(
-                                      _customer != null
-                                          ? "Will be added to ${_customer!.name}'s ledger. New total balance will be PKR ${_newTotalBalance.toStringAsFixed(0)}"
-                                          : "New total balance will be PKR ${_newTotalBalance.toStringAsFixed(0)}",
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        color: Color(0xFFB91C1C),
-                                        height: 1.25,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                              const Row(
                                 children: [
+                                  Icon(Icons.menu_book,
+                                      size: 18, color: Color(0xFFDC2626)),
+                                  SizedBox(width: 6),
                                   Text(
-                                    'PKR ${_newUdhaar.toStringAsFixed(0)}',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFFDC2626),
-                                    ),
-                                  ),
-                                  const Text(
-                                    'UNPAID BALANCE',
+                                    'Full Bill on Udhaar (ادھار)',
                                     style: TextStyle(
-                                      fontSize: 8.5,
-                                      fontWeight: FontWeight.w800,
-                                      color: Color(0xFFDC2626),
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF991B1B),
                                     ),
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        GestureDetector(
-                          onTap: () => setState(
-                              () => _sendNotifications = !_sendNotifications),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _sendNotifications
-                                    ? Icons.check_box
-                                    : Icons.check_box_outline_blank,
-                                size: 18,
-                                color: const Color(0xFF15803D),
-                              ),
-                              const SizedBox(width: 6),
-                              const Icon(
-                                Icons.chat_bubble_outline_rounded,
-                                size: 15,
-                                color: Color(0xFF2563EB),
-                              ),
-                              const SizedBox(width: 5),
-                              const Text(
-                                'Send Instant SMS & WhatsApp Ledger Bill',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1E293B),
+                              Text(
+                                'PKR ${_billAmount.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFFDC2626),
                                 ),
                               ),
                             ],
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Cash received is PKR 0. Full bill will be recorded as Udhaar in customer ledger.',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF7F1D1D),
+                                height: 1.3),
+                          ),
+                          if (_customer == null) ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border:
+                                    Border.all(color: const Color(0xFFFCA5A5)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(Icons.error_outline,
+                                      size: 18, color: Color(0xFFDC2626)),
+                                  const SizedBox(width: 8),
+                                  const Expanded(
+                                    child: Text(
+                                      'Customer required for Udhaar / Khata sale.',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF991B1B)),
+                                    ),
+                                  ),
+                                  ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFDC2626),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
+                                      minimumSize: Size.zero,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius:
+                                              BorderRadius.circular(6)),
+                                    ),
+                                    onPressed: _showCustomerPicker,
+                                    child: const Text('Select',
+                                        style: TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ] else ...[
+                            const SizedBox(height: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8),
+                                border:
+                                    Border.all(color: const Color(0xFFFECACA)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'New Total Udhaar Balance:',
+                                    style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B)),
+                                  ),
+                                  Text(
+                                    'PKR ${_newTotalBalance.toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w900,
+                                        color: Color(0xFFDC2626)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          GestureDetector(
+                            onTap: () => setState(() =>
+                                _sendNotifications = !_sendNotifications),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _sendNotifications
+                                      ? Icons.check_box
+                                      : Icons.check_box_outline_blank,
+                                  size: 18,
+                                  color: const Color(0xFF15803D),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 15,
+                                  color: Color(0xFF2563EB),
+                                ),
+                                const SizedBox(width: 5),
+                                const Text(
+                                  'Send Instant SMS & WhatsApp Ledger Bill',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (_selectedPaymentMethod == 'Raast QR')
+                    // ── RAAST QR SECTION ──
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF0FDF4),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFBBF7D0)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.qr_code_2,
+                                      size: 20, color: Color(0xFF15803D)),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Raast Instant QR',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'PKR ${_billAmount.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  color: Color(0xFF15803D),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Customer can scan from any mobile banking app or Easypaisa / JazzCash to pay directly to Shop Raast ID: ${ShopState.instance.activeShop.phone.isNotEmpty ? ShopState.instance.activeShop.phone : "Registered Number"}.',
+                            style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF166534),
+                                height: 1.3),
+                          ),
+                        ],
+                      ),
+                    )
+                  else
+                    // ── CASH SECTION (Full or Split) ──
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFDBEAFE)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Row(
+                                children: [
+                                  Icon(Icons.payments_outlined,
+                                      size: 15, color: Color(0xFF15803D)),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Cash Received (Naqd)',
+                                    style: TextStyle(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Text(
+                                'Bill: PKR ${_billAmount.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                    fontSize: 11, color: Color(0xFF64748B)),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(10),
+                              border:
+                                  Border.all(color: const Color(0xFFCBD5E1)),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'PKR',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF64748B),
+                                  ),
+                                ),
+                                SizedBox(
+                                  width: 120,
+                                  child: TextField(
+                                    controller: _cashReceivedController,
+                                    keyboardType: TextInputType.number,
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                    decoration: const InputDecoration(
+                                      border: InputBorder.none,
+                                      isDense: true,
+                                      contentPadding:
+                                          EdgeInsets.symmetric(vertical: 10),
+                                    ),
+                                    onChanged: (_) => setState(() {}),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildQuickAmountPill(
+                                  'Exact (${_billAmount.toStringAsFixed(0)})',
+                                  _billAmount),
+                              _buildQuickAmountPill('500', 500),
+                              _buildQuickAmountPill('1,000', 1000),
+                              _buildQuickAmountPill('2,000', 2000),
+                            ],
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          if (_cashReceived >= _billAmount)
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFDCFCE7),
+                                borderRadius: BorderRadius.circular(8),
+                                border:
+                                    Border.all(color: const Color(0xFFBBF7D0)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Change to Return:',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                  ),
+                                  Text(
+                                    'PKR ${(_cashReceived - _billAmount).toStringAsFixed(0)}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFF15803D),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF1F2),
+                                borderRadius: BorderRadius.circular(8),
+                                border:
+                                    Border.all(color: const Color(0xFFFECDD3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                      Icons.notifications_active_outlined,
+                                      color: Color(0xFFDC2626),
+                                      size: 18),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Split: Remaining as Udhaar',
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF991B1B),
+                                          ),
+                                        ),
+                                        Text(
+                                          _customer != null
+                                              ? "Will be added to ${_customer!.name}'s ledger."
+                                              : "Select customer to record remaining udhar.",
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            color: Color(0xFFB91C1C),
+                                            height: 1.25,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        'PKR ${_newUdhaar.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFFDC2626),
+                                        ),
+                                      ),
+                                      const Text(
+                                        'UNPAID / UDHAR',
+                                        style: TextStyle(
+                                          fontSize: 8.5,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFFDC2626),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                          const SizedBox(height: 8),
+
+                          GestureDetector(
+                            onTap: () => setState(() =>
+                                _sendNotifications = !_sendNotifications),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  _sendNotifications
+                                      ? Icons.check_box
+                                      : Icons.check_box_outline_blank,
+                                  size: 18,
+                                  color: const Color(0xFF15803D),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 15,
+                                  color: Color(0xFF2563EB),
+                                ),
+                                const SizedBox(width: 5),
+                                const Text(
+                                  'Send Instant SMS & WhatsApp Ledger Bill',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -1063,31 +1329,80 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                RichText(
-                  text: TextSpan(
-                    style:
-                        const TextStyle(fontSize: 11, color: Color(0xFF334155)),
-                    children: [
-                      const TextSpan(text: 'Cash: '),
-                      TextSpan(
-                        text: 'PKR ${_cashReceived.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF16A34A)),
-                      ),
-                      const TextSpan(text: ' • Credit: '),
-                      TextSpan(
-                        text: 'PKR ${_newUdhaar.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFDC2626)),
-                      ),
-                    ],
+                if (_selectedPaymentMethod == 'Store Credit')
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFF334155)),
+                      children: [
+                        const TextSpan(text: 'Payment Mode: '),
+                        const TextSpan(
+                          text: 'Full Udhaar / Khata',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFDC2626)),
+                        ),
+                        const TextSpan(text: ' • Credit: '),
+                        TextSpan(
+                          text: 'PKR ${_billAmount.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFDC2626)),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (_selectedPaymentMethod == 'Raast QR')
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFF334155)),
+                      children: [
+                        const TextSpan(text: 'Payment Mode: '),
+                        const TextSpan(
+                          text: 'Raast Digital QR',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1D4ED8)),
+                        ),
+                        const TextSpan(text: ' • Amount: '),
+                        TextSpan(
+                          text: 'PKR ${_billAmount.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF15803D)),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(
+                          fontSize: 11, color: Color(0xFF334155)),
+                      children: [
+                        const TextSpan(text: 'Cash: '),
+                        TextSpan(
+                          text: 'PKR ${_cashReceived.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF16A34A)),
+                        ),
+                        const TextSpan(text: ' • Credit: '),
+                        TextSpan(
+                          text: 'PKR ${_newUdhaar.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFFDC2626)),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const Text(
-                  'READY TO POST',
-                  style: TextStyle(
+                Text(
+                  _selectedPaymentMethod == 'Store Credit'
+                      ? 'KHATA RECORD'
+                      : 'READY TO POST',
+                  style: const TextStyle(
                     fontSize: 9.5,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF64748B),
@@ -1105,7 +1420,11 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
               child: ElevatedButton(
                 onPressed: _onCompleteSale,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF15803D), // Forest Green
+                  backgroundColor: _selectedPaymentMethod == 'Store Credit'
+                      ? const Color(0xFF0F172A)
+                      : (_selectedPaymentMethod == 'Raast QR'
+                          ? const Color(0xFF1D4ED8)
+                          : const Color(0xFF15803D)),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
@@ -1115,11 +1434,22 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.check_circle_outline, size: 18),
+                    Icon(
+                      _selectedPaymentMethod == 'Store Credit'
+                          ? Icons.menu_book
+                          : (_selectedPaymentMethod == 'Raast QR'
+                              ? Icons.qr_code_2
+                              : Icons.check_circle_outline),
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
-                    const Text(
-                      'Complete Sale & Print',
-                      style: TextStyle(
+                    Text(
+                      _selectedPaymentMethod == 'Store Credit'
+                          ? 'Complete Udhaar Sale & Record'
+                          : (_selectedPaymentMethod == 'Raast QR'
+                              ? 'Verify Raast & Complete'
+                              : 'Complete Sale & Print'),
+                      style: const TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.bold,
                       ),
@@ -1127,10 +1457,12 @@ class _CheckoutSettlementScreenState extends State<CheckoutSettlementScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'PKR ${_billAmount.toStringAsFixed(0)} →',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF86EFAC),
+                        color: _selectedPaymentMethod == 'Store Credit'
+                            ? const Color(0xFFFCA5A5)
+                            : const Color(0xFF86EFAC),
                       ),
                     ),
                   ],
