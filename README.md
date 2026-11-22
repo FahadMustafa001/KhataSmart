@@ -217,22 +217,69 @@ For businesses with silent investors, non-active partners, or owners monitoring 
 
 ## ☁️ Dual-Engine Cloud Architecture
 
-SmartKhata protects business records against device theft, accidental deletion, water damage, and hardware failure using a dual-redundant cloud strategy:
+SmartKhata protects business records against device theft, accidental deletion, water damage, and hardware failure using an offline-first dual-redundant cloud strategy:
 
 ```mermaid
-graph TD
-    UI[SmartKhata Mobile / Tablet UI] --> LocalDB[(SQLite Local Database)]
-    LocalDB -->|Offline First Instant Reads & Writes| UI
-    
-    LocalDB -->|Background Debounce 2.5s| CloudSyncService[Cloud Sync Engine]
-    CloudSyncService -->|TLS Encrypted Stream| Firestore[(Firebase Cloud Firestore)]
-    
-    LocalDB -.->|Manual / Scheduled Snapshot| DriveService[Google Drive Engine]
-    DriveService -.->|REST API v3| GoogleDrive[(Shop Owner's Personal 15GB Drive)]
-    
-    Firestore -->|Auto Restore on Reinstall / Multi-Device| LocalDB
-    GoogleDrive -.->|Manual JSON Restore| LocalDB
+flowchart TD
+    subgraph UI["Presentation & Business Logic Layer"]
+        POS["POS Fast Checkout"]
+        INV["Inventory Adjustments"]
+        KHT["Khata Ledger Debits/Credits"]
+        SET["Store Settings & Profile"]
+    end
+
+    subgraph Tier1["TIER 1: Local Edge Storage (Authoritative Master)"]
+        direction TB
+        SM["StateManager (CartState / InventoryState / KhataState)"]
+        LDB["LocalDatabaseService (SQLite Engine)"]
+        WAL["SQLite WAL Mode (Write-Ahead Logging)<br/>Sub-15ms Latency | ACID Transactions"]
+        TBL[("Local Database: smart_khata.db<br/>• shops & products<br/>• parties & ledger_entries<br/>• orders & order_items<br/>• purchases & purchase_items")]
+        
+        SM -->|Synchronous Direct DML| LDB
+        LDB -->|Atomic db.transaction| WAL
+        WAL -->|Instant Commit| TBL
+    end
+
+    UI -->|User Events| SM
+
+    subgraph SyncEngine["Synchronization & Disaster Recovery Bridge"]
+        direction TB
+        FLAG{"Check Record Status<br/>is_synced == 0?"}
+        TIMER["2.5-Second Debounce Timer<br/>(Prevents Network Saturation)"]
+        NET{"Internet Available?<br/>(Wi-Fi / 4G Cellular)"}
+        
+        TBL -.->|Monitors Modified Rows| FLAG
+        FLAG -->|Yes| TIMER
+        TIMER --> NET
+    end
+
+    subgraph Tier2["TIER 2: Remote Cloud Storage (Asynchronous Mirror)"]
+        direction TB
+        subgraph EngineA["Cloud Engine A: Real-Time Delta Mirror"]
+            FS["CloudSyncService (Firestore API)"]
+            FDB[("Google Cloud Firestore<br/>• Real-time Document Collections<br/>• Auto-merging Deltas")]
+            FS -->|Batch Write Payload| FDB
+            FDB -->|HTTP 200 OK Response| FS
+        end
+
+        subgraph EngineB["Cloud Engine B: Disaster Recovery Snapshots"]
+            GD["GoogleDriveService (OAuth 2.0)"]
+            GDRIVE[("Google Drive App Folder<br/>• Encrypted Full DB JSON Snapshots<br/>• Historical Timestamps (Anti-Theft)")]
+            GD -->|Multipart Encrypted Upload| GDRIVE
+        end
+    end
+
+    NET -->|ONLINE| FS
+    NET -->|MANUAL / SCHEDULED BACKUP| GD
+    NET -.->|OFFLINE| WAIT["Defer Sync: Keep is_synced=0<br/>Zero UI Lag, App Works 100% Offline"]
+
+    FS -->|Update Local Row<br/>SET is_synced = 1| TBL
 ```
+
+### Architectural Key Guarantees:
+- **100% Offline Autonomy:** In dense covered bazaars or during 8-hour load shedding, checkout never stops. All reads and writes hit SQLite with sub-15ms latency.
+- **2.5s Debounced Network Efficiency:** Rapid scans in a rush queue don't spam network calls; changes are batched and synced once the cashier pauses.
+- **Data Sovereignty:** Full database snapshots export directly to the merchant's personal Google Drive without recurring vendor lock-in.
 
 ---
 
@@ -413,12 +460,39 @@ The release bundle will be located in:
 
 ## 🛠️ Recent Quality Improvements & Bug Fixes
 
+- **Party Ledger Search Bar Contrast Enhancement:** Fixed an invisible white-on-white text input bug in [party_ledger_detail_screen.dart](file:///c:/Users/fahad/StudioProjects/KhataSmart/lib/views/khata/party_ledger_detail_screen.dart) by explicitly setting high-contrast Slate-900 typography (`#0F172A`, `FontWeight.w600`), a crisp black cursor, search prefix icon, and an interactive 1-tap clear button.
+- **POS Scanner Reticle Layout Overflow & Fallback:** In [pos_scanner_screen.dart](file:///c:/Users/fahad/StudioProjects/KhataSmart/lib/views/pos/pos_scanner_screen.dart), fixed the green targeting reticle painting over error dialogs during camera initialization failures. Implemented a scrollable fallback sheet with manual barcode/SKU input and camera re-initialization lifecycle controls.
+- **ProGuard / R8 Release Build Crash Elimination:** Resolved a native `NullPointerException` during release APK execution by configuring explicit reflection preservation rules in `android/app/proguard-rules.pro` for `dev.steenbakker.mobile_scanner.**`, `com.google.mlkit.**`, and `androidx.camera.**`.
+- **Pre-downloaded ML Kit Vision Dependency:** Added `<meta-data android:name="com.google.mlkit.vision.DEPENDENCIES" android:value="barcode" />` into `android/app/src/main/AndroidManifest.xml`, ensuring barcode recognition models are downloaded upon install for instant offline scanning.
+- **Weighted Inward Cost Averaging (WAV):** Integrated dynamic cost averaging into [purchase_inward_screen.dart](file:///c:/Users/fahad/StudioProjects/KhataSmart/lib/views/inventory/purchase_inward_screen.dart) and `inventory_state.dart`, recalculating unit purchase costs during supplier restocking to protect profit margins against currency inflation.
 - **Catalog Item 12px Overflow Resolved:** Resolved a horizontal layout overflow in [inventory_list_screen.dart](file:///c:/Users/fahad/StudioProjects/KhataSmart/lib/views/inventory/inventory_list_screen.dart) when large item prices caused badge rows to exceed device width. Replaced rigid `Row` + `Spacer` layouts with flexible `Expanded` + `Wrap` containers.
 - **Stock Inward Screen Blank Screen Eliminated:** Migrated [purchase_inward_screen.dart](file:///c:/Users/fahad/StudioProjects/KhataSmart/lib/views/inventory/purchase_inward_screen.dart) to robust `CustomAppBar` architecture and modal sheets, preventing layout crashes when opening the inward restock portal.
 - **Interactive Inward Empty State:** Replaced static "No products added yet" containers with an interactive `InkWell` containing a prominent **`+ Add Product to Bill`** button.
 - **On-the-Fly Product Auto-Selection:** Products created on-the-fly from the purchase bill sheet now automatically return via `Navigator.pop(context, newProd)` and are immediately selected in the active inward invoice.
 - **Universal Units of Measurement (UOM):** Added native support for agricultural and wholesale units (`Mann`, `Bori`, `Carton`, `Roll`, `Meter`, `Pair`, `Pcs`, `Pack`, `Dozen`, `Liter`).
-- **Branding Uniformity:** Harmonized brand naming across Android manifests, iOS plists, web titles, and app-lock screens to **SmartKhata**.
+- **Comprehensive 65+ Page Capstone Documentation:** Compiled an exhaustive, publication-grade academic report (`SmartKhata_Final_Semester_Project_Report.docx`) with 13 chapters, 32 formatted tables, 18 complete code listings, and 35 formal QA test cases.
+
+---
+
+## 📚 Final Capstone Semester Project Report
+
+A publication-grade, 65+ page academic capstone project report has been compiled and saved inside the project repository for final semester thesis submission and committee defense:
+- **Location:** [`SmartKhata_Final_Semester_Project_Report.docx`](file:///c:/Users/fahad/StudioProjects/KhataSmart/SmartKhata_Final_Semester_Project_Report.docx)
+- **Detailed Structure:**
+  1. *Cover Page, Approval Certificate, Declaration, Executive Abstract & Acronyms*
+  2. *Chapter 1: Socio-Economic Fabric of Pakistani Retail & Bahi Khata Failures*
+  3. *Chapter 2: Literature Review & 16-Criteria Benchmark Matrix*
+  4. *Chapter 3: Software Requirements Specification (SRS), Personas & Formal Use Cases*
+  5. *Chapter 4: System Architecture, Reactive MVVM & Dual-Tier Storage Engine*
+  6. *Chapter 5: Relational Database Design, ERD Diagram, Production DDL & ACID Transactions*
+  7. *Chapter 6: File-by-File Source Code & Module Architecture Deep Dive*
+  8. *Chapter 7: UI Engineering & Screen-by-Screen Walkthrough of All 18 Screens*
+  9. *Chapter 8: Core Mathematical Algorithms (Weighted Average, Split-Tender, ESC/POS Stream)*
+  10. *Chapter 9: Native Platform Engineering, Android Manifest, ProGuard R8 Rules & Cryptography*
+  11. *Chapter 10: Quality Assurance, 35-Case Test Suite, Bug Remediation & Benchmarks*
+  12. *Chapter 11: Deployment & Thermal Hardware Setup Guide*
+  13. *Chapter 12: Discussion, Architectural Limitations & 3-Year Engineering Roadmap*
+  14. *Chapter 13: Academic References & Bibliography (20 Citations)*
 
 ---
 
