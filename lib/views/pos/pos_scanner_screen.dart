@@ -31,6 +31,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
   DateTime? _lastScanTime;
   int _scannedQty = 1;
   bool _isCaptureMode = false;
+  bool _hasCameraError = false;
 
   @override
   void didChangeDependencies() {
@@ -432,6 +433,7 @@ class _PosScannerScreenState extends State<PosScannerScreen>
 
   // ── Overlay Mask & Viewfinder Box ──────────────────────────────────────────
   Widget _buildScannerOverlay() {
+    if (_hasCameraError) return const SizedBox.shrink();
     final screenSize = MediaQuery.of(context).size;
     const boxWidth = 260.0;
     const boxHeight = 180.0;
@@ -1134,48 +1136,89 @@ class _PosScannerScreenState extends State<PosScannerScreen>
     );
   }
 
+  Future<void> _restartScanner() async {
+    setState(() {
+      _hasCameraError = false;
+    });
+    try {
+      await _scannerController.stop();
+      await Future.delayed(const Duration(milliseconds: 300));
+      await _scannerController.start();
+    } catch (e) {
+      debugPrint('Error restarting scanner: $e');
+    }
+    if (mounted) setState(() {});
+  }
+
   // ── Camera Error Builder ───────────────────────────────────────────────────
   Widget _buildScannerErrorView(MobileScannerException error) {
+    if (!_hasCameraError) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_hasCameraError) {
+          setState(() => _hasCameraError = true);
+        }
+      });
+    }
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.no_photography_outlined, size: 48, color: Colors.white54),
-            const SizedBox(height: 12),
-            Text(
-              error.errorCode == MobileScannerErrorCode.permissionDenied
-                  ? 'Camera permission denied.\nPlease grant camera permission in your phone settings to scan barcodes.'
-                  : 'Camera initialization error.\n(${error.errorDetails?.message ?? error.errorCode.name})',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: () => _scannerController.start(),
-                  icon: const Icon(Icons.refresh, size: 16),
-                  label: const Text('Retry Camera'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
-                    foregroundColor: Colors.white,
-                  ),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 32.0),
+        child: Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1E293B),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.no_photography_outlined, size: 52, color: Color(0xFFF59E0B)),
+              const SizedBox(height: 14),
+              const Text(
+                'Camera Access Issue',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                 ),
-                const SizedBox(width: 10),
-                OutlinedButton.icon(
-                  onPressed: _showManualInputDialog,
-                  icon: const Icon(Icons.keyboard, size: 16, color: Colors.white),
-                  label: const Text('Manual Entry', style: TextStyle(color: Colors.white)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.white30),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                error.errorCode == MobileScannerErrorCode.permissionDenied
+                    ? 'Camera permission was not granted.\nPlease grant camera access in app settings to scan barcodes.'
+                    : 'The camera could not be started.\n(${error.errorDetails?.message ?? error.errorCode.name})',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: _restartScanner,
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('Retry Camera'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF15803D),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                  OutlinedButton.icon(
+                    onPressed: _showManualInputDialog,
+                    icon: const Icon(Icons.keyboard, size: 16, color: Colors.white),
+                    label: const Text('Enter Manually', style: TextStyle(color: Colors.white)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white30),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

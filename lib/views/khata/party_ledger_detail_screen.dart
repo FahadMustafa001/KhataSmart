@@ -560,19 +560,51 @@ class _PartyLedgerDetailScreenState extends State<PartyLedgerDetailScreen> {
             },
           ),
           title: _isSearching
-              ? TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
-                  cursorColor: Colors.white,
-                  decoration: const InputDecoration(
-                    hintText: 'Search ledger by note, amount, bill...',
-                    hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-                    border: InputBorder.none,
+              ? SizedBox(
+                  height: 40,
+                  child: TextField(
+                    controller: _searchController,
+                    autofocus: true,
+                    style: const TextStyle(
+                      color: Color(0xFF0F172A), // Black / Dark Navy text
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    cursorColor: const Color(0xFF0F172A),
+                    decoration: InputDecoration(
+                      hintText: 'Search note, amount, bill...',
+                      hintStyle: const TextStyle(color: Color(0xFF64748B), fontSize: 12.5),
+                      fillColor: Colors.white,
+                      filled: true,
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF64748B)),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, size: 16, color: Color(0xFF64748B)),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFFCBD5E1)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: const BorderSide(color: Color(0xFF15803D), width: 1.5),
+                      ),
+                    ),
+                    onChanged: (val) {
+                      setState(() => _searchQuery = val);
+                    },
                   ),
-                  onChanged: (val) {
-                    setState(() => _searchQuery = val);
-                  },
                 )
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
