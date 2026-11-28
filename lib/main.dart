@@ -1,15 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'core/constants/app_strings.dart';
 import 'core/theme/app_theme.dart';
 import 'routes/app_routes.dart';
 import 'services/security_service.dart';
+import 'state/cart_state.dart';
+import 'state/inventory_state.dart';
+import 'state/khata_state.dart';
+import 'state/shop_state.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Mount Flutter root immediately so splash screen renders at 0ms without delay
-  runApp(const SmartKhataApp());
+  // Mount Flutter root immediately with Hybrid MultiProvider for reactive UI
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: ShopState.instance),
+        ChangeNotifierProvider.value(value: InventoryState.instance),
+        ChangeNotifierProvider.value(value: KhataState.instance),
+        ChangeNotifierProvider.value(value: CartState.instance),
+      ],
+      child: const SmartKhataApp(),
+    ),
+  );
 }
 
 class SmartKhataApp extends StatefulWidget {
