@@ -34,7 +34,8 @@ dependencies:
   # 7. Formatting Helpers (Dates & Numbers)
   intl: ^0.19.0
 
-  # 8. Local Storage & File Path Handling
+  # 8. Local Storage, Relational SQLite Database & File Path Handling
+  sqflite: ^2.3.3+1
   path_provider: ^2.1.4
   path: ^1.9.0
 
